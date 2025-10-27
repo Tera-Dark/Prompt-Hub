@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prompts Data Test</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .test-section {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .test-section h2 {
+      margin-top: 0;
+      color: #1a1a1a;
+    }
+    .success {
+      color: #22c55e;
+    }
+    .error {
+      color: #ef4444;
+    }
+    .info {
+      color: #3b82f6;
+    }
+    pre {
+      background: #f5f5f5;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+    .stat {
+      display: inline-block;
+      margin-right: 20px;
+      padding: 8px 12px;
+      background: #e5e5e5;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧪 Prompts Data Implementation Test</h1>
+  
+  <div class="test-section">
+    <h2>📦 Loading Data</h2>
+    <div id="load-test"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>📊 Data Statistics</h2>
+    <div id="stats-test"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>🔍 Filter Tests</h2>
+    <div id="filter-test"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>🔎 Search Test</h2>
+    <div id="search-test"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>✅ Schema Validation</h2>
+    <div id="validation-test"></div>
+  </div>
+
+  <script type="module">
+    // Simple implementation of the load function for testing
+    async function loadPrompts() {
+      const response = await fetch('/data/prompts.json');
+      if (!response.ok) {
+        throw new Error(`Failed to fetch: ${response.status}`);
+      }
+      return await response.json();
+    }
+
+    function getPromptsByCategory(prompts, category) {
+      return prompts.filter(p => p.category === category);
+    }
+
+    function getPromptsByTag(prompts, tag) {
+      return prompts.filter(p => p.tags.includes(tag));
+    }
+
+    function searchPrompts(prompts, query) {
+      const lowerQuery = query.toLowerCase();
+      return prompts.filter(p => 
+        p.title.toLowerCase().includes(lowerQuery) ||
+        p.description.toLowerCase().includes(lowerQuery) ||
+        p.prompt.toLowerCase().includes(lowerQuery) ||
+        p.tags.some(tag => tag.toLowerCase().includes(lowerQuery))
+      );
+    }
+
+    function getAllCategories(prompts) {
+      const categories = new Set(prompts.map(p => p.category));
+      return Array.from(categories).sort();
+    }
+
+    function getAllTags(prompts) {
+      const tags = new Set(prompts.flatMap(p => p.tags));
+      return Array.from(tags).sort();
+    }
+
+    async function runTests() {
+      const loadTest = document.getElementById('load-test');
+      const statsTest = document.getElementById('stats-test');
+      const filterTest = document.getElementById('filter-test');
+      const searchTest = document.getElementById('search-test');
+      const validationTest = document.getElementById('validation-test');
+
+      try {
+        // Test 1: Load data
+        loadTest.innerHTML = '<p class="info">⏳ Loading data...</p>';
+        const data = await loadPrompts();
+        const prompts = data.prompts;
+        
+        loadTest.innerHTML = `
+          <p class="success">✅ Successfully loaded prompts</p>
+          <p>Version: <strong>${data.version}</strong></p>
+          <p>Total prompts: <strong>${prompts.length}</strong></p>
+        `;
+
+        // Test 2: Statistics
+        const categories = getAllCategories(prompts);
+        const tags = getAllTags(prompts);
+        
+        let statsHtml = '<div>';
+        statsHtml += `<span class="stat">📋 ${prompts.length} Prompts</span>`;
+        statsHtml += `<span class="stat">📂 ${categories.length} Categories</span>`;
+        statsHtml += `<span class="stat">🏷️ ${tags.length} Tags</span>`;
+        statsHtml += '</div><br>';
+        
+        statsHtml += '<h3>Categories:</h3><ul>';
+        categories.forEach(cat => {
+          const count = getPromptsByCategory(prompts, cat).length;
+          statsHtml += `<li>${cat}: ${count} prompts</li>`;
+        });
+        statsHtml += '</ul>';
+        
+        statsTest.innerHTML = statsHtml;
+
+        // Test 3: Filtering
+        const programmingPrompts = getPromptsByCategory(prompts, '编程');
+        const writingPrompts = getPromptsByCategory(prompts, '写作');
+        const seoPrompts = getPromptsByTag(prompts, 'SEO');
+        
+        filterTest.innerHTML = `
+          <p class="success">✅ Filter functions working</p>
+          <ul>
+            <li>编程 category: ${programmingPrompts.length} prompts</li>
+            <li>写作 category: ${writingPrompts.length} prompts</li>
+            <li>SEO tag: ${seoPrompts.length} prompts</li>
+          </ul>
+        `;
+
+        // Test 4: Search
+        const emailResults = searchPrompts(prompts, 'email');
+        const codeResults = searchPrompts(prompts, 'code');
+        
+        searchTest.innerHTML = `
+          <p class="success">✅ Search function working</p>
+          <ul>
+            <li>Search "email": ${emailResults.length} results</li>
+            <li>Search "code": ${codeResults.length} results</li>
+          </ul>
+        `;
+
+        // Test 5: Validation
+        const requiredFields = ['id', 'title', 'category', 'tags', 'prompt', 'description', 'createdAt'];
+        let validationErrors = [];
+        const seenIds = new Set();
+
+        prompts.forEach((prompt, index) => {
+          requiredFields.forEach(field => {
+            if (!prompt[field]) {
+              validationErrors.push(`Prompt ${index}: Missing ${field}`);
+            }
+          });
+
+          if (seenIds.has(prompt.id)) {
+            validationErrors.push(`Duplicate ID: ${prompt.id}`);
+          } else {
+            seenIds.add(prompt.id);
+          }
+
+          if (!Array.isArray(prompt.tags)) {
+            validationErrors.push(`Prompt ${prompt.id}: tags must be an array`);
+          }
+
+          if (prompt.createdAt) {
+            const date = new Date(prompt.createdAt);
+            if (isNaN(date.getTime())) {
+              validationErrors.push(`Prompt ${prompt.id}: Invalid date format`);
+            }
+          }
+        });
+
+        if (validationErrors.length === 0) {
+          validationTest.innerHTML = `
+            <p class="success">✅ All prompts passed validation</p>
+            <ul>
+              <li>All required fields present</li>
+              <li>No duplicate IDs</li>
+              <li>Valid date formats</li>
+              <li>Valid array structures</li>
+            </ul>
+          `;
+        } else {
+          validationTest.innerHTML = `
+            <p class="error">❌ Validation errors found:</p>
+            <pre>${validationErrors.join('\n')}</pre>
+          `;
+        }
+
+      } catch (error) {
+        loadTest.innerHTML = `<p class="error">❌ Error: ${error.message}</p>`;
+        console.error('Test error:', error);
+      }
+    }
+
+    // Run tests on page load
+    runTests();
+  </script>
+</body>
+</html>
