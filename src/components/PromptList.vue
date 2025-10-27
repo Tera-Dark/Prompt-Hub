@@ -1,218 +1,197 @@
 <template>
   <div class="prompt-list">
     <div v-if="loading" class="loading">
-      Loading prompts...
+      <div class="loading-spinner"></div>
+      <p>Loading prompts...</p>
     </div>
 
     <div v-else-if="error" class="error">
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
       <p>{{ error }}</p>
-      <button @click="retry">Retry</button>
+      <button @click="retry" class="retry-button">Retry</button>
     </div>
 
-    <div v-else-if="prompts.length === 0" class="empty">
-      <p>No prompts available.</p>
+    <div v-else-if="displayedPrompts.length === 0" class="empty">
+      <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"></circle>
+        <path d="m21 21-4.35-4.35"></path>
+      </svg>
+      <h3>No prompts found</h3>
+      <p>Try adjusting your search or filters to find what you're looking for.</p>
     </div>
 
-    <div v-else class="prompts">
-      <div class="stats">
-        <p>Total: {{ prompts.length }} prompts</p>
-        <p>Categories: {{ categories.length }}</p>
-        <p>Tags: {{ tags.length }}</p>
-        <p v-if="dataVersion">Version: {{ dataVersion }}</p>
-      </div>
-
-      <div class="prompt-items">
-        <div 
-          v-for="prompt in prompts" 
-          :key="prompt.id" 
-          class="prompt-item"
-        >
-          <div class="prompt-header">
-            <h3>{{ prompt.title }}</h3>
-            <span class="category-badge">{{ prompt.category }}</span>
-          </div>
-          <p class="description">{{ prompt.description }}</p>
-          <div class="tags">
-            <span 
-              v-for="tag in prompt.tags" 
-              :key="tag" 
-              class="tag"
-            >
-              {{ tag }}
-            </span>
-          </div>
-          <div class="meta">
-            <small>ID: {{ prompt.id }}</small>
-            <small v-if="prompt.sourceLink">
-              <a :href="prompt.sourceLink" target="_blank" rel="noopener noreferrer">
-                Source
-              </a>
-            </small>
-          </div>
-        </div>
-      </div>
+    <div v-else class="prompt-grid">
+      <PromptCard 
+        v-for="prompt in displayedPrompts" 
+        :key="prompt.id" 
+        :prompt="prompt"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
-import { usePrompts } from '@/composables/usePrompts';
+import { computed } from 'vue';
+import type { Prompt } from '@/types/prompt';
+import PromptCard from './PromptCard.vue';
 
-const { 
-  prompts, 
-  loading, 
-  error, 
-  dataVersion,
-  categories,
-  tags,
-  fetchPrompts 
-} = usePrompts();
+interface Props {
+  prompts: Prompt[];
+  loading?: boolean;
+  error?: string | null;
+}
 
-onMounted(() => {
-  fetchPrompts();
+interface Emits {
+  (e: 'retry'): void;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  loading: false,
+  error: null
 });
 
+const emit = defineEmits<Emits>();
+
+const displayedPrompts = computed(() => props.prompts);
+
 function retry() {
-  fetchPrompts();
+  emit('retry');
 }
 </script>
 
 <style scoped>
 .prompt-list {
-  padding: 1rem;
+  width: 100%;
 }
 
 .loading,
 .error,
 .empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
-  padding: 2rem;
+  padding: 4rem 2rem;
   background-color: var(--color-white);
   border-radius: 8px;
-  border: 1px solid var(--color-gray-300);
+  border: 2px dashed var(--color-gray-300);
+  min-height: 400px;
+}
+
+.loading {
+  gap: 1.5rem;
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--color-gray-200);
+  border-top-color: var(--color-gray-900);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading p {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--color-gray-600);
+  font-weight: 500;
 }
 
 .error {
-  color: var(--color-red-600);
-}
-
-.error button {
-  margin-top: 1rem;
-  padding: 0.5rem 1rem;
-  background-color: var(--color-blue-600);
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.error button:hover {
-  background-color: var(--color-blue-700);
-}
-
-.stats {
-  display: flex;
-  gap: 2rem;
-  margin-bottom: 1.5rem;
-  padding: 1rem;
-  background-color: var(--color-white);
-  border-radius: 8px;
-  border: 1px solid var(--color-gray-300);
-}
-
-.stats p {
-  margin: 0;
-  font-size: 0.875rem;
+  gap: 1.5rem;
   color: var(--color-gray-700);
 }
 
-.prompt-items {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+.error svg {
+  color: var(--color-gray-400);
 }
 
-.prompt-item {
-  background-color: var(--color-white);
-  border: 1px solid var(--color-gray-300);
-  border-radius: 8px;
-  padding: 1.5rem;
-  transition: box-shadow 0.2s;
-}
-
-.prompt-item:hover {
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.prompt-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: start;
-  margin-bottom: 0.75rem;
-  gap: 1rem;
-}
-
-.prompt-header h3 {
+.error p {
   margin: 0;
-  font-size: 1.125rem;
+  font-size: 1rem;
+  color: var(--color-gray-600);
+}
+
+.retry-button {
+  margin-top: 0.5rem;
+  padding: 0.625rem 1.5rem;
+  background-color: var(--color-gray-900);
+  color: var(--color-white);
+  border: none;
+  border-radius: 6px;
+  font-size: 0.938rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.retry-button:hover {
+  background-color: var(--color-gray-800);
+  transform: translateY(-1px);
+}
+
+.retry-button:active {
+  transform: translateY(0);
+}
+
+.empty {
+  gap: 1rem;
+  color: var(--color-gray-600);
+}
+
+.empty svg {
+  color: var(--color-gray-300);
+}
+
+.empty h3 {
+  margin: 0;
+  font-size: 1.5rem;
   font-weight: 600;
   color: var(--color-gray-900);
-  flex: 1;
 }
 
-.category-badge {
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  background-color: var(--color-blue-100);
-  color: var(--color-blue-800);
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.description {
-  margin: 0 0 1rem 0;
-  font-size: 0.875rem;
+.empty p {
+  margin: 0;
+  font-size: 1rem;
   color: var(--color-gray-600);
-  line-height: 1.5;
+  max-width: 400px;
 }
 
-.tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
+.prompt-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
 }
 
-.tag {
-  display: inline-block;
-  padding: 0.25rem 0.5rem;
-  background-color: var(--color-gray-100);
-  color: var(--color-gray-700);
-  border-radius: 4px;
-  font-size: 0.75rem;
+@media (max-width: 768px) {
+  .prompt-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .loading,
+  .error,
+  .empty {
+    padding: 3rem 1.5rem;
+    min-height: 300px;
+  }
 }
 
-.meta {
-  display: flex;
-  justify-content: space-between;
-  padding-top: 1rem;
-  border-top: 1px solid var(--color-gray-200);
-}
-
-.meta small {
-  font-size: 0.75rem;
-  color: var(--color-gray-500);
-}
-
-.meta a {
-  color: var(--color-blue-600);
-  text-decoration: none;
-}
-
-.meta a:hover {
-  text-decoration: underline;
+@media (min-width: 1400px) {
+  .prompt-grid {
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  }
 }
 </style>
