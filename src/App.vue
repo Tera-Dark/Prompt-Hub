@@ -9,7 +9,7 @@
 
     <main class="app-main">
       <div class="content-wrapper">
-        <p class="placeholder-text">Prompt Explorer will be loaded here</p>
+        <PromptList />
       </div>
     </main>
 
@@ -20,6 +20,7 @@
 </template>
 
 <script setup lang="ts">
+import PromptList from '@/components/PromptList.vue';
 </script>
 
 <style scoped>

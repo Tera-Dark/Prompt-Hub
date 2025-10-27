@@ -35,6 +35,13 @@ body {
   --color-gray-200: #e5e5e5;
   --color-gray-100: #f5f5f5;
   --color-white: #ffffff;
+
+  --color-blue-100: #dbeafe;
+  --color-blue-600: #2563eb;
+  --color-blue-700: #1d4ed8;
+  --color-blue-800: #1e40af;
+
+  --color-red-600: #dc2626;
 }
 
 #app {

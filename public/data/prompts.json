@@ -1,0 +1,200 @@
+{
+  "version": "1.0.0",
+  "prompts": [
+    {
+      "id": "ai-drawing-001",
+      "title": "高质量人物肖像生成",
+      "category": "AI绘画",
+      "tags": ["肖像", "人物", "高质量", "写实"],
+      "prompt": "professional portrait photography, high quality, detailed facial features, natural lighting, soft shadows, 8k resolution, photorealistic, sharp focus, bokeh background, canon EOS R5, 85mm lens, f/1.4 aperture",
+      "description": "生成专业级别的人物肖像图片，适合用于头像、证件照或艺术创作。强调光影效果和细节表现。",
+      "sourceLink": "https://example.com/portrait-guide",
+      "createdAt": "2024-01-15T10:30:00Z",
+      "updatedAt": "2024-02-20T14:45:00Z"
+    },
+    {
+      "id": "ai-drawing-002",
+      "title": "科幻场景生成",
+      "category": "AI绘画",
+      "tags": ["科幻", "场景", "未来", "概念艺术"],
+      "prompt": "futuristic sci-fi cityscape, neon lights, cyberpunk aesthetic, flying vehicles, towering skyscrapers, holographic displays, rain reflections, night scene, cinematic composition, high detail, concept art style, dramatic lighting",
+      "description": "创建充满科技感的未来城市场景，适合游戏设计、电影概念艺术或科幻小说配图。",
+      "createdAt": "2024-01-18T09:15:00Z"
+    },
+    {
+      "id": "ai-drawing-003",
+      "title": "卡通角色设计",
+      "category": "AI绘画",
+      "tags": ["卡通", "角色设计", "可爱", "插画"],
+      "prompt": "cute cartoon character, chibi style, big expressive eyes, colorful design, simple shapes, friendly appearance, white background, character sheet, multiple poses, clean lines, digital illustration",
+      "description": "设计可爱的卡通角色，适合儿童读物、动画或品牌吉祥物。包含多个姿势的角色设定图。",
+      "createdAt": "2024-01-20T11:00:00Z"
+    },
+    {
+      "id": "ai-drawing-004",
+      "title": "自然风景画",
+      "category": "AI绘画",
+      "tags": ["风景", "自然", "油画", "艺术"],
+      "prompt": "beautiful landscape painting, oil painting style, golden hour lighting, mountains in distance, serene lake reflection, autumn colors, impressionist technique, thick brushstrokes, rich colors, peaceful atmosphere",
+      "description": "生成印象派风格的自然风景画，适合装饰或艺术收藏。强调色彩和氛围营造。",
+      "sourceLink": "https://example.com/landscape-techniques",
+      "createdAt": "2024-01-22T16:20:00Z"
+    },
+    {
+      "id": "writing-001",
+      "title": "专业邮件润色",
+      "category": "写作",
+      "tags": ["商务", "邮件", "润色", "专业"],
+      "prompt": "Please help me refine this business email to make it more professional, concise, and polite. Maintain the core message but improve the tone, grammar, and structure. The email should be suitable for a corporate environment and convey respect while being direct and clear.",
+      "description": "将草稿邮件转化为专业、简洁且礼貌的商务邮件。适用于各种商务沟通场景。",
+      "createdAt": "2024-01-10T08:30:00Z"
+    },
+    {
+      "id": "writing-002",
+      "title": "创意故事开头",
+      "category": "写作",
+      "tags": ["故事", "创意", "小说", "开头"],
+      "prompt": "Create an engaging story opening that immediately hooks the reader. Set the scene with vivid descriptions, introduce an intriguing character or situation, and establish a compelling tone. The opening should raise questions that make readers want to continue. Genre: [specify genre]",
+      "description": "生成引人入胜的故事开头，建立场景、介绍角色并设置悬念，激发读者的阅读欲望。",
+      "createdAt": "2024-01-12T14:00:00Z"
+    },
+    {
+      "id": "writing-003",
+      "title": "社交媒体文案生成",
+      "category": "写作",
+      "tags": ["社交媒体", "文案", "营销", "吸引力"],
+      "prompt": "Generate an engaging social media post about [topic]. The post should be concise (under 280 characters for Twitter or 150 words for other platforms), include a clear call-to-action, use relevant hashtags, and appeal to the target audience's emotions or interests. Make it shareable and conversation-starting.",
+      "description": "创作吸引人的社交媒体文案，包含明确的行动号召和相关标签，提高互动率和分享率。",
+      "sourceLink": "https://example.com/social-media-guide",
+      "createdAt": "2024-01-14T10:45:00Z"
+    },
+    {
+      "id": "writing-004",
+      "title": "产品描述撰写",
+      "category": "写作",
+      "tags": ["电商", "产品描述", "销售", "转化"],
+      "prompt": "Write a compelling product description that highlights key features, benefits, and unique selling points. Use persuasive language, address customer pain points, and include specific details about materials, dimensions, or specifications. End with a strong reason to buy now.",
+      "description": "撰写有说服力的产品描述，突出特点和优势，解决客户痛点，提高转化率。",
+      "createdAt": "2024-01-16T13:20:00Z"
+    },
+    {
+      "id": "writing-005",
+      "title": "博客文章大纲",
+      "category": "写作",
+      "tags": ["博客", "大纲", "结构", "SEO"],
+      "prompt": "Create a detailed blog post outline on [topic]. Include an attention-grabbing title, compelling introduction, 5-7 main sections with subheadings, key points to cover in each section, and a strong conclusion with a call-to-action. Consider SEO keywords and reader engagement throughout.",
+      "description": "生成结构完整的博客文章大纲，包含标题、引言、主体段落和结论，便于后续撰写。",
+      "createdAt": "2024-01-25T09:30:00Z"
+    },
+    {
+      "id": "programming-001",
+      "title": "代码审查助手",
+      "category": "编程",
+      "tags": ["代码审查", "最佳实践", "重构", "质量"],
+      "prompt": "Please review this code and provide feedback on: 1) Code quality and readability, 2) Potential bugs or edge cases, 3) Performance optimizations, 4) Security concerns, 5) Best practices and design patterns, 6) Suggestions for refactoring. Be specific and provide examples where applicable.",
+      "description": "全面审查代码质量，识别问题并提供改进建议，包括可读性、性能、安全性等方面。",
+      "createdAt": "2024-01-08T15:00:00Z"
+    },
+    {
+      "id": "programming-002",
+      "title": "算法解释与实现",
+      "category": "编程",
+      "tags": ["算法", "数据结构", "教学", "实现"],
+      "prompt": "Explain the [algorithm name] algorithm in simple terms. Include: 1) What problem it solves, 2) How it works step-by-step, 3) Time and space complexity analysis, 4) A clean implementation in [programming language] with comments, 5) Example usage and output. Make it beginner-friendly.",
+      "description": "详细解释算法原理和实现，包含复杂度分析和示例代码，适合学习和教学。",
+      "sourceLink": "https://example.com/algorithm-guide",
+      "createdAt": "2024-01-11T11:30:00Z"
+    },
+    {
+      "id": "programming-003",
+      "title": "API文档生成",
+      "category": "编程",
+      "tags": ["API", "文档", "接口", "注释"],
+      "prompt": "Generate comprehensive API documentation for this code. Include: 1) Function/method description, 2) Parameters with types and descriptions, 3) Return value details, 4) Usage examples, 5) Error handling information, 6) Notes about side effects or requirements. Format using standard documentation syntax (JSDoc, Sphinx, etc.).",
+      "description": "为代码生成完整的API文档，包含参数说明、返回值、使用示例和注意事项。",
+      "createdAt": "2024-01-13T14:15:00Z"
+    },
+    {
+      "id": "programming-004",
+      "title": "调试问题分析",
+      "category": "编程",
+      "tags": ["调试", "错误排查", "问题解决", "troubleshooting"],
+      "prompt": "Help me debug this issue. I'll provide: 1) The error message or unexpected behavior, 2) Relevant code snippets, 3) What I've tried so far. Please analyze the problem systematically, identify the root cause, and suggest specific solutions with explanations. Include debugging strategies I can use.",
+      "description": "系统化分析和解决编程问题，识别根本原因并提供具体解决方案和调试策略。",
+      "createdAt": "2024-01-17T10:00:00Z"
+    },
+    {
+      "id": "programming-005",
+      "title": "单元测试编写",
+      "category": "编程",
+      "tags": ["测试", "单元测试", "TDD", "质量保证"],
+      "prompt": "Write comprehensive unit tests for this function/class. Include: 1) Test cases for normal operation, 2) Edge cases and boundary conditions, 3) Error cases and exception handling, 4) Mock external dependencies if needed, 5) Clear test names and assertions. Follow testing best practices and aim for high code coverage.",
+      "description": "编写全面的单元测试，覆盖正常流程、边界情况和错误处理，提高代码质量和可靠性。",
+      "createdAt": "2024-01-19T16:45:00Z"
+    },
+    {
+      "id": "programming-006",
+      "title": "SQL查询优化",
+      "category": "编程",
+      "tags": ["SQL", "数据库", "优化", "性能"],
+      "prompt": "Analyze and optimize this SQL query for better performance. Consider: 1) Index usage and recommendations, 2) Query structure and join optimization, 3) Subquery vs JOIN trade-offs, 4) Execution plan analysis, 5) Potential bottlenecks, 6) Alternative approaches. Explain the reasoning behind each optimization.",
+      "description": "分析和优化SQL查询性能，包括索引建议、查询结构改进和执行计划分析。",
+      "createdAt": "2024-01-23T12:00:00Z"
+    },
+    {
+      "id": "productivity-001",
+      "title": "会议纪要整理",
+      "category": "效率提升",
+      "tags": ["会议", "纪要", "整理", "总结"],
+      "prompt": "Transform these meeting notes into a well-organized meeting summary. Include: 1) Meeting details (date, attendees, topic), 2) Key discussion points, 3) Decisions made, 4) Action items with owners and deadlines, 5) Open questions or next steps. Use clear formatting and bullet points for easy reference.",
+      "description": "将会议笔记整理为结构化的会议纪要，包含讨论要点、决策和行动项。",
+      "createdAt": "2024-01-09T09:00:00Z"
+    },
+    {
+      "id": "productivity-002",
+      "title": "时间管理计划",
+      "category": "效率提升",
+      "tags": ["时间管理", "计划", "效率", "优先级"],
+      "prompt": "Help me create an effective time management plan for [time period]. Consider: 1) Prioritizing tasks using urgency/importance matrix, 2) Time blocking for focused work, 3) Buffer time for unexpected issues, 4) Break schedules for productivity, 5) Balance between different types of work. Provide a structured daily/weekly schedule.",
+      "description": "制定高效的时间管理计划，合理安排任务优先级和时间分配，提升工作效率。",
+      "createdAt": "2024-01-21T08:15:00Z"
+    },
+    {
+      "id": "translation-001",
+      "title": "专业文档翻译",
+      "category": "翻译",
+      "tags": ["翻译", "专业", "技术文档", "准确性"],
+      "prompt": "Translate this [source language] text to [target language]. Maintain professional tone and technical accuracy. Preserve formatting, special terms, and proper nouns. If certain terms have standard translations in the field, use those. Provide natural-sounding output that reads well in the target language.",
+      "description": "翻译专业或技术文档，保持术语准确性和专业语气，确保译文自然流畅。",
+      "createdAt": "2024-01-24T13:30:00Z"
+    },
+    {
+      "id": "education-001",
+      "title": "概念简化解释",
+      "category": "教育",
+      "tags": ["教学", "简化", "概念", "易懂"],
+      "prompt": "Explain [complex concept] in simple terms that a beginner can understand. Use: 1) Clear analogies and real-world examples, 2) Step-by-step breakdown of key ideas, 3) Visual descriptions where helpful, 4) Common misconceptions to avoid, 5) Practice questions to check understanding. Avoid jargon unless you explain it first.",
+      "description": "用简单易懂的方式解释复杂概念，使用类比、示例和逐步分解，适合初学者理解。",
+      "createdAt": "2024-01-26T10:30:00Z"
+    },
+    {
+      "id": "marketing-001",
+      "title": "品牌口号创作",
+      "category": "营销",
+      "tags": ["品牌", "口号", "slogan", "创意"],
+      "prompt": "Create memorable brand slogans for [product/company]. Each slogan should: 1) Be concise (under 10 words), 2) Highlight unique value proposition, 3) Be easy to remember and repeat, 4) Evoke positive emotions, 5) Differentiate from competitors. Provide 5-10 options with brief rationale for each.",
+      "description": "创作简洁有力、易于记忆的品牌口号，突出独特价值主张和品牌个性。",
+      "createdAt": "2024-01-27T11:00:00Z"
+    },
+    {
+      "id": "analysis-001",
+      "title": "数据分析报告",
+      "category": "分析",
+      "tags": ["数据分析", "报告", "洞察", "可视化"],
+      "prompt": "Analyze this dataset and create a comprehensive report including: 1) Data summary and key statistics, 2) Trends and patterns identified, 3) Insights and their business implications, 4) Visualizations to represent findings, 5) Recommendations based on analysis, 6) Limitations and caveats. Make it actionable and easy to understand.",
+      "description": "分析数据集并生成全面报告，包含统计摘要、趋势分析、洞察和可执行建议。",
+      "sourceLink": "https://example.com/data-analysis-guide",
+      "createdAt": "2024-01-28T14:00:00Z"
+    }
+  ]
+}
