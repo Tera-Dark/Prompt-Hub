@@ -1,0 +1,166 @@
+name: 📝 New Prompt Submission
+description: Submit a new AI prompt to be added to the Prompt Hub collection (提交新的AI提示词)
+title: "[New Prompt]: "
+labels: ["new-prompt", "needs-review"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Thank you for contributing! 感谢您的贡献！
+        
+        Please fill out this form to submit a new prompt to our collection. All fields marked with * are required.
+        请填写此表单以提交新的提示词。标有*的字段为必填项。
+        
+        ---
+
+  - type: input
+    id: title
+    attributes:
+      label: Prompt Title (提示词标题) *
+      description: A short, descriptive title for your prompt (3-8 words recommended)
+      placeholder: e.g., "SEO Blog Title Generator" or "Python代码审查助手"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category (类别) *
+      description: Select the most appropriate category for this prompt
+      options:
+        - "AI绘画 - AI Drawing & Image Generation"
+        - "写作 - Writing & Content Creation"
+        - "编程 - Programming & Development"
+        - "效率提升 - Productivity & Efficiency"
+        - "翻译 - Translation & Language"
+        - "教育 - Education & Learning"
+        - "营销 - Marketing & Strategy"
+        - "分析 - Analysis & Research"
+    validations:
+      required: true
+
+  - type: textarea
+    id: tags
+    attributes:
+      label: Tags (标签) *
+      description: |
+        Provide 2-8 relevant tags for filtering and search. Use commas to separate tags.
+        提供2-8个相关标签，用逗号分隔。
+      placeholder: "SEO, blog, writing, creative, 创意, 博客"
+    validations:
+      required: true
+
+  - type: textarea
+    id: prompt
+    attributes:
+      label: Prompt Content (提示词内容) *
+      description: |
+        The actual prompt text that users will use with AI models. Be clear, specific, and actionable.
+        用户将与AI模型一起使用的实际提示词文本。请确保清晰、具体且可操作。
+        
+        **Tips:**
+        - Use placeholders like [topic], [language], [context] for customizable parts
+        - Be specific about the expected output format
+        - Include any constraints or requirements
+      placeholder: |
+        Example:
+        Generate 10 catchy, SEO-friendly blog post titles about [topic]. Each title should:
+        - Be under 60 characters
+        - Include relevant keywords
+        - Appeal to the target audience
+        - Be engaging and click-worthy
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description (描述) *
+      description: |
+        A brief user-facing explanation of what the prompt does and when to use it (1-3 sentences).
+        简要说明此提示词的作用和使用场景（1-3句话）。
+      placeholder: "生成吸引人的博客文章标题，优化SEO并提高点击率。适合内容创作者和数字营销人员使用。"
+    validations:
+      required: true
+
+  - type: textarea
+    id: usage-tips
+    attributes:
+      label: Usage Tips (使用建议)
+      description: |
+        Optional: Any tips for getting the best results with this prompt
+        可选：使用此提示词获得最佳效果的建议
+      placeholder: |
+        - Works best with ChatGPT-4 or Claude
+        - Customize the [topic] placeholder with your specific subject
+        - Try running it multiple times for more variety
+
+  - type: input
+    id: source-link
+    attributes:
+      label: Source Link (来源链接)
+      description: |
+        Optional: URL to the original source, tutorial, or reference
+        可选：原始来源、教程或参考的URL
+      placeholder: "https://example.com/prompt-guide"
+
+  - type: dropdown
+    id: attribution
+    attributes:
+      label: Attribution (归属) *
+      description: |
+        How should we credit this submission?
+        我们应该如何注明此提交的来源？
+      options:
+        - "Original work - I created this prompt (原创作品)"
+        - "Adapted from existing source - see source link (改编自现有来源)"
+        - "Community submission - no specific attribution needed (社区贡献)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context (补充说明)
+      description: |
+        Optional: Any other information that might be helpful
+        可选：任何其他可能有帮助的信息
+      placeholder: "This prompt has been tested with ChatGPT-4 and Claude 3, and works particularly well for tech blog content."
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Submission Checklist (提交清单) *
+      description: Please confirm the following before submitting
+      options:
+        - label: I have tested this prompt with at least one AI model (我已使用至少一个AI模型测试了此提示词)
+          required: true
+        - label: The prompt is clear, specific, and actionable (提示词清晰、具体且可操作)
+          required: true
+        - label: I have provided accurate attribution/source information (我已提供准确的归属/来源信息)
+          required: true
+        - label: The prompt does not contain harmful, offensive, or inappropriate content (提示词不包含有害、冒犯性或不当内容)
+          required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        
+        ## What happens next? 接下来会发生什么？
+        
+        1. **Review**: Maintainers will review your submission within 3-5 business days
+           审核：维护者将在3-5个工作日内审核您的提交
+        
+        2. **Feedback**: We may ask for clarifications or suggest improvements
+           反馈：我们可能会要求澄清或建议改进
+        
+        3. **Approval**: Once approved, your prompt will be added to `prompts.json`
+           批准：一旦批准，您的提示词将被添加到 `prompts.json`
+        
+        4. **Deployment**: Changes will be deployed to the live site automatically
+           部署：更改将自动部署到实时站点
+        
+        Thank you for contributing to Prompt Hub! 感谢您对 Prompt Hub 的贡献！

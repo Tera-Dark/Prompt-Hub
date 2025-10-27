@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 💬 GitHub Discussions
+    url: https://github.com/username/Prompt-Hub/discussions
+    about: Ask questions, share ideas, and discuss the project with the community
+  - name: 📖 Documentation
+    url: https://github.com/username/Prompt-Hub/blob/main/README.md
+    about: Read the project documentation and usage guides
