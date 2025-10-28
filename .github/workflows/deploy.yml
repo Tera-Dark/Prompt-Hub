@@ -1,0 +1,76 @@
+# GitHub Pages Deployment Workflow
+# 
+# This workflow automatically builds and deploys the Vite application to GitHub Pages
+# when changes are pushed to the main branch. It uses the modern GitHub Pages deployment
+# flow with upload-pages-artifact and deploy-pages actions.
+#
+# Manual Configuration Required (First Time Setup):
+# 1. Go to repository Settings → Pages
+# 2. Under "Source", select "GitHub Actions"
+# 3. Push to main branch to trigger the deployment
+#
+# The workflow consists of two jobs:
+# - Build: Installs dependencies, builds the app, and uploads the artifact
+# - Deploy: Deploys the artifact to GitHub Pages
+
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist'
+
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
