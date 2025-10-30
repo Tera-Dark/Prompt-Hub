@@ -105,35 +105,34 @@ class PromptLoadError extends Error { /* ... */ }
 
 ### 4. Documentation
 
-**Multiple documentation files created:**
+**Documentation assets maintained in `/document`:**
 
-1. **`/public/data/README.md`** (2,500+ words)
-   - Complete JSON schema documentation
-   - Field requirements and formats
-   - Category reference table
-   - Contribution guidelines
-   - Validation requirements
-   - Example entries
-   - Version history
+1. **`/document/README.md`**
+   - 中文版项目概览与核心特性
+   - 技术栈、项目结构与功能说明
+   - FAQ 与常见问题解答
 
-2. **`/src/PROMPTS_USAGE.md`** (4,000+ words)
-   - Quick start guide
-   - Type definitions reference
-   - Utility functions documentation
-   - Composable usage examples
-   - Working with categories
-   - Error handling patterns
-   - Best practices
-   - Troubleshooting guide
-   - Complete code examples
+2. **`/document/CONTRIBUTING.md`**
+   - 提示词提交流程与 Issue 模板
+   - 数据格式与命名规范
+   - Pull Request 规范与代码风格指南
 
-3. **`/README.md`** (Updated)
-   - Added Prompts Data section
-   - Updated project structure
-   - Quick start code snippet
-   - Links to detailed documentation
+3. **`/document/DATA_SCHEMA.md`**
+   - prompts.json 字段定义与校验规则
+   - 分类、标签与示例条目
+   - 数据维护流程与验证清单
 
-4. **`/IMPLEMENTATION_SUMMARY.md`** (This file)
+4. **`/document/DEVELOPMENT.md`**
+   - 本地开发环境配置与命令速查
+   - 组件开发规范与目录约定
+   - 调试方法与常见问题排查
+
+5. **`/document/DEPLOYMENT.md`**
+   - GitHub Pages 部署步骤
+   - 首次部署设置与自定义域名
+   - 常见故障排除列表
+
+6. **`/IMPLEMENTATION_SUMMARY.md`** (This file)
    - Implementation overview
    - Acceptance criteria checklist
    - File structure summary
@@ -286,10 +285,15 @@ Features:
 
 ```
 /home/engine/project/
+├── document/
+│   ├── README.md                 # 项目总览
+│   ├── CONTRIBUTING.md           # 贡献指南
+│   ├── DATA_SCHEMA.md            # 数据结构说明
+│   ├── DEVELOPMENT.md            # 开发说明
+│   └── DEPLOYMENT.md             # 部署指南
 ├── public/
 │   └── data/
-│       ├── prompts.json          # Prompts data (21 entries)
-│       └── README.md             # Schema documentation
+│       └── prompts.json          # Prompts data (21 entries)
 ├── src/
 │   ├── components/
 │   │   ├── PromptList.vue        # Display component
@@ -306,11 +310,10 @@ Features:
 │   │   └── validatePrompts.ts    # Validation utilities
 │   ├── App.vue                   # Root component (updated)
 │   ├── main.ts                   # Entry point
-│   ├── style.css                 # Global styles (updated)
-│   └── PROMPTS_USAGE.md          # Developer guide
+│   └── style.css                 # Global styles (updated)
 ├── scripts/
 │   └── validate-prompts.js       # CLI validation tool
-├── README.md                     # Main README (updated)
+├── README.md                     # 简化版仓库说明
 ├── IMPLEMENTATION_SUMMARY.md     # This file
 ├── package.json                  # Added validate script
 ├── tsconfig.json                 # Added path aliases
