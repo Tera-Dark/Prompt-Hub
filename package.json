@@ -10,7 +10,8 @@
     "validate:prompts": "node scripts/validate-prompts.js"
   },
   "dependencies": {
-    "vue": "^3.4.21"
+    "vue": "^3.4.21",
+    "vue-router": "^4.6.3"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.4",
