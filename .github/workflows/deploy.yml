@@ -1,3 +1,8 @@
+# 🚨 重要提示：
+# 首次使用前必须在仓库 Settings > Pages 中手动启用 GitHub Actions 作为部署源
+# 访问：https://github.com/你的用户名/Prompt-Hub/settings/pages
+# Source 选择：GitHub Actions
+
 name: Deploy to GitHub Pages
 
 on:
