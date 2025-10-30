@@ -71,64 +71,62 @@ fetchPrompts();
 
 ## GitHub Pages Deployment
 
-The project is configured to deploy to GitHub Pages with the base path `/Prompt-Hub/`.
+The project is configured to deploy to GitHub Pages with the base path `/Prompt-Hub/`. The repository ships with a streamlined workflow (`.github/workflows/deploy.yml`) that builds the Vite application and deploys it directly with `actions/deploy-pages@v4`.
 
-### Automatic Deployment
+### 🛠️ Workflow overview
 
-The repository includes a GitHub Actions workflow (`.github/workflows/deploy.yml`) that automatically builds and deploys the application to GitHub Pages when changes are pushed to the `main` branch.
+- Triggered automatically on pushes to the `main` branch or manually via **Run workflow**
+- Steps: checkout, set up Node 20 with npm caching, install dependencies with `npm ci`, build with `npm run build`, upload the `dist` folder, and deploy with `actions/deploy-pages@v4`
+- No `actions/configure-pages` step is required; deployment happens in a single job
 
-The workflow is configured to **automatically enable GitHub Pages** using the `enablement: true` parameter, so in most cases, no manual setup is required.
+### 📝 First-time deployment checklist
 
-### Initial Setup (One-time Configuration)
+⚠️ **Important:** Complete these steps before the first workflow run:
 
-The workflow should automatically enable GitHub Pages on first run. However, if you encounter errors or need to manually configure it:
+1. Navigate to **Settings → Pages**
+2. Under **Source**, choose **GitHub Actions** and save
+3. If you encounter permission errors, go to **Settings → Actions → General** and set **Workflow permissions** to **Read and write**
 
-#### Steps to Manually Enable GitHub Pages:
+After this one-time setup, pushing to `main` will automatically publish the site.
 
-1. Go to your repository on GitHub
-2. Navigate to **Settings** → **Pages**
-3. In the **Build and deployment** section:
-   - **Source**: Select **GitHub Actions** from the dropdown
-   - This tells GitHub to use the workflow file for deployment instead of a branch
-4. Save the settings
-5. Push changes to the `main` branch to trigger deployment
+### Troubleshooting
 
-#### Troubleshooting
-
-If you see errors like "Get Pages site failed" or "Not Found":
-
-1. **Verify Pages is enabled**: Check that Settings → Pages shows "GitHub Actions" as the source
-2. **Check workflow permissions**: The workflow requires:
-   - `contents: read`
-   - `pages: write`
-   - `id-token: write`
-   
-   These are already configured in the workflow file.
-
-3. **First deployment may take a few minutes**: The initial deployment can take longer to propagate
-
-4. **Check Actions tab**: View the workflow runs in the Actions tab to see detailed logs
-
-#### How the Deployment Works
-
-The workflow will:
-- Install dependencies (using npm ci with dependency caching for faster builds)
-- Run the TypeScript compiler and build the Vite application
-- Upload the built static files from the `dist` folder
-- Deploy to GitHub Pages using the modern `actions/upload-pages-artifact` + `actions/deploy-pages` flow
+- If a run fails with `Resource not accessible by integration`, double-check the workflow permissions described above
+- View detailed logs in the **Actions** tab to confirm the build, artifact upload, and deployment steps
 
 Once deployed, the site will be available at: `https://tera-dark.github.io/Prompt-Hub/`
 
-### Build Configuration
+### Build configuration
 
-The production build is configured in `vite.config.ts` to use the base path `/Prompt-Hub/`:
+`vite.config.ts` uses the GitHub Pages base path:
 
 ```typescript
-base: process.env.NODE_ENV === 'production' ? '/Prompt-Hub/' : '/'
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+import { fileURLToPath, URL } from 'node:url'
+
+export default defineConfig({
+  plugins: [vue()],
+  base: '/Prompt-Hub/',
+  resolve: {
+    alias: {
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+    },
+  },
+})
 ```
 
-This ensures all assets and routes are correctly resolved when deployed to GitHub Pages.
+### Package scripts
 
-### Node.js Version
+`package.json` provides the standard Vite scripts used by the workflow:
 
-The workflow uses Node.js 20 (LTS) and caches npm dependencies for optimal build performance.
+```json
+{
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "validate:prompts": "node scripts/validate-prompts.js"
+  }
+}
+```
