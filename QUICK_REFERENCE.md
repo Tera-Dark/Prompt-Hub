@@ -119,8 +119,8 @@ npm run dev
 - **Constants**: `/src/constants/categories.ts`
 - **Composable**: `/src/composables/usePrompts.ts`
 - **Docs**: 
-  - `/public/data/README.md` (Schema)
-  - `/src/PROMPTS_USAGE.md` (Usage)
+  - `/document/DATA_SCHEMA.md` (Schema)
+  - `/document/DEVELOPMENT.md` (Development Guide)
 
 ## ⚠️ Error Handling
 
@@ -147,6 +147,6 @@ try {
 
 ## 📚 Full Documentation
 
-- [Schema Documentation](public/data/README.md)
-- [Usage Guide](src/PROMPTS_USAGE.md)
+- [数据结构文档](document/DATA_SCHEMA.md)
+- [开发指南](document/DEVELOPMENT.md)
 - [Implementation Summary](IMPLEMENTATION_SUMMARY.md)
