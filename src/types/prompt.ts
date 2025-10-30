@@ -24,7 +24,7 @@ export class PromptLoadError extends Error {
 
 export async function loadPrompts(): Promise<PromptsData> {
   try {
-    const response = await fetch('/data/prompts.json');
+    const response = await fetch(`${import.meta.env.BASE_URL}data/prompts.json`);
     
     if (!response.ok) {
       throw new PromptLoadError(
