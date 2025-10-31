@@ -77,17 +77,144 @@ Prompt-Hub 管理员系统是一个基于 GitHub OAuth 和 GitHub API 的**零�
 6. 保存 token 到 localStorage（加密）
 7. 进入管理后台
 
+#### Cloudflare Worker Token 交换代理
+为确保 GitHub Client Secret 不会暴露在前端，我们使用一个体积极小的 Cloudflare Worker 作为中转：
+
+```ts
+export interface Env {
+  GITHUB_CLIENT_ID: string
+  GITHUB_CLIENT_SECRET: string
+  ALLOWED_ORIGIN?: string
+}
+
+const GITHUB_TOKEN_URL = 'https://github.com/login/oauth/access_token'
+
+function resolveAllowedOrigin(requestOrigin: string | null, allowed?: string) {
+  if (!allowed) {
+    return requestOrigin ?? '*'
+  }
+
+  const entries = allowed
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean)
+
+  if (requestOrigin && entries.includes(requestOrigin)) {
+    return requestOrigin
+  }
+
+  return entries[0] ?? requestOrigin ?? '*'
+}
+
+function buildCorsHeaders(request: Request, allowed?: string) {
+  const origin = request.headers.get('Origin')
+  const resolved = resolveAllowedOrigin(origin, allowed)
+
+  return {
+    'Access-Control-Allow-Origin': resolved,
+    'Access-Control-Allow-Headers': 'content-type',
+    'Access-Control-Allow-Methods': 'POST,OPTIONS',
+    'Access-Control-Max-Age': '86400',
+    Vary: 'Origin',
+  }
+}
+
+async function exchangeToken(code: string, env: Env) {
+  const response = await fetch(GITHUB_TOKEN_URL, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      client_id: env.GITHUB_CLIENT_ID,
+      client_secret: env.GITHUB_CLIENT_SECRET,
+      code,
+    }),
+  })
+
+  const payload = await response.json()
+
+  if (!response.ok || !payload.access_token) {
+    return { error: payload.error_description || payload.error || 'token_exchange_failed' }
+  }
+
+  return {
+    access_token: payload.access_token,
+    scope: payload.scope ?? '',
+    token_type: payload.token_type ?? 'bearer',
+  }
+}
+
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const corsHeaders = buildCorsHeaders(request, env.ALLOWED_ORIGIN)
+
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { status: 204, headers: corsHeaders })
+    }
+
+    if (request.method !== 'POST') {
+      return new Response('Method Not Allowed', { status: 405, headers: corsHeaders })
+    }
+
+    let body: { code?: string } | undefined
+
+    try {
+      body = await request.json()
+    } catch (error) {
+      return new Response(JSON.stringify({ error: 'invalid_json' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    if (!body?.code) {
+      return new Response(JSON.stringify({ error: 'missing_code' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    const tokenPayload = await exchangeToken(body.code, env)
+
+    const status = 'error' in tokenPayload ? 400 : 200
+
+    return new Response(JSON.stringify(tokenPayload), {
+      status,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
+  },
+}
+```
+
+> 🌐 具体的部署步骤与 Wrangler 配置请见《document/CF_WORKER_OAUTH.md》。
+
 ### 权限验证
 ```javascript
 // 检查用户是否有仓库写权限
-async function checkPermission(token) {
+async function checkPermission(token, username) {
   const response = await fetch(
-    'https://api.github.com/repos/Tera-Dark/Prompt-Hub/collaborators',
+    `https://api.github.com/repos/Tera-Dark/Prompt-Hub/collaborators/${username}/permission`,
     {
-      headers: { Authorization: `Bearer ${token}` }
-    }
-  );
-  return response.ok; // 200 表示有权限
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+      },
+    },
+  )
+
+  if (response.status === 204) {
+    return true
+  }
+
+  if (!response.ok) {
+    return false
+  }
+
+  const payload = await response.json()
+  return ['admin', 'maintain', 'write'].includes(payload.permission)
 }
 ```
 
