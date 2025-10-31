@@ -52,6 +52,7 @@
 - [部署指南](./document/DEPLOYMENT.md)
 - [开发指南](./document/DEVELOPMENT.md)
 - [数据结构](./document/DATA_SCHEMA.md)
+- [GitHub App OAuth Worker 指南](./document/CF_WORKER_GH_APP_OAUTH.md)
 
 ## 🤝 贡献
 欢迎提交优秀的提示词！请查看 [贡献指南](./document/CONTRIBUTING.md)
