@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
 import AdminLayout from '@/layouts/AdminLayout.vue'
-import { useAuthStore } from '@/stores/auth'
+import { useAuth } from '@/composables/useAuth'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -69,11 +69,22 @@ const router = createRouter({
   routes,
 })
 
-const authStore = useAuthStore()
+const auth = useAuth()
 
 router.beforeEach((to) => {
-  if (to.meta.requiresAuth && !authStore.isAuthenticated.value) {
-    authStore.setAttemptedRoute(to.fullPath)
+  if (!auth.isReady.value) {
+    auth.refreshFromStorage()
+  }
+
+  if (to.meta.requiresAuth) {
+    if (!auth.isAuthed.value) {
+      auth.setAttemptedRoute(to.fullPath)
+      return true
+    }
+
+    if (!auth.hasRepoWriteAccess.value && to.name !== 'AdminDashboard') {
+      return { name: 'AdminDashboard' }
+    }
   }
 
   return true

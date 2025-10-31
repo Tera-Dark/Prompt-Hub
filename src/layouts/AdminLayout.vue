@@ -9,7 +9,7 @@
           <span aria-hidden="true">×</span>
         </button>
       </div>
-      <nav class="sidebar-nav" aria-label="Admin">
+      <nav v-if="hasRepoWriteAccess" class="sidebar-nav" aria-label="Admin">
         <RouterLink
           v-for="item in navigation"
           :key="item.label"
@@ -35,7 +35,7 @@
         <div class="header-actions">
           <div class="auth-status" :class="{ 'is-authenticated': isAuthenticated }">
             <span class="status-indicator" aria-hidden="true"></span>
-            <span>{{ isAuthenticated ? 'Signed in' : 'Signed out' }}</span>
+            <span>{{ authStatusLabel }}</span>
           </div>
           <RouterLink to="/" class="header-link">Public site</RouterLink>
           <button
@@ -44,23 +44,50 @@
             class="header-link header-link--cta"
             @click="handleLogin"
           >
-            Sign in
+            Sign in with GitHub
+          </button>
+          <button
+            v-else
+            type="button"
+            class="header-link header-link--ghost"
+            @click="handleLogout"
+          >
+            Sign out
           </button>
         </div>
       </header>
 
       <main class="admin-content">
-        <RouterView v-if="isAuthenticated" />
+        <RouterView v-if="isAuthenticated && hasRepoWriteAccess" />
+        <section v-else-if="isAuthenticated" class="admin-auth-gate" aria-labelledby="admin-auth-heading">
+          <div class="auth-card auth-card--warning">
+            <h2 id="admin-auth-heading">Write access required</h2>
+            <p>
+              {{ userDisplayName }} is signed in, but this account does not have write access to
+              <span class="repo-slug">{{ repoTarget }}</span>.
+            </p>
+            <p>
+              Ask the repository owner to grant the required permissions, or sign in with a different
+              GitHub account.
+            </p>
+            <div class="auth-actions">
+              <button type="button" class="cta-button" @click="handleLogout">Switch account</button>
+              <RouterLink to="/" class="secondary-link">Return to public site</RouterLink>
+            </div>
+          </div>
+        </section>
         <section v-else class="admin-auth-gate" aria-labelledby="admin-auth-heading">
           <div class="auth-card">
             <h2 id="admin-auth-heading">Admin access required</h2>
             <p>
               Sign in to continue to
               <span class="attempted-route">{{ attemptedRouteLabel }}</span>.
-              Authentication will be wired soon.
+              Only collaborators with write access to
+              <span class="repo-slug">{{ repoTarget }}</span>
+              can use the admin tools.
             </p>
             <div class="auth-actions">
-              <button type="button" class="cta-button" @click="handleLogin">Sign in with OAuth</button>
+              <button type="button" class="cta-button" @click="handleLogin">Sign in with GitHub</button>
               <RouterLink to="/" class="secondary-link">Return to public site</RouterLink>
             </div>
           </div>
@@ -73,7 +100,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { useAuth } from '@/composables/useAuth'
 
 type NavigationItem = {
   label: string
@@ -90,10 +117,23 @@ const navigation: NavigationItem[] = [
 
 const route = useRoute()
 const sidebarOpen = ref(false)
-const authStore = useAuthStore()
+const auth = useAuth()
 
-const isAuthenticated = computed(() => authStore.isAuthenticated.value)
-const attemptedRoute = computed(() => authStore.attemptedRoute.value)
+const isAuthenticated = computed(() => auth.isAuthed.value)
+const hasRepoWriteAccess = computed(() => auth.hasRepoWriteAccess.value)
+const currentUser = computed(() => auth.user.value)
+const attemptedRoute = computed(() => auth.attemptedRoute.value)
+
+const repoOwner = import.meta.env.VITE_GITHUB_REPO_OWNER ?? ''
+const repoName = import.meta.env.VITE_GITHUB_REPO_NAME ?? ''
+
+const repoTarget = computed(() => {
+  if (repoOwner && repoName) {
+    return `${repoOwner}/${repoName}`
+  }
+
+  return repoOwner || repoName || 'the configured repository'
+})
 
 const currentSection = computed(() => {
   const found = navigation.find((item) => item.match.test(route.path))
@@ -101,6 +141,19 @@ const currentSection = computed(() => {
 })
 
 const attemptedRouteLabel = computed(() => attemptedRoute.value ?? '/admin/dashboard')
+const userDisplayName = computed(() => currentUser.value?.name || currentUser.value?.login || 'This user')
+
+const authStatusLabel = computed(() => {
+  if (!isAuthenticated.value) {
+    return 'Signed out'
+  }
+
+  if (currentUser.value?.login) {
+    return `Signed in as ${currentUser.value.login}`
+  }
+
+  return 'Signed in'
+})
 
 watch(
   () => route.path,
@@ -118,7 +171,11 @@ function closeSidebar() {
 }
 
 function handleLogin() {
-  authStore.startLogin()
+  auth.login(route.fullPath)
+}
+
+function handleLogout() {
+  auth.logout()
 }
 </script>
 
@@ -307,6 +364,18 @@ function handleLogin() {
   border-color: var(--color-gray-900);
 }
 
+.header-link--ghost {
+  background-color: transparent;
+  color: var(--color-gray-600);
+}
+
+.header-link--ghost:hover,
+.header-link--ghost:focus-visible {
+  background-color: var(--color-gray-200);
+  color: var(--color-gray-900);
+  border-color: var(--color-gray-300);
+}
+
 .admin-content {
   flex: 1;
   padding: 2rem;
@@ -333,6 +402,11 @@ function handleLogin() {
   gap: 1rem;
 }
 
+.auth-card--warning {
+  background: var(--color-gray-50);
+  border-color: var(--color-gray-300);
+}
+
 .auth-card h2 {
   font-size: var(--text-xl);
   color: var(--color-gray-900);
@@ -345,6 +419,11 @@ function handleLogin() {
 }
 
 .attempted-route {
+  font-weight: 600;
+  color: var(--color-gray-900);
+}
+
+.repo-slug {
   font-weight: 600;
   color: var(--color-gray-900);
 }
