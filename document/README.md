@@ -71,6 +71,10 @@ Prompt-Hub/
 ```
 如需深入了解开发流程、部署步骤或数据结构，请参阅上述 `document` 文件夹内的其他文档。
 
+## 🌐 OAuth 代理与 Workers
+- [Cloudflare Worker OAuth Proxy](./CF_WORKER_OAUTH.md)
+- [Cloudflare Worker: GitHub App OAuth Exchange](./CF_WORKER_GH_APP_OAUTH.md)
+
 ## 📘 功能使用说明
 1. **浏览分类**：在首页按照分类或标签浏览提示词，点击即可查看详情。
 2. **关键字搜索**：使用搜索栏输入中文或英文关键字，实时筛选相关提示词。
