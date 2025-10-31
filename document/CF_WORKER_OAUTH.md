@@ -1,20 +1,20 @@
 # Cloudflare Worker OAuth Proxy
 
-This document explains how to run the tiny Cloudflare Worker that exchanges GitHub OAuth codes for access tokens. The worker keeps your `client_secret` on the serverless edge and exposes a single endpoint that the Vite frontend can call from GitHub Pages or any other static host.
+This document explains how to run the tiny Cloudflare Worker that exchanges GitHub App OAuth codes for user access tokens. The worker keeps your `client_secret` on the serverless edge and exposes a single endpoint that the Vite frontend can call from GitHub Pages or any other static host.
 
 ## 1. Worker responsibilities
 
-- Accept a `POST /exchange` request with a JSON body `{ "code": "..." }`
+- Accept a `POST /exchange` request with a JSON body containing the OAuth `code` (and optionally the `state` and `redirect_uri`)
 - Forward the OAuth code to GitHub's `/login/oauth/access_token` endpoint along with the app's client id and secret (stored as Worker secrets)
-- Return the resulting `access_token` to the browser as JSON
+- Return the resulting GitHub App user `access_token` to the browser as JSON
 - Reply to pre-flight (`OPTIONS`) requests and emit CORS headers for the site origin
 
 A TypeScript version of the worker is already provided in `document/ADMIN_SYSTEM.md`. Save it as `src/worker.ts` (or `worker.ts`) in your Worker project.
 
 ```ts
 export interface Env {
-  GITHUB_CLIENT_ID: string
-  GITHUB_CLIENT_SECRET: string
+  GH_APP_CLIENT_ID: string
+  GH_APP_CLIENT_SECRET: string
   ALLOWED_ORIGIN?: string
 }
 
@@ -50,30 +50,41 @@ function buildCorsHeaders(request: Request, allowed?: string) {
   }
 }
 
-async function exchangeToken(code: string, env: Env) {
+async function exchangeToken(code: string, redirectUri: string | undefined, env: Env) {
+  const requestPayload: Record<string, unknown> = {
+    client_id: env.GH_APP_CLIENT_ID,
+    client_secret: env.GH_APP_CLIENT_SECRET,
+    code,
+  }
+
+  if (redirectUri) {
+    requestPayload.redirect_uri = redirectUri
+  }
+
   const response = await fetch(GITHUB_TOKEN_URL, {
     method: 'POST',
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      client_id: env.GITHUB_CLIENT_ID,
-      client_secret: env.GITHUB_CLIENT_SECRET,
-      code,
-    }),
+    body: JSON.stringify(requestPayload),
   })
 
-  const payload = await response.json()
+  const tokenPayload = await response.json()
 
-  if (!response.ok || !payload.access_token) {
-    return { error: payload.error_description || payload.error || 'token_exchange_failed' }
+  if (!response.ok || !tokenPayload.access_token) {
+    return {
+      error: tokenPayload.error_description || tokenPayload.error || 'token_exchange_failed',
+    }
   }
 
   return {
-    access_token: payload.access_token,
-    scope: payload.scope ?? '',
-    token_type: payload.token_type ?? 'bearer',
+    access_token: tokenPayload.access_token,
+    scope: tokenPayload.scope ?? '',
+    token_type: tokenPayload.token_type ?? 'bearer',
+    expires_in: tokenPayload.expires_in,
+    refresh_token: tokenPayload.refresh_token,
+    refresh_token_expires_in: tokenPayload.refresh_token_expires_in,
   }
 }
 
@@ -89,7 +100,7 @@ export default {
       return new Response('Method Not Allowed', { status: 405, headers: corsHeaders })
     }
 
-    let body: { code?: string } | undefined
+    let body: { code?: string; redirect_uri?: string } | undefined
 
     try {
       body = await request.json()
@@ -107,7 +118,7 @@ export default {
       })
     }
 
-    const tokenPayload = await exchangeToken(body.code, env)
+    const tokenPayload = await exchangeToken(body.code, body.redirect_uri, env)
     const status = 'error' in tokenPayload ? 400 : 200
 
     return new Response(JSON.stringify(tokenPayload), {
@@ -145,18 +156,18 @@ export default {
 
 5. **Store your secrets**
    ```bash
-   wrangler secret put GITHUB_CLIENT_ID
-   wrangler secret put GITHUB_CLIENT_SECRET
+   wrangler secret put GH_APP_CLIENT_ID
+   wrangler secret put GH_APP_CLIENT_SECRET
    wrangler secret put ALLOWED_ORIGIN
    ```
-   - `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET`: from your GitHub OAuth App
+   - `GH_APP_CLIENT_ID` / `GH_APP_CLIENT_SECRET`: from your GitHub App OAuth credentials
    - `ALLOWED_ORIGIN`: the site that is allowed to call the worker (e.g. `https://your-name.github.io`). You can provide a comma-separated list for multiple origins.
 
 6. **Deploy**
    ```bash
    wrangler deploy
    ```
-   Wrangler prints the public worker URL (e.g. `https://prompt-hub-oauth.your-account.workers.dev`). Use that value for `VITE_OAUTH_PROXY_URL` in your `.env` file.
+   Wrangler prints the public worker URL (e.g. `https://prompt-hub-oauth.your-account.workers.dev`). Use that value for `VITE_GH_APP_OAUTH_PROXY_URL` in your `.env` file.
 
 ## 3. Deploying through the Cloudflare dashboard
 
@@ -164,7 +175,7 @@ If you prefer the UI:
 
 1. Create a new **HTTP Worker** in the [Cloudflare dashboard](https://dash.cloudflare.com/)
 2. Replace the default code with the worker snippet
-3. In *Settings → Variables*, add the following **Secrets**: `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, and optionally `ALLOWED_ORIGIN`
+3. In *Settings → Variables*, add the following **Secrets**: `GH_APP_CLIENT_ID`, `GH_APP_CLIENT_SECRET`, and optionally `ALLOWED_ORIGIN`
 4. Save and deploy
 
 You can bind the worker to a custom domain or route later; a workers.dev subdomain is sufficient for this project and is free.
@@ -174,13 +185,15 @@ You can bind the worker to a custom domain or route later; a workers.dev subdoma
 Add the following values to your `.env` (see `.env.example`):
 
 ```
-VITE_GITHUB_CLIENT_ID=xxxxxxxxxxxxxxxx
-VITE_OAUTH_PROXY_URL=https://prompt-hub-oauth.your-account.workers.dev
-VITE_GITHUB_REPO_OWNER=your-github-username
+VITE_GH_APP_CLIENT_ID=xxxxxxxxxxxxxxxx
+VITE_GH_APP_OAUTH_PROXY_URL=https://prompt-hub-oauth.your-account.workers.dev
+VITE_GITHUB_REPO_OWNER=Tera-Dark
 VITE_GITHUB_REPO_NAME=Prompt-Hub
 ```
 
-When the Vue app runs, it sends `POST ${VITE_OAUTH_PROXY_URL}/exchange` during the callback step. Ensure that the worker URL matches exactly (no trailing slash needed—the frontend app trims it automatically).
+Replace the repository owner and name if you are deploying a fork.
+
+When the Vue app runs, it sends `POST ${VITE_GH_APP_OAUTH_PROXY_URL}/exchange` during the callback step. Ensure that the worker URL matches exactly (no trailing slash needed—the frontend app trims it automatically).
 
 ## 5. Testing
 
@@ -189,11 +202,11 @@ Use `curl` to verify the worker before wiring the frontend:
 ```bash
 curl -X POST \
   -H "Content-Type: application/json" \
-  -d '{"code":"abc123"}' \
+  -d '{"code":"abc123","redirect_uri":"https://your-site.example/auth/callback"}' \
   https://prompt-hub-oauth.your-account.workers.dev/exchange
 ```
 
-With a valid `code` you will receive `{ "access_token": "..." }`. A malformed request returns a helpful JSON error payload so the frontend can display a message to the user.
+With a valid `code` you will receive the GitHub App user access token payload (including `access_token`, `expires_in`, and `refresh_token`). A malformed request returns a helpful JSON error payload so the frontend can display a message to the user.
 
 ## 6. Pricing notes
 
@@ -202,6 +215,6 @@ With a valid `code` you will receive `{ "access_token": "..." }`. A malformed re
 
 ## 7. Updating secrets
 
-Use `wrangler secret put <NAME>` again (CLI) or the dashboard UI whenever you rotate the GitHub OAuth credentials. No other changes are needed—deployments pick up the new secret immediately.
+Use `wrangler secret put <NAME>` again (CLI) or the dashboard UI whenever you rotate the GitHub App OAuth credentials. No other changes are needed—deployments pick up the new secret immediately.
 
-Once the worker is deployed and the `.env` values are set, the GitHub OAuth flow works transparently for both local development (`npm run dev`) and static hosting on GitHub Pages.
+Once the worker is deployed and the `.env` values are set, the GitHub App OAuth flow works transparently for both local development (`npm run dev`) and static hosting on GitHub Pages.

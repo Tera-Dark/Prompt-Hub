@@ -2,7 +2,7 @@
 
 ## 📖 概述
 
-Prompt-Hub 管理员系统是一个基于 GitHub OAuth 和 GitHub API 的**零成本、纯前端**解决方案，允许仓库管理员在线管理提示词内容。
+Prompt-Hub 管理员系统是一个基于 GitHub App OAuth（user-to-server）和 GitHub API 的**零成本、纯前端**解决方案，允许仓库管理员在线管理提示词内容。
 
 ## 🎯 设计目标
 
@@ -16,7 +16,7 @@ Prompt-Hub 管理员系统是一个基于 GitHub OAuth 和 GitHub API 的**零�
 
 ### 核心技术栈
 - **前端框架**: Vue 3 + TypeScript
-- **身份验证**: GitHub OAuth App
+- **身份验证**: GitHub App OAuth（user-to-server）
 - **数据存储**: GitHub Repository (prompts.json)
 - **API 交互**: GitHub REST API
 - **路由**: Vue Router
@@ -30,7 +30,7 @@ Prompt-Hub 管理员系统是一个基于 GitHub OAuth 和 GitHub API 的**零�
        │ 访问管理后台
        ▼
 ┌─────────────────────────┐
-│  GitHub OAuth 登录      │
+│  GitHub App OAuth 登录  │
 │  (验证仓库权限)         │
 └──────┬──────────────────┘
        │ 获取 Token
@@ -52,10 +52,10 @@ Prompt-Hub 管理员系统是一个基于 GitHub OAuth 和 GitHub API 的**零�
 
 ## 💡 方案对比
 
-### 选择的方案：GitHub OAuth + API
+### 选择的方案：GitHub App OAuth + API
 | 优势 | 劣势 |
 |------|------|
-| ✅ 完全免费 | ⚠️ 需配置 OAuth App |
+| ✅ 完全免费 | ⚠️ 需配置 GitHub App |
 | ✅ 无需后端服务器 | ⚠️ 依赖 GitHub 服务 |
 | ✅ 数据自带版本控制 | ⚠️ API 有速率限制 |
 | ✅ 权限管理简单 | |
@@ -68,11 +68,11 @@ Prompt-Hub 管理员系统是一个基于 GitHub OAuth 和 GitHub API 的**零�
 
 ## 🔑 身份验证流程
 
-### OAuth 认证流程
+### GitHub App OAuth 认证流程
 1. 用户点击"管理后台"按钮
-2. 跳转到 GitHub OAuth 授权页面
+2. 跳转到 GitHub App OAuth 授权页面
 3. 用户授权后返回携带 code
-4. 前端使用 code 换取 access_token（通过 GitHub OAuth App）
+4. 前端使用 code 通过 GitHub App OAuth（user-to-server）换取用户 access_token
 5. 验证用户是否为仓库协作者
 6. 保存 token 到 localStorage（加密）
 7. 进入管理后台
@@ -82,8 +82,8 @@ Prompt-Hub 管理员系统是一个基于 GitHub OAuth 和 GitHub API 的**零�
 
 ```ts
 export interface Env {
-  GITHUB_CLIENT_ID: string
-  GITHUB_CLIENT_SECRET: string
+  GH_APP_CLIENT_ID: string
+  GH_APP_CLIENT_SECRET: string
   ALLOWED_ORIGIN?: string
 }
 
@@ -119,30 +119,41 @@ function buildCorsHeaders(request: Request, allowed?: string) {
   }
 }
 
-async function exchangeToken(code: string, env: Env) {
+async function exchangeToken(code: string, redirectUri: string | undefined, env: Env) {
+  const requestPayload: Record<string, unknown> = {
+    client_id: env.GH_APP_CLIENT_ID,
+    client_secret: env.GH_APP_CLIENT_SECRET,
+    code,
+  }
+
+  if (redirectUri) {
+    requestPayload.redirect_uri = redirectUri
+  }
+
   const response = await fetch(GITHUB_TOKEN_URL, {
     method: 'POST',
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      client_id: env.GITHUB_CLIENT_ID,
-      client_secret: env.GITHUB_CLIENT_SECRET,
-      code,
-    }),
+    body: JSON.stringify(requestPayload),
   })
 
-  const payload = await response.json()
+  const tokenPayload = await response.json()
 
-  if (!response.ok || !payload.access_token) {
-    return { error: payload.error_description || payload.error || 'token_exchange_failed' }
+  if (!response.ok || !tokenPayload.access_token) {
+    return {
+      error: tokenPayload.error_description || tokenPayload.error || 'token_exchange_failed',
+    }
   }
 
   return {
-    access_token: payload.access_token,
-    scope: payload.scope ?? '',
-    token_type: payload.token_type ?? 'bearer',
+    access_token: tokenPayload.access_token,
+    scope: tokenPayload.scope ?? '',
+    token_type: tokenPayload.token_type ?? 'bearer',
+    expires_in: tokenPayload.expires_in,
+    refresh_token: tokenPayload.refresh_token,
+    refresh_token_expires_in: tokenPayload.refresh_token_expires_in,
   }
 }
 
@@ -158,7 +169,7 @@ export default {
       return new Response('Method Not Allowed', { status: 405, headers: corsHeaders })
     }
 
-    let body: { code?: string } | undefined
+    let body: { code?: string; redirect_uri?: string } | undefined
 
     try {
       body = await request.json()
@@ -176,7 +187,7 @@ export default {
       })
     }
 
-    const tokenPayload = await exchangeToken(body.code, env)
+    const tokenPayload = await exchangeToken(body.code, body.redirect_uri, env)
 
     const status = 'error' in tokenPayload ? 400 : 200
 
@@ -195,7 +206,7 @@ export default {
 // 检查用户是否有仓库写权限
 async function checkPermission(token, username) {
   const response = await fetch(
-    `https://api.github.com/repos/Tera-Dark/Prompt-Hub/collaborators/${username}/permission`,
+    `https://api.github.com/repos/Tera-Dark/Prompt-Hub/collaborators/${username}?permission=push`,
     {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -209,12 +220,32 @@ async function checkPermission(token, username) {
     return true
   }
 
-  if (!response.ok) {
+  if (response.status === 404) {
     return false
   }
 
-  const payload = await response.json()
-  return ['admin', 'maintain', 'write'].includes(payload.permission)
+  if (!response.ok) {
+    throw new Error('无法验证仓库权限')
+  }
+
+  const payload = await response.json().catch(() => null)
+  if (!payload || typeof payload !== 'object') {
+    throw new Error('无法解析 GitHub 权限响应')
+  }
+
+  const permission =
+    typeof payload.permission === 'string'
+      ? payload.permission.toLowerCase()
+      : typeof payload.role_name === 'string'
+        ? payload.role_name.toLowerCase()
+        : ''
+
+  return (
+    ['admin', 'maintain', 'write', 'push'].includes(permission) ||
+    payload.permissions?.push === true ||
+    payload.permissions?.maintain === true ||
+    payload.permissions?.admin === true
+  )
 }
 ```
 
@@ -224,14 +255,14 @@ async function checkPermission(token, username) {
 **路由**: `/admin/login`
 
 **功能**:
-- GitHub OAuth 登录按钮
+- GitHub App OAuth 登录按钮
 - 自动验证仓库权限
 - Token 管理（存储、刷新、清除）
 - 登出功能
 
 **UI 组件**:
 - `LoginPage.vue` - 登录页面
-- `AuthCallback.vue` - OAuth 回调处理
+- `AuthCallback.vue` - GitHub App OAuth 回调处理
 
 ### 2. 管理后台首页
 **路由**: `/admin/dashboard`
@@ -347,7 +378,7 @@ Body: { body: "感谢提交！已添加到数据库。" }
 
 #### 6. 验证权限
 ```javascript
-GET /repos/Tera-Dark/Prompt-Hub/collaborators/{username}
+GET /repos/Tera-Dark/Prompt-Hub/collaborators/{username}?permission=push
 ```
 
 ### API 速率限制
@@ -447,7 +478,7 @@ const routes = [
     ]
   },
   
-  // OAuth 回调
+  // GitHub App OAuth 回调
   { path: '/auth/callback', component: AuthCallback }
 ]
 ```
@@ -523,23 +554,23 @@ const routes = [
 
 ## 📚 开发参考
 
-### GitHub OAuth App 创建
-1. 访问 GitHub Settings > Developer settings > OAuth Apps
-2. 创建新应用
+### GitHub App 创建（User-to-server OAuth）
+1. 访问 GitHub Settings > Developer settings > GitHub Apps
+2. 创建新的 GitHub App，并启用 *User-to-server OAuth* 流程
 3. 配置:
    - Homepage URL: `https://tera-dark.github.io/Prompt-Hub/`
    - Callback URL: `https://tera-dark.github.io/Prompt-Hub/auth/callback`
-4. 获取 Client ID 和 Client Secret
+4. 在 **User-to-server OAuth** 区域记录 Client ID，并生成新的 Client Secret
 
 ### 相关文档
-- [GitHub OAuth 文档](https://docs.github.com/en/developers/apps/building-oauth-apps)
+- [GitHub App OAuth 文档](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/authorizing-users-for-a-github-app)
 - [GitHub REST API](https://docs.github.com/en/rest)
 - [Vue Router](https://router.vuejs.org/)
 - [Pinia State Management](https://pinia.vuejs.org/)
 
 ## ⚠️ 注意事项
 
-1. **Client Secret 保护**
+1. **GitHub App Client Secret 保护**
    - 不要在前端代码中暴露
    - 考虑使用 GitHub Actions 或 Cloudflare Worker 作为中间层
 

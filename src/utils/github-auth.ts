@@ -28,7 +28,7 @@ type OAuthStatePayload = {
 
 function ensureBrowserContext() {
   if (typeof window === 'undefined') {
-    throw new Error('GitHub OAuth can only be used in a browser context.')
+    throw new Error('GitHub App OAuth can only be used in a browser context.')
   }
 }
 
@@ -167,9 +167,9 @@ export function createOAuthState() {
 export function getAuthUrl(state: string) {
   ensureBrowserContext()
 
-  const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID
+  const clientId = import.meta.env.VITE_GH_APP_CLIENT_ID
   if (!clientId) {
-    throw new Error('Missing GitHub OAuth client id configuration.')
+    throw new Error('Missing GitHub App client id configuration.')
   }
 
   const redirectUri = buildRedirectUri()
@@ -177,9 +177,9 @@ export function getAuthUrl(state: string) {
   const params = new URLSearchParams({
     client_id: clientId,
     redirect_uri: redirectUri,
-    scope: 'repo',
-    allow_signup: 'false',
+    scope: 'read:user',
     state,
+    allow_signup: 'false',
   })
 
   return `${GITHUB_AUTHORIZE_URL}?${params.toString()}`
@@ -189,6 +189,9 @@ type ExchangeResponse = {
   access_token?: string
   token_type?: string
   scope?: string
+  expires_in?: number | string
+  refresh_token?: string
+  refresh_token_expires_in?: number | string
   error?: string
   error_description?: string
 }
@@ -232,12 +235,29 @@ function buildAuthHeaders(token: string) {
   }
 }
 
-function getRequiredEnv(name: 'VITE_GITHUB_REPO_OWNER' | 'VITE_GITHUB_REPO_NAME' | 'VITE_OAUTH_PROXY_URL') {
+function getRequiredEnv(
+  name: 'VITE_GITHUB_REPO_OWNER' | 'VITE_GITHUB_REPO_NAME' | 'VITE_GH_APP_OAUTH_PROXY_URL',
+) {
   const value = import.meta.env[name]
   if (!value) {
     throw new Error(`Missing required configuration: ${name}`)
   }
   return value
+}
+
+function resolveExpiryMs(expiresIn?: number | string) {
+  const numericValue =
+    typeof expiresIn === 'number'
+      ? expiresIn
+      : typeof expiresIn === 'string'
+        ? Number.parseInt(expiresIn, 10)
+        : Number.NaN
+
+  if (Number.isFinite(numericValue) && numericValue > 0) {
+    return numericValue * 1000
+  }
+
+  return TOKEN_TTL_MS
 }
 
 export async function handleCallback(code: string, state: string): Promise<AuthSession> {
@@ -248,9 +268,10 @@ export async function handleCallback(code: string, state: string): Promise<AuthS
   ensureBrowserContext()
   readOAuthState(state)
 
-  const proxyUrl = stripTrailingSlash(getRequiredEnv('VITE_OAUTH_PROXY_URL'))
+  const proxyUrl = stripTrailingSlash(getRequiredEnv('VITE_GH_APP_OAUTH_PROXY_URL'))
   const owner = getRequiredEnv('VITE_GITHUB_REPO_OWNER')
   const repo = getRequiredEnv('VITE_GITHUB_REPO_NAME')
+  const redirectUri = buildRedirectUri()
 
   let exchangePayload: ExchangeResponse
   try {
@@ -260,7 +281,7 @@ export async function handleCallback(code: string, state: string): Promise<AuthS
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },
-      body: JSON.stringify({ code }),
+      body: JSON.stringify({ code, state, redirect_uri: redirectUri }),
       credentials: 'omit',
       mode: 'cors',
     })
@@ -294,22 +315,71 @@ export async function handleCallback(code: string, state: string): Promise<AuthS
 
   const user = (await userResponse.json()) as GitHubUser
 
-  const permissionUrl = `${GITHUB_API_BASE_URL}/repos/${owner}/${repo}/collaborators/${encodeURIComponent(user.login)}/permission`
-  const permissionResponse = await fetch(permissionUrl, {
+  const collaboratorBaseUrl = `${GITHUB_API_BASE_URL}/repos/${owner}/${repo}/collaborators/${encodeURIComponent(
+    user.login,
+  )}`
+  const collaboratorResponse = await fetch(`${collaboratorBaseUrl}?permission=push`, {
     method: 'GET',
     headers,
   })
 
   let hasRepoWriteAccess = false
 
-  if (permissionResponse.status === 204) {
+  if (collaboratorResponse.status === 204) {
     hasRepoWriteAccess = true
-  } else if (permissionResponse.status === 404) {
+  } else if (collaboratorResponse.status === 404) {
     hasRepoWriteAccess = false
-  } else if (permissionResponse.ok) {
-    const payload = await permissionResponse.json()
-    const permission = payload?.permission ?? payload?.role_name ?? ''
-    hasRepoWriteAccess = ['admin', 'maintain', 'write'].includes(permission)
+  } else if (collaboratorResponse.status === 422) {
+    const fallbackResponse = await fetch(`${collaboratorBaseUrl}/permission`, {
+      method: 'GET',
+      headers,
+    })
+
+    if (fallbackResponse.status === 204) {
+      hasRepoWriteAccess = true
+    } else if (fallbackResponse.status === 404) {
+      hasRepoWriteAccess = false
+    } else if (fallbackResponse.ok) {
+      const fallbackPayload = await fallbackResponse.json().catch(() => null)
+
+      if (fallbackPayload && typeof fallbackPayload === 'object') {
+        const fallbackPermission =
+          (fallbackPayload as { permission?: string }).permission ??
+          (fallbackPayload as { role_name?: string }).role_name ??
+          ''
+        const normalizedFallbackPermission =
+          typeof fallbackPermission === 'string' ? fallbackPermission.toLowerCase() : ''
+        hasRepoWriteAccess = ['admin', 'maintain', 'write'].includes(normalizedFallbackPermission)
+      } else {
+        throw new Error('Unable to verify repository permissions.')
+      }
+    } else {
+      throw new Error('Unable to verify repository permissions.')
+    }
+  } else if (collaboratorResponse.ok) {
+    const collaboratorPayload = await collaboratorResponse.json().catch(() => null)
+
+    if (collaboratorPayload && typeof collaboratorPayload === 'object') {
+      const permission =
+        (collaboratorPayload as { permission?: string }).permission ??
+        (collaboratorPayload as { role_name?: string }).role_name ??
+        ''
+      const permissionsRecordRaw =
+        (collaboratorPayload as { permissions?: Record<string, boolean | undefined> }).permissions
+
+      const normalizedPermission = typeof permission === 'string' ? permission.toLowerCase() : ''
+      const directPermission = ['admin', 'maintain', 'write', 'push'].includes(normalizedPermission)
+
+      let derivedPermission = false
+      if (permissionsRecordRaw && typeof permissionsRecordRaw === 'object') {
+        const permissionsRecord = permissionsRecordRaw as Record<string, boolean | undefined>
+        derivedPermission = ['admin', 'maintain', 'push'].some((key) => permissionsRecord[key] === true)
+      }
+
+      hasRepoWriteAccess = directPermission || derivedPermission
+    } else {
+      throw new Error('Unable to verify repository permissions.')
+    }
   } else {
     throw new Error('Unable to verify repository permissions.')
   }
@@ -318,7 +388,7 @@ export async function handleCallback(code: string, state: string): Promise<AuthS
     token,
     user,
     hasRepoWriteAccess,
-    expiresAt: Date.now() + TOKEN_TTL_MS,
+    expiresAt: Date.now() + resolveExpiryMs(exchangePayload.expires_in),
   }
 
   saveSession(session)

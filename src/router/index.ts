@@ -77,13 +77,18 @@ router.beforeEach((to) => {
   }
 
   if (to.meta.requiresAuth) {
-    if (!auth.isAuthed.value) {
-      auth.setAttemptedRoute(to.fullPath)
-      return true
-    }
+    const isAuthorized = auth.isAuthed.value && auth.hasRepoWriteAccess.value
 
-    if (!auth.hasRepoWriteAccess.value && to.name !== 'AdminDashboard') {
-      return { name: 'AdminDashboard' }
+    if (!isAuthorized) {
+      auth.setAttemptedRoute(to.fullPath)
+
+      if (!auth.isAuthed.value) {
+        return true
+      }
+
+      if (to.name !== 'AdminDashboard') {
+        return { name: 'AdminDashboard' }
+      }
     }
   }
 
