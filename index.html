@@ -8,6 +8,25 @@
   </head>
   <body>
     <div id="app"></div>
+    <!-- GitHub Pages SPA 深链接恢复：当从 404.html 重定向过来时，读取 ?p= 原始子路由并还原到真实路径 -->
+    <script>
+      (function () {
+        try {
+          var search = location.search || '';
+          var pMatch = search.match(/[?&]p=([^&]+)/);
+          if (pMatch && pMatch[1]) {
+            var decoded = decodeURIComponent(pMatch[1]);
+            // 避免重复还原
+            if (!sessionStorage.getItem('ghp:restored')) {
+              sessionStorage.setItem('ghp:restored', '1');
+              history.replaceState(null, '', decoded);
+            }
+          }
+        } catch (e) {
+          // 忽略容错
+        }
+      })();
+    </script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

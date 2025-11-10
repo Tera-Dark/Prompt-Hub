@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Redirecting...</title>
+    <meta http-equiv="refresh" content="0; url=/Prompt-Hub/index.html?p=%2FPrompt-Hub%2F" />
+    <script>
+      (function () {
+        var path = location.pathname + location.search + location.hash;
+        var base = '/Prompt-Hub';
+        var normalized = path.startsWith(base) ? path : (base + path);
+        var target = '/Prompt-Hub/index.html?p=' + encodeURIComponent(normalized);
+        location.replace(target);
+      })();
+    </script>
+  </head>
+  <body>
+    Redirecting...
+  </body>
+  
+</html>

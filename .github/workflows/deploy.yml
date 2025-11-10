@@ -43,6 +43,11 @@ jobs:
         run: npm run build
         env:
           NODE_ENV: production
+          # 以下 Vite 构建时注入的环境变量需在仓库 Settings > Variables 中配置
+          VITE_GITHUB_CLIENT_ID: ${{ vars.VITE_GITHUB_CLIENT_ID }}
+          VITE_OAUTH_PROXY_URL: ${{ vars.VITE_OAUTH_PROXY_URL }}
+          VITE_GITHUB_REPO_OWNER: ${{ vars.VITE_GITHUB_REPO_OWNER }}
+          VITE_GITHUB_REPO_NAME: ${{ vars.VITE_GITHUB_REPO_NAME }}
       
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
