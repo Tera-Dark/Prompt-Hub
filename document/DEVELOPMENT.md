@@ -65,6 +65,16 @@ src/
 - 将复杂逻辑拆分为 composable 函数，引入响应式引用时使用 `ref`/`computed`
 - 组件命名遵循 PascalCase，例如 `PromptCard.vue`
 
+## 🔐 GitHub App OAuth 设置
+
+为了支持 GitHub OAuth 认证，项目使用 Cloudflare Workers 作为 OAuth 代理。详细的设置和部署说明，请参考 [Cloudflare Worker GitHub App OAuth 文档](./CF_WORKER_GH_APP_OAUTH.md)。
+
+**快速步骤：**
+1. 在 `cf-worker` 目录中执行 `npm install`
+2. 使用 `wrangler secret put` 配置 GitHub App 凭证
+3. 执行 `npm run deploy` 部署 Worker
+4. 更新 `.env` 中的 `VITE_GH_APP_OAUTH_PROXY_URL`
+
 ## 🧯 调试与常见问题
 | 问题 | 可能原因 | 解决方案 |
 | --- | --- | --- |
@@ -72,5 +82,6 @@ src/
 | 数据加载失败 | `prompts.json` 结构不合法 | 运行 `npm run validate:prompts` 并修复提示 |
 | 类型报错 | 类型定义未更新或导入路径错误 | 对照 `@/types/prompt.ts` 修正类型声明 |
 | 样式冲突 | 全局样式污染 | 将样式限制在组件作用域或使用 CSS Modules |
+| OAuth 认证失败 | Worker 未部署或凭证配置错误 | 参考 [CF_WORKER_GH_APP_OAUTH.md](./CF_WORKER_GH_APP_OAUTH.md) 中的故障排除部分 |
 
 更多整体信息可在 [项目文档概览](./README.md) 中获取。祝开发顺利！🛠️

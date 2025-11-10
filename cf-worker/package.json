@@ -1,0 +1,17 @@
+{
+  "name": "prompt-hub-gh-app-oauth",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "node --loader ts-node/esm --no-warnings test/index.test.ts"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240919.0",
+    "typescript": "^5.4.2",
+    "wrangler": "^3.28.0"
+  }
+}
