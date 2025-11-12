@@ -4,7 +4,7 @@ compatibility_date = "2024-11-01"
 compatibility_flags = ["nodejs_compat"]
 
 [vars]
-ALLOWED_ORIGIN = ""
+ALLOWED_ORIGIN = "https://tera-dark.github.io,http://localhost:5173"
 
 [env.production]
 name = "prompt-hub-gh-app-oauth"

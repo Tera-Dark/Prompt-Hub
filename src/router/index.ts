@@ -56,6 +56,16 @@ const routes: RouteRecordRaw[] = [
         name: 'AdminData',
         component: () => import('@/views/admin/AdminDataToolsView.vue'),
       },
+      {
+        path: 'profile',
+        name: 'AdminProfile',
+        component: () => import('@/views/admin/AdminProfileView.vue'),
+      },
+      {
+        path: 'settings',
+        name: 'AdminSettings',
+        component: () => import('@/views/admin/AdminSettingsView.vue'),
+      },
     ],
   },
   {

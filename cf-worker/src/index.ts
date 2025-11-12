@@ -38,9 +38,23 @@ const GITHUB_TOKEN_URL = 'https://github.com/login/oauth/access_token'
  * Only allows requests from the specified origin
  */
 function buildCorsHeaders(requestOrigin: string | null, env: Env): Record<string, string> {
-  const allowed = env.ALLOWED_ORIGIN || ''
+  const raw = env.ALLOWED_ORIGIN || ''
+  const allowedList = raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0)
+
   const origin = requestOrigin || ''
-  const finalOrigin = allowed || origin
+  let finalOrigin = origin
+
+  if (allowedList.length > 0) {
+    if (origin && allowedList.includes(origin)) {
+      finalOrigin = origin
+    } else {
+      finalOrigin = allowedList[0]
+    }
+  }
+
   return {
     'Access-Control-Allow-Origin': finalOrigin,
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',

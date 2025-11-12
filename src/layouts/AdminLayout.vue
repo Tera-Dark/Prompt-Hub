@@ -33,11 +33,13 @@
           <p class="context-subtitle">Manage the tools that power Prompt Hub</p>
         </div>
         <div class="header-actions">
-          <div class="auth-status" :class="{ 'is-authenticated': isAuthenticated }">
-            <span class="status-indicator" aria-hidden="true"></span>
-            <span>{{ authStatusLabel }}</span>
+          <div class="auth-user" v-if="isAuthenticated">
+            <img v-if="currentUser?.avatar_url" :src="currentUser?.avatar_url || ''" alt="avatar" class="avatar" />
+            <a :href="currentUser?.html_url || '#'" target="_blank" rel="noopener" class="user-link">{{ currentUser?.login || 'user' }}</a>
           </div>
           <RouterLink to="/" class="header-link">Public site</RouterLink>
+          <RouterLink to="/admin/profile" class="header-link">Profile</RouterLink>
+          <RouterLink to="/admin/settings" class="header-link">Settings</RouterLink>
           <button
             v-if="!isAuthenticated"
             type="button"
@@ -143,17 +145,6 @@ const currentSection = computed(() => {
 const attemptedRouteLabel = computed(() => attemptedRoute.value ?? '/admin/dashboard')
 const userDisplayName = computed(() => currentUser.value?.name || currentUser.value?.login || 'This user')
 
-const authStatusLabel = computed(() => {
-  if (!isAuthenticated.value) {
-    return 'Signed out'
-  }
-
-  if (currentUser.value?.login) {
-    return `Signed in as ${currentUser.value.login}`
-  }
-
-  return 'Signed in'
-})
 
 watch(
   () => route.path,
@@ -308,6 +299,24 @@ function handleLogout() {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+}
+
+.auth-user {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px;
+  border: 1px solid var(--color-gray-300);
+}
+
+.user-link {
+  font-size: var(--text-sm);
+  color: var(--color-gray-700);
 }
 
 .auth-status {

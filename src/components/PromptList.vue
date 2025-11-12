@@ -67,7 +67,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import type { Prompt } from '@/types/prompt';
 import PromptCard from './PromptCard.vue';
 
@@ -140,6 +140,7 @@ function goNext() {
 function retry() {
   emit('retry');
 }
+onMounted(() => {})
 </script>
 
 <style scoped>
@@ -335,3 +336,9 @@ function retry() {
   }
 }
 </style>
+onMounted(() => {
+  try {
+    const saved = Number(localStorage.getItem('prompt-hub::pref::pageSize'))
+    if (!Number.isNaN(saved) && saved > 0) pageSize.value = saved
+  } catch {}
+})
