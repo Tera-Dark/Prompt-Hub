@@ -3,6 +3,9 @@ main = "src/index.ts"
 compatibility_date = "2024-11-01"
 compatibility_flags = ["nodejs_compat"]
 
+[vars]
+ALLOWED_ORIGIN = ""
+
 [env.production]
 name = "prompt-hub-gh-app-oauth"
 

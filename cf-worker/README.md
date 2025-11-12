@@ -24,10 +24,10 @@ Store your GitHub App credentials as Cloudflare Secrets:
 
 ```bash
 wrangler secret put CLIENT_ID
-# Enter: Iv23lifKbrCHK9bLgK8N
+# Enter your GitHub App Client ID
 
 wrangler secret put CLIENT_SECRET
-# Enter: 68a2ab68bdad2e40cfb46a570813469b711d4bbc
+# Enter your GitHub App Client Secret
 ```
 
 ### Deployment
@@ -75,7 +75,7 @@ Response:
 
 ✅ Exchanges GitHub OAuth codes for access tokens
 ✅ Stores secrets securely in Cloudflare
-✅ CORS protection (only allows `https://tera-dark.github.io`)
+✅ CORS protection（允许源可配置）
 ✅ TypeScript for type safety
 ✅ Error handling with descriptive messages
 ✅ Works on Cloudflare free plan
@@ -99,7 +99,7 @@ For detailed setup, configuration, and troubleshooting, see:
 ## Security
 
 - Client secret is stored as a Cloudflare Secret (not in code)
-- CORS headers restrict to `https://tera-dark.github.io`
+- CORS 允许源通过环境变量配置
 - Input validation on all requests
 - No sensitive data in error messages
 - TLS 1.3+ encryption for all communication

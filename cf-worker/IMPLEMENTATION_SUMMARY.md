@@ -10,7 +10,7 @@ This directory contains a complete, production-ready Cloudflare Worker that secu
 - **`src/index.ts`** - Complete TypeScript implementation with:
   - POST `/exchange` endpoint for OAuth code exchange
   - GitHub App OAuth flow integration
-  - CORS headers restricting to `https://tera-dark.github.io`
+  - CORS 允许源可配置
   - Input validation and error handling
   - Type-safe interfaces and environment variables
 
@@ -52,7 +52,7 @@ This directory contains a complete, production-ready Cloudflare Worker that secu
 
 ✅ **Security**
 - Client ID and Secret stored as Cloudflare Secrets (encrypted)
-- CORS headers restrict to `https://tera-dark.github.io`
+- CORS 允许源通过环境变量配置
 - Input validation on all parameters
 - No sensitive data in error messages
 - TLS 1.3+ encryption for all communication
@@ -77,8 +77,8 @@ This directory contains a complete, production-ready Cloudflare Worker that secu
 The worker uses these credentials (configured as secrets):
 
 ```
-CLIENT_ID:     Iv23lifKbrCHK9bLgK8N
-CLIENT_SECRET: 68a2ab68bdad2e40cfb46a570813469b711d4bbc
+CLIENT_ID:     YOUR_CLIENT_ID
+CLIENT_SECRET: YOUR_CLIENT_SECRET
 ```
 
 Configure these using:
@@ -162,8 +162,8 @@ Use curl to test the deployed worker:
 ```bash
 curl -X POST \
   -H "Content-Type: application/json" \
-  -H "Origin: https://tera-dark.github.io" \
-  -d '{"code":"test_code","redirect_uri":"https://tera-dark.github.io/Prompt-Hub/auth/callback"}' \
+  -H "Origin: https://your-pages-domain" \
+  -d '{"code":"test_code","redirect_uri":"https://your-pages-domain/Prompt-Hub/auth/callback"}' \
   https://prompt-hub-gh-app-oauth.YOUR_ACCOUNT.workers.dev/exchange
 ```
 
@@ -172,7 +172,7 @@ curl -X POST \
 The worker enforces CORS restrictions:
 
 **Allowed Origin:**
-- `https://tera-dark.github.io`
+- 通过环境变量 `ALLOWED_ORIGIN` 配置
 
 **Allowed Methods:**
 - `POST` - For exchanging OAuth codes
@@ -183,7 +183,7 @@ The worker enforces CORS restrictions:
 - `Authorization`
 
 **Response Headers Include:**
-- `Access-Control-Allow-Origin: https://tera-dark.github.io`
+- `Access-Control-Allow-Origin: <configured allowed origin>`
 - `Access-Control-Allow-Methods: POST, OPTIONS`
 - `Access-Control-Max-Age: 86400`
 
@@ -264,7 +264,7 @@ See **`TESTING.md`** and **`../../document/CF_WORKER_GH_APP_OAUTH.md`** for:
 ✅ Worker compiles successfully (TypeScript → JavaScript)
 ✅ Exchange endpoint accepts `{ code, redirect_uri }`
 ✅ Returns valid token response format
-✅ CORS headers restrict to `https://tera-dark.github.io`
+✅ CORS 允许源可配置
 ✅ Client secret stored as Cloudflare Secret
 ✅ Input validation on all parameters
 ✅ Error handling with descriptive messages

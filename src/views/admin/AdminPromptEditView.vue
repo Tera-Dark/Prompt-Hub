@@ -12,38 +12,109 @@
       <div class="form-grid">
         <label class="form-field">
           <span>Title</span>
-          <input type="text" placeholder="Existing title will load here" disabled />
+          <input v-model="form.title" type="text" placeholder="Existing title will load here" />
         </label>
         <label class="form-field">
           <span>Status</span>
-          <input type="text" placeholder="Draft | Published" disabled />
+          <input v-model="status" type="text" placeholder="Draft | Published" />
         </label>
         <label class="form-field form-field--full">
           <span>Description</span>
-          <textarea rows="3" placeholder="Description is pending API data" disabled></textarea>
+          <textarea v-model="form.description" rows="3" placeholder="Description is pending API data"></textarea>
         </label>
         <label class="form-field form-field--full">
           <span>Prompt body</span>
-          <textarea rows="8" placeholder="Prompt content will go here" disabled></textarea>
+          <textarea v-model="form.prompt" rows="8" placeholder="Prompt content will go here"></textarea>
         </label>
         <label class="form-field form-field--full">
           <span>Tags</span>
-          <input type="text" placeholder="Comma separated" disabled />
+          <input v-model="tagsInput" type="text" placeholder="Comma separated" />
         </label>
       </div>
       <div class="form-actions">
-        <button type="button" class="secondary">Save changes</button>
-        <button type="submit" class="primary" disabled>Update prompt</button>
+        <button type="button" class="secondary" @click="saveChanges" :disabled="submitting">Save changes</button>
+        <button type="submit" class="primary" :disabled="submitting">Update prompt</button>
       </div>
     </form>
   </section>
 </template>
 
 <script setup lang="ts">
-const props = defineProps<{ id: string }>()
+import { ref, onMounted } from 'vue'
+import { loadPrompts, type Prompt } from '@/types/prompt'
+import { useAuth } from '@/composables/useAuth'
+import { getDefaultBranch, getBranchSha, createBranch, getFile, updateFile, createPullRequest } from '@/utils/github-repo'
 
-function handleSubmit() {
-  console.info(`[admin] Prompt ${props.id} update flow pending implementation.`)
+const props = defineProps<{ id: string }>()
+const { token, hasRepoWriteAccess } = useAuth()
+
+const form = ref({ title: '', description: '', prompt: '' })
+const status = ref('Published')
+const tagsInput = ref('')
+const submitting = ref(false)
+
+const owner = import.meta.env.VITE_GITHUB_REPO_OWNER
+const repo = import.meta.env.VITE_GITHUB_REPO_NAME
+
+function ensureAuth() {
+  if (!token.value || !hasRepoWriteAccess.value) throw new Error('需要登录并具备仓库写权限')
+}
+
+onMounted(async () => {
+  try {
+    const data = await loadPrompts()
+    const p = data.prompts.find((x) => x.id === props.id)
+    if (p) {
+      form.value.title = p.title
+      form.value.description = p.description
+      form.value.prompt = p.prompt
+      tagsInput.value = (p.tags || []).join(', ')
+    }
+  } catch {}
+})
+
+async function saveChanges() {
+  await handleSubmit()
+}
+
+async function handleSubmit() {
+  ensureAuth()
+  submitting.value = true
+  try {
+    const t = token.value!
+    const base = await getDefaultBranch(owner, repo, t)
+    const baseSha = await getBranchSha(owner, repo, base, t)
+    const branch = `prompt-edit-${props.id}-${Date.now()}`
+    await createBranch(owner, repo, branch, baseSha, t)
+
+    const file = await getFile(owner, repo, 'public/data/prompts.json', base, t)
+    const data = JSON.parse(file.content) as { version: string; prompts: Prompt[] }
+    const idx = data.prompts.findIndex((x) => x.id === props.id)
+    if (idx < 0) throw new Error('未找到待编辑的提示词')
+    const tags = tagsInput.value.split(',').map((s) => s.trim()).filter(Boolean)
+    const now = new Date().toISOString()
+    const updated: Prompt = {
+      ...data.prompts[idx],
+      title: form.value.title.trim(),
+      description: form.value.description.trim(),
+      prompt: form.value.prompt.trim(),
+      tags,
+      updatedAt: now,
+    }
+    const next = { version: data.version, prompts: [...data.prompts] }
+    next.prompts[idx] = updated
+    const message = `feat: update prompt ${updated.id}`
+    await updateFile(owner, repo, 'public/data/prompts.json', JSON.stringify(next, null, 2), message, branch, file.sha, t)
+    const prTitle = `Update prompt: ${updated.title}`
+    const prBody = `Update prompt ${updated.id}`
+    const url = await createPullRequest(owner, repo, prTitle, branch, base, prBody, t)
+    alert(`Pull Request 已创建：\n${url}`)
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : '提交失败'
+    alert(msg)
+  } finally {
+    submitting.value = false
+  }
 }
 </script>
 
@@ -127,16 +198,10 @@ textarea {
   padding: 0.75rem 0.85rem;
   border-radius: var(--radius-md);
   border: 1px solid var(--color-gray-200);
-  background-color: var(--color-gray-50);
-  color: var(--color-gray-500);
+  background-color: var(--color-white);
+  color: var(--color-gray-900);
   font-size: var(--text-sm);
   resize: vertical;
-}
-
-input:disabled,
-textarea:disabled {
-  cursor: not-allowed;
-  opacity: 0.7;
 }
 
 .form-field--full {

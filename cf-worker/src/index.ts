@@ -11,6 +11,7 @@
 export interface Env {
   CLIENT_ID: string
   CLIENT_SECRET: string
+  ALLOWED_ORIGIN?: string
 }
 
 interface ExchangeRequest {
@@ -31,18 +32,17 @@ interface ErrorResponse {
 }
 
 const GITHUB_TOKEN_URL = 'https://github.com/login/oauth/access_token'
-const ALLOWED_ORIGIN = 'https://tera-dark.github.io'
 
 /**
  * Build CORS headers for the response
  * Only allows requests from the specified origin
  */
-function buildCorsHeaders(requestOrigin: string | null): Record<string, string> {
-  // Only allow the specified origin
-  const allowedOrigin = requestOrigin === ALLOWED_ORIGIN ? ALLOWED_ORIGIN : ALLOWED_ORIGIN
-
+function buildCorsHeaders(requestOrigin: string | null, env: Env): Record<string, string> {
+  const allowed = env.ALLOWED_ORIGIN || ''
+  const origin = requestOrigin || ''
+  const finalOrigin = allowed || origin
   return {
-    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Origin': finalOrigin,
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Max-Age': '86400',
@@ -188,7 +188,7 @@ async function handleExchange(
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const requestOrigin = request.headers.get('Origin')
-    const corsHeaders = buildCorsHeaders(requestOrigin)
+    const corsHeaders = buildCorsHeaders(requestOrigin, env)
 
     // Parse the URL
     const url = new URL(request.url)

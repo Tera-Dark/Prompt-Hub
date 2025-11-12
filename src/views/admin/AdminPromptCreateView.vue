@@ -8,40 +8,123 @@
       <RouterLink to="/admin/prompts" class="back-link">Back to list</RouterLink>
     </header>
 
-    <form class="editor-form" @submit.prevent="handleSubmit">
+    <form class="editor-form" @submit.prevent="onSubmit">
       <div class="form-grid">
         <label class="form-field">
           <span>Title</span>
-          <input type="text" placeholder="e.g. Product launch teaser" disabled />
+          <input v-model="form.title" type="text" placeholder="e.g. Product launch teaser" />
         </label>
         <label class="form-field">
           <span>Category</span>
-          <input type="text" placeholder="Select category" disabled />
+          <select v-model="form.category">
+            <option value="" disabled>Select category</option>
+            <option v-for="c in categories" :key="c" :value="c">{{ c }}</option>
+          </select>
         </label>
         <label class="form-field form-field--full">
           <span>Description</span>
-          <textarea rows="3" placeholder="Short summary for the library" disabled></textarea>
+          <textarea v-model="form.description" rows="3" placeholder="Short summary for the library"></textarea>
         </label>
         <label class="form-field form-field--full">
           <span>Prompt body</span>
-          <textarea rows="8" placeholder="Prompt instructions will be entered here" disabled></textarea>
+          <textarea v-model="form.prompt" rows="8" placeholder="Prompt instructions will be entered here"></textarea>
         </label>
         <label class="form-field form-field--full">
           <span>Tags</span>
-          <input type="text" placeholder="comma, separated" disabled />
+          <input v-model="tagsInput" type="text" placeholder="comma, separated" />
         </label>
       </div>
       <div class="form-actions">
-        <button type="button" class="secondary">Save draft</button>
-        <button type="submit" class="primary" disabled>Publish</button>
+        <button type="button" class="secondary" @click="saveDraft" :disabled="submitting">Save draft</button>
+        <button type="submit" class="primary" :disabled="submitting">Publish</button>
       </div>
     </form>
   </section>
 </template>
 
 <script setup lang="ts">
-function handleSubmit() {
-  console.info('[admin] Prompt creation submission is pending implementation.')
+import { ref } from 'vue'
+import { usePrompts } from '@/composables/usePrompts'
+import { useAuth } from '@/composables/useAuth'
+import { type Prompt } from '@/types/prompt'
+import { getDefaultBranch, getBranchSha, createBranch, getFile, updateFile, createPullRequest } from '@/utils/github-repo'
+
+const { categories } = usePrompts()
+const { token, hasRepoWriteAccess } = useAuth()
+
+const form = ref({ title: '', category: '', description: '', prompt: '' })
+const tagsInput = ref('')
+const submitting = ref(false)
+
+const owner = import.meta.env.VITE_GITHUB_REPO_OWNER
+const repo = import.meta.env.VITE_GITHUB_REPO_NAME
+
+function ensureAuth() {
+  if (!token.value || !hasRepoWriteAccess.value) throw new Error('需要登录并具备仓库写权限')
+}
+
+function genId(title: string, category: string) {
+  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+  const ts = new Date().toISOString().replace(/[-:TZ\.]/g, '').slice(0, 12)
+  return `${category}-${slug}-${ts}`
+}
+
+function validate(): string | null {
+  if (!form.value.title.trim()) return '标题必填'
+  if (!form.value.category.trim()) return '类目必选'
+  if (!form.value.description.trim()) return '描述必填'
+  if (!form.value.prompt.trim()) return '正文必填'
+  return null
+}
+
+async function saveDraft() {
+  await handleSubmit(true)
+}
+
+function onSubmit(_e: SubmitEvent) {
+  handleSubmit()
+}
+
+async function handleSubmit(draft = false) {
+  ensureAuth()
+  const err = validate()
+  if (err) throw new Error(err)
+  submitting.value = true
+  try {
+    const t = token.value!
+    const base = await getDefaultBranch(owner, repo, t)
+    const baseSha = await getBranchSha(owner, repo, base, t)
+    const branch = `prompt-add-${Date.now()}`
+    await createBranch(owner, repo, branch, baseSha, t)
+
+    const file = await getFile(owner, repo, 'public/data/prompts.json', base, t)
+    const data = JSON.parse(file.content) as { version: string; prompts: Prompt[] }
+    const tags = tagsInput.value.split(',').map((s) => s.trim()).filter(Boolean)
+    const now = new Date().toISOString()
+    const newItem: Prompt = {
+      id: genId(form.value.title, form.value.category),
+      title: form.value.title.trim(),
+      category: form.value.category.trim(),
+      description: form.value.description.trim(),
+      prompt: form.value.prompt.trim(),
+      tags,
+      createdAt: now,
+    }
+    const next = { version: data.version, prompts: [newItem, ...data.prompts] }
+    const message = draft ? `chore: add prompt draft ${newItem.id}` : `feat: add prompt ${newItem.id}`
+    await updateFile(owner, repo, 'public/data/prompts.json', JSON.stringify(next, null, 2), message, branch, file.sha, t)
+    const prTitle = draft ? `Add prompt (draft): ${newItem.title}` : `Add prompt: ${newItem.title}`
+    const prBody = `Add a new prompt in category ${newItem.category} with ${tags.length} tags.`
+    const url = await createPullRequest(owner, repo, prTitle, branch, base, prBody, t)
+    alert(`Pull Request 已创建：\n${url}`)
+    form.value = { title: '', category: '', description: '', prompt: '' }
+    tagsInput.value = ''
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : '提交失败'
+    alert(msg)
+  } finally {
+    submitting.value = false
+  }
 }
 </script>
 
@@ -120,16 +203,19 @@ textarea {
   padding: 0.75rem 0.85rem;
   border-radius: var(--radius-md);
   border: 1px solid var(--color-gray-200);
-  background-color: var(--color-gray-50);
-  color: var(--color-gray-500);
+  background-color: var(--color-white);
+  color: var(--color-gray-900);
   font-size: var(--text-sm);
   resize: vertical;
 }
 
-input:disabled,
-textarea:disabled {
-  cursor: not-allowed;
-  opacity: 0.7;
+select {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-gray-200);
+  background-color: var(--color-white);
+  color: var(--color-gray-900);
 }
 
 .form-field--full {

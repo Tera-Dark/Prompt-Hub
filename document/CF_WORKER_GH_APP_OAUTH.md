@@ -26,17 +26,17 @@ The Cloudflare Worker acts as a secure OAuth proxy that:
 - **Exchanges** the OAuth code for an access token using your GitHub App credentials
 - **Returns** a JSON response with: `{ "access_token", "token_type", "scope", "expires_in" }`
 - **Secures** your client secret by storing it as a Cloudflare Secret (never exposed to the browser)
-- **Enforces** CORS headers to restrict access to `https://tera-dark.github.io`
+- **Enforces** CORS headers with a可配置的允许源
 
 ### GitHub App Credentials
 
-The example GitHub App credentials provided are:
+Example GitHub App credentials format:
 
 ```
-Client ID:     Iv23lifKbrCHK9bLgK8N
-Client Secret: 68a2ab68bdad2e40cfb46a570813469b711d4bbc
-Callback URL:  https://tera-dark.github.io/Prompt-Hub/auth/callback
-Homepage:      https://github.com/Tera-Dark/Prompt-Hub
+Client ID:     YOUR_CLIENT_ID
+Client Secret: YOUR_CLIENT_SECRET
+Callback URL:  https://your-pages-domain/Prompt-Hub/auth/callback
+Homepage:      https://github.com/<your-username>/Prompt-Hub
 ```
 
 ---
@@ -162,14 +162,12 @@ Your GitHub App credentials must be stored as Cloudflare Secrets. These are secu
 ```bash
 # Store your Client ID
 wrangler secret put CLIENT_ID
-# Paste the Client ID when prompted:
-# Iv23lifKbrCHK9bLgK8N
+# Paste your Client ID when prompted
 # Press Enter twice (Ctrl+D on Unix, Ctrl+Z then Enter on Windows)
 
 # Store your Client Secret
 wrangler secret put CLIENT_SECRET
-# Paste the Client Secret when prompted:
-# 68a2ab68bdad2e40cfb46a570813469b711d4bbc
+# Paste your Client Secret when prompted
 # Press Enter twice
 ```
 
@@ -180,8 +178,8 @@ wrangler secret put CLIENT_SECRET
 3. Navigate to **Workers & Pages** → **prompt-hub-gh-app-oauth**
 4. Go to **Settings** → **Variables**
 5. Click **Add Secret** for each:
-   - **Name**: `CLIENT_ID` → **Value**: `Iv23lifKbrCHK9bLgK8N`
-   - **Name**: `CLIENT_SECRET` → **Value**: `68a2ab68bdad2e40cfb46a570813469b711d4bbc`
+   - **Name**: `CLIENT_ID` → **Value**: `YOUR_CLIENT_ID`
+   - **Name**: `CLIENT_SECRET` → **Value**: `YOUR_CLIENT_SECRET`
 
 ### Step 3: Verify Secrets
 
@@ -289,8 +287,8 @@ Test the endpoint with curl:
 ```bash
 curl -X POST \
   -H "Content-Type: application/json" \
-  -H "Origin: https://tera-dark.github.io" \
-  -d '{"code":"test_code","redirect_uri":"https://tera-dark.github.io/Prompt-Hub/auth/callback"}' \
+  -H "Origin: https://your-pages-domain" \
+  -d '{"code":"test_code","redirect_uri":"https://your-pages-domain/Prompt-Hub/auth/callback"}' \
   http://localhost:8787/exchange
 ```
 
@@ -298,7 +296,7 @@ curl -X POST \
 
 ```bash
 curl -X OPTIONS \
-  -H "Origin: https://tera-dark.github.io" \
+  -H "Origin: https://your-pages-domain" \
   -v \
   https://prompt-hub-gh-app-oauth.YOUR_ACCOUNT.workers.dev/exchange
 ```
@@ -306,7 +304,7 @@ curl -X OPTIONS \
 You should see in the response headers:
 
 ```
-Access-Control-Allow-Origin: https://tera-dark.github.io
+Access-Control-Allow-Origin: <configured allowed origin>
 Access-Control-Allow-Methods: POST, OPTIONS
 Access-Control-Allow-Headers: Content-Type, Authorization
 ```
@@ -329,7 +327,7 @@ The `Access-Control-Allow-Origin` header should still be set to the allowed orig
 During GitHub OAuth flow:
 
 1. User is redirected to GitHub's OAuth page
-2. After authorization, GitHub redirects to: `https://tera-dark.github.io/Prompt-Hub/auth/callback?code=XXXXX`
+2. After authorization, GitHub redirects to: `https://your-pages-domain/Prompt-Hub/auth/callback?code=XXXXX`
 3. Frontend extracts the code and makes a request:
 
 ```typescript
@@ -340,7 +338,7 @@ const response = await fetch(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       code: 'XXXXX',
-      redirect_uri: 'https://tera-dark.github.io/Prompt-Hub/auth/callback',
+      redirect_uri: 'https://your-pages-domain/Prompt-Hub/auth/callback',
     }),
   }
 )
@@ -372,7 +370,7 @@ Your GitHub App client secret is protected by:
 ### 3. CORS Security
 
 The worker enforces:
-- **Allowed Origin**: Only `https://tera-dark.github.io` can call the worker
+- **Allowed Origin**: 通过环境变量 `ALLOWED_ORIGIN` 配置
 - **Method Restrictions**: Only `POST` and `OPTIONS` methods allowed
 - **Credential Handling**: Credentials are not sent or stored by the worker
 
@@ -459,7 +457,7 @@ wrangler secret put CLIENT_SECRET
 ### Issue: CORS errors in browser console
 
 **Solution**:
-- Verify the frontend is running on `https://tera-dark.github.io` (not localhost)
+- Verify the frontend origin matches你配置在 Worker 的允许源
 - For local development, use the environment variable `VITE_GH_APP_OAUTH_PROXY_URL` pointing to the deployed worker
 
 ### Issue: "Invalid OAuth code" error from GitHub
@@ -582,7 +580,7 @@ This is already included in the provided `wrangler.toml`.
 
 All responses include:
 ```
-Access-Control-Allow-Origin: https://tera-dark.github.io
+Access-Control-Allow-Origin: <configured allowed origin>
 Access-Control-Allow-Methods: POST, OPTIONS
 Access-Control-Allow-Headers: Content-Type, Authorization
 Access-Control-Max-Age: 86400
