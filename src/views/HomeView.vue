@@ -8,7 +8,20 @@
             <p class="app-subtitle">Discover and copy AI prompts for any task</p>
           </div>
           <nav class="app-nav" aria-label="Primary">
-            <RouterLink to="/admin" class="nav-link">Admin</RouterLink>
+            <RouterLink v-if="!isAuthenticated" to="/admin" class="nav-link nav-link--login">
+              Login
+            </RouterLink>
+            <div v-else class="user-info-compact">
+              <img
+                v-if="user?.avatar_url"
+                :src="user.avatar_url"
+                alt="User avatar"
+                class="nav-avatar"
+              />
+              <RouterLink to="/admin" class="nav-link nav-link--user">
+                {{ user?.name || user?.login || 'User' }}
+              </RouterLink>
+            </div>
           </nav>
         </div>
       </div>
@@ -38,7 +51,9 @@
     <footer class="app-footer">
       <div class="footer-content">
         <p>&copy; 2024 Prompt Hub. All rights reserved.</p>
-        <RouterLink to="/admin" class="footer-admin-link">Admin</RouterLink>
+        <RouterLink to="/admin" class="footer-admin-link">{{
+          isAuthenticated ? user?.login || 'User' : 'Login'
+        }}</RouterLink>
       </div>
     </footer>
   </div>
@@ -47,11 +62,16 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { usePrompts } from '@/composables/usePrompts'
+import { useAuth } from '@/composables/useAuth'
 import PromptList from '@/components/PromptList.vue'
 import SearchBar from '@/components/SearchBar.vue'
 import CategoryFilter from '@/components/CategoryFilter.vue'
 
 const { prompts, loading, error, categories, fetchPrompts } = usePrompts()
+const auth = useAuth()
+
+const isAuthenticated = computed(() => auth.isAuthed.value)
+const user = computed(() => auth.user.value)
 
 const searchQuery = ref('')
 const selectedCategory = ref<string | null>(null)
@@ -135,6 +155,20 @@ onMounted(() => {
   justify-content: flex-start;
 }
 
+.user-info-compact {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nav-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px;
+  border: 2px solid var(--color-gray-700);
+  object-fit: cover;
+}
+
 .nav-link {
   display: inline-flex;
   align-items: center;
@@ -144,7 +178,19 @@ onMounted(() => {
   border: 1px solid var(--color-gray-800);
   border-radius: var(--radius-md);
   padding: 0.5rem 1rem;
-  transition: background-color var(--transition-base), color var(--transition-base), border-color var(--transition-base);
+  transition:
+    background-color var(--transition-base),
+    color var(--transition-base),
+    border-color var(--transition-base);
+}
+
+.nav-link--login {
+  background-color: var(--color-gray-800);
+  font-weight: 600;
+}
+
+.nav-link--user {
+  font-weight: 500;
 }
 
 .nav-link:hover,
@@ -204,7 +250,9 @@ onMounted(() => {
   color: var(--color-gray-300);
   border-bottom: 1px solid transparent;
   padding-bottom: 0.125rem;
-  transition: color var(--transition-base), border-color var(--transition-base);
+  transition:
+    color var(--transition-base),
+    border-color var(--transition-base);
 }
 
 .footer-admin-link:hover,
