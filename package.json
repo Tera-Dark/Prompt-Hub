@@ -19,23 +19,27 @@
     "vue-router": "^4.6.3"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^5.0.4",
-    "typescript": "^5.4.2",
-    "vite": "^5.1.6",
-    "vue-tsc": "^2.0.6",
-    "eslint": "^8.57.0",
-    "eslint-plugin-vue": "^9.20.1",
-    "@typescript-eslint/parser": "^7.0.2",
     "@typescript-eslint/eslint-plugin": "^7.0.2",
+    "@typescript-eslint/parser": "^7.0.2",
+    "@vitejs/plugin-vue": "^5.0.4",
+    "@vue/eslint-config-prettier": "^10.2.0",
+    "@vue/eslint-config-typescript": "13.0.0",
+    "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
-    "prettier": "^3.3.3",
+    "eslint-plugin-vue": "^9.20.1",
     "husky": "^9.1.0",
     "lint-staged": "^15.2.2",
-    "vitest": "^1.6.1"
+    "prettier": "^3.3.3",
+    "typescript": "^5.4.2",
+    "vite": "^5.1.6",
+    "vitest": "^1.6.1",
+    "vue-tsc": "^2.0.6"
   },
   "lint-staged": {
+    "*.{ts,vue}": [
+      "eslint --fix"
+    ],
     "*.{ts,vue,js,json}": [
-      "eslint --fix",
       "prettier --write"
     ]
   }

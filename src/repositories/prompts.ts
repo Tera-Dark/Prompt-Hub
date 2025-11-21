@@ -1,5 +1,12 @@
 import type { Prompt } from '@/types/prompt'
-import { getDefaultBranch, getBranchSha, createBranch, getFile, updateFile, createPullRequest } from '@/services/github'
+import {
+  getDefaultBranch,
+  getBranchSha,
+  createBranch,
+  getFile,
+  updateFile,
+  createPullRequest,
+} from '@/services/github'
 
 function repoInfo() {
   const owner = import.meta.env.VITE_GITHUB_REPO_OWNER
@@ -18,13 +25,26 @@ export async function addPrompt(newItem: Prompt, token: string): Promise<string>
   const data = JSON.parse(file.content) as { version: string; prompts: Prompt[] }
   const next = { version: data.version, prompts: [newItem, ...data.prompts] }
   const message = `feat: add prompt ${newItem.id}`
-  await updateFile(owner, repo, 'public/data/prompts.json', JSON.stringify(next, null, 2), message, branch, file.sha, token)
+  await updateFile(
+    owner,
+    repo,
+    'public/data/prompts.json',
+    JSON.stringify(next, null, 2),
+    message,
+    branch,
+    file.sha,
+    token,
+  )
   const prTitle = `Add prompt: ${newItem.title}`
   const prBody = `Add a new prompt in category ${newItem.category}`
   return await createPullRequest(owner, repo, prTitle, branch, base, prBody, token)
 }
 
-export async function updatePromptById(id: string, updater: (p: Prompt) => Prompt, token: string): Promise<string> {
+export async function updatePromptById(
+  id: string,
+  updater: (_p: Prompt) => Prompt,
+  token: string,
+): Promise<string> {
   const { owner, repo } = repoInfo()
   const base = await getDefaultBranch(owner, repo, token)
   const baseSha = await getBranchSha(owner, repo, base, token)
@@ -38,7 +58,16 @@ export async function updatePromptById(id: string, updater: (p: Prompt) => Promp
   const next = { version: data.version, prompts: [...data.prompts] }
   next.prompts[idx] = updated
   const message = `feat: update prompt ${id}`
-  await updateFile(owner, repo, 'public/data/prompts.json', JSON.stringify(next, null, 2), message, branch, file.sha, token)
+  await updateFile(
+    owner,
+    repo,
+    'public/data/prompts.json',
+    JSON.stringify(next, null, 2),
+    message,
+    branch,
+    file.sha,
+    token,
+  )
   const prTitle = `Update prompt: ${updated.title}`
   const prBody = `Update prompt ${updated.id}`
   return await createPullRequest(owner, repo, prTitle, branch, base, prBody, token)
@@ -54,7 +83,16 @@ export async function deletePromptById(id: string, token: string): Promise<strin
   const data = JSON.parse(file.content) as { version: string; prompts: Prompt[] }
   const next = { version: data.version, prompts: data.prompts.filter((x) => x.id !== id) }
   const message = `feat: delete prompt ${id}`
-  await updateFile(owner, repo, 'public/data/prompts.json', JSON.stringify(next, null, 2), message, branch, file.sha, token)
+  await updateFile(
+    owner,
+    repo,
+    'public/data/prompts.json',
+    JSON.stringify(next, null, 2),
+    message,
+    branch,
+    file.sha,
+    token,
+  )
   const prTitle = `Delete prompt: ${id}`
   const prBody = `Remove prompt ${id}`
   return await createPullRequest(owner, repo, prTitle, branch, base, prBody, token)
