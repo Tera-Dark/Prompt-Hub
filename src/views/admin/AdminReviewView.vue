@@ -21,7 +21,7 @@
       </label>
       <label class="control">
         <span>Only mine</span>
-        <input type="checkbox" v-model="onlyMine" />
+        <input v-model="onlyMine" type="checkbox" />
       </label>
       <button class="refresh" @click="load">Refresh</button>
     </div>
@@ -34,22 +34,31 @@
         <span>Total: {{ stats.total }}</span>
       </div>
       <div class="pr-list">
-      <article v-for="pr in filtered" :key="pr.id" class="pr-card">
-        <div class="card-header">
-          <h3>
-            <a :href="pr.html_url" target="_blank" rel="noopener">#{{ pr.number }} · {{ pr.title }}</a>
-          </h3>
-          <span class="badge" :data-state="pr.state">{{ pr.state }}</span>
-        </div>
-        <div class="card-meta">
-          <div class="author">
-            <img v-if="pr.user?.avatar_url" :src="pr.user?.avatar_url || ''" class="avatar" alt="avatar" />
-            <a :href="pr.user?.html_url || '#'" target="_blank" rel="noopener">{{ pr.user?.login }}</a>
+        <article v-for="pr in filtered" :key="pr.id" class="pr-card">
+          <div class="card-header">
+            <h3>
+              <a :href="pr.html_url" target="_blank" rel="noopener"
+                >#{{ pr.number }} · {{ pr.title }}</a
+              >
+            </h3>
+            <span class="badge" :data-state="pr.state">{{ pr.state }}</span>
           </div>
-          <span class="date">{{ formatDate(pr.created_at) }}</span>
-        </div>
-      </article>
-      <div v-if="!filtered.length" class="empty">No PRs</div>
+          <div class="card-meta">
+            <div class="author">
+              <img
+                v-if="pr.user?.avatar_url"
+                :src="pr.user?.avatar_url || ''"
+                class="avatar"
+                alt="avatar"
+              />
+              <a :href="pr.user?.html_url || '#'" target="_blank" rel="noopener">{{
+                pr.user?.login
+              }}</a>
+            </div>
+            <span class="date">{{ formatDate(pr.created_at) }}</span>
+          </div>
+        </article>
+        <div v-if="!filtered.length" class="empty">No PRs</div>
       </div>
     </div>
   </section>
@@ -137,15 +146,25 @@ onMounted(() => {
     if (s === 'open' || s === 'closed' || s === 'all') state.value = s as any
     const m = localStorage.getItem(MINE_KEY)
     if (m === '1') onlyMine.value = true
-  } catch {}
+  } catch {
+    // Silently fail if preferences cannot be loaded
+  }
   if (isAuthed.value) load()
 })
 
 watch(state, (v) => {
-  try { localStorage.setItem(STATE_KEY, v) } catch {}
+  try {
+    localStorage.setItem(STATE_KEY, v)
+  } catch {
+    // Silently fail if localStorage is unavailable
+  }
 })
 watch(onlyMine, (v) => {
-  try { localStorage.setItem(MINE_KEY, v ? '1' : '0') } catch {}
+  try {
+    localStorage.setItem(MINE_KEY, v ? '1' : '0')
+  } catch {
+    // Silently fail if localStorage is unavailable
+  }
 })
 </script>
 
@@ -200,7 +219,13 @@ watch(onlyMine, (v) => {
   border-radius: var(--radius-md);
   background: var(--color-white);
 }
-.stats { display: flex; gap: 1rem; margin: 0.5rem 0; font-size: var(--text-sm); color: var(--color-gray-700); }
+.stats {
+  display: flex;
+  gap: 1rem;
+  margin: 0.5rem 0;
+  font-size: var(--text-sm);
+  color: var(--color-gray-700);
+}
 
 .pr-list {
   display: grid;
@@ -242,8 +267,12 @@ watch(onlyMine, (v) => {
   color: var(--color-white);
 }
 
-.badge[data-state="open"] { background-color: var(--color-green-600, #16a34a); }
-.badge[data-state="closed"] { background-color: var(--color-red-600, #dc2626); }
+.badge[data-state='open'] {
+  background-color: var(--color-green-600, #16a34a);
+}
+.badge[data-state='closed'] {
+  background-color: var(--color-red-600, #dc2626);
+}
 
 .card-meta {
   display: flex;
@@ -252,8 +281,17 @@ watch(onlyMine, (v) => {
   color: var(--color-gray-700);
 }
 
-.author { display: inline-flex; align-items: center; gap: 0.5rem; }
-.avatar { width: 20px; height: 20px; border-radius: 9999px; border: 1px solid var(--color-gray-300); }
+.author {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  border: 1px solid var(--color-gray-300);
+}
 
 @media (max-width: 640px) {
   .card-meta {

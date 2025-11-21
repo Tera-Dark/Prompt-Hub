@@ -33,7 +33,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 
-const theme = ref<'light'|'dark'>('light')
+const theme = ref<'light' | 'dark'>('light')
 const pageSize = ref<number>(24)
 
 const THEME_KEY = 'prompt-hub::pref::theme'
@@ -45,7 +45,9 @@ onMounted(() => {
     if (t === 'dark' || t === 'light') theme.value = t as any
     const p = Number(localStorage.getItem(PAGE_SIZE_KEY))
     if (!Number.isNaN(p) && p > 0) pageSize.value = p
-  } catch {}
+  } catch {
+    // Silently fail if preferences cannot be loaded
+  }
 })
 
 function applyTheme() {

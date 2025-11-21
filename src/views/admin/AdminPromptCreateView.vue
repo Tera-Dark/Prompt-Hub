@@ -30,11 +30,19 @@
         </label>
         <label class="form-field form-field--full">
           <span>Description</span>
-          <textarea v-model="form.description" rows="3" placeholder="Short summary for the library"></textarea>
+          <textarea
+            v-model="form.description"
+            rows="3"
+            placeholder="Short summary for the library"
+          ></textarea>
         </label>
         <label class="form-field form-field--full">
           <span>Prompt body</span>
-          <textarea v-model="form.prompt" rows="8" placeholder="Prompt instructions will be entered here"></textarea>
+          <textarea
+            v-model="form.prompt"
+            rows="8"
+            placeholder="Prompt instructions will be entered here"
+          ></textarea>
         </label>
         <label class="form-field form-field--full">
           <span>Tags</span>
@@ -42,7 +50,9 @@
         </label>
       </div>
       <div class="form-actions">
-        <button type="button" class="secondary" @click="saveDraft" :disabled="submitting">Save draft</button>
+        <button type="button" class="secondary" :disabled="submitting" @click="saveDraft">
+          Save draft
+        </button>
         <button type="submit" class="primary" :disabled="submitting">Publish</button>
       </div>
     </form>
@@ -59,7 +69,13 @@ import { addPrompt } from '@/repositories/prompts'
 const { categories } = usePrompts()
 const { token, hasRepoWriteAccess } = useAuth()
 
-const form = ref({ title: '', category: '', description: '', prompt: '', status: 'draft' as 'draft'|'published' })
+const form = ref({
+  title: '',
+  category: '',
+  description: '',
+  prompt: '',
+  status: 'draft' as 'draft' | 'published',
+})
 const tagsInput = ref('')
 const submitting = ref(false)
 
@@ -70,8 +86,14 @@ function ensureAuth() {
 }
 
 function genId(title: string, category: string) {
-  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
-  const ts = new Date().toISOString().replace(/[-:TZ\.]/g, '').slice(0, 12)
+  const slug = title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+  const ts = new Date()
+    .toISOString()
+    .replace(/[-:TZ.]/g, '')
+    .slice(0, 12)
   return `${category}-${slug}-${ts}`
 }
 
@@ -98,7 +120,10 @@ async function handleSubmit(_draft = false) {
   submitting.value = true
   try {
     const t = token.value!
-    const tags = tagsInput.value.split(',').map((s) => s.trim()).filter(Boolean)
+    const tags = tagsInput.value
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
     const now = new Date().toISOString()
     const newItem: Prompt = {
       id: genId(form.value.title, form.value.category),
@@ -230,7 +255,9 @@ select {
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
   border: 1px solid var(--color-gray-900);
-  transition: background-color var(--transition-base), color var(--transition-base);
+  transition:
+    background-color var(--transition-base),
+    color var(--transition-base);
 }
 
 .primary {

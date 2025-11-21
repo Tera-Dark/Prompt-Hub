@@ -3,7 +3,10 @@
     <header class="editor-header">
       <div>
         <h2>Edit prompt</h2>
-        <p>Currently editing prompt <span class="prompt-id">#{{ id }}</span>. Content loading to be wired.</p>
+        <p>
+          Currently editing prompt <span class="prompt-id">#{{ id }}</span
+          >. Content loading to be wired.
+        </p>
       </div>
       <RouterLink to="/admin/prompts" class="back-link">Back to list</RouterLink>
     </header>
@@ -24,11 +27,19 @@
         </label>
         <label class="form-field form-field--full">
           <span>Description</span>
-          <textarea v-model="form.description" rows="3" placeholder="Description is pending API data"></textarea>
+          <textarea
+            v-model="form.description"
+            rows="3"
+            placeholder="Description is pending API data"
+          ></textarea>
         </label>
         <label class="form-field form-field--full">
           <span>Prompt body</span>
-          <textarea v-model="form.prompt" rows="8" placeholder="Prompt content will go here"></textarea>
+          <textarea
+            v-model="form.prompt"
+            rows="8"
+            placeholder="Prompt content will go here"
+          ></textarea>
         </label>
         <label class="form-field form-field--full">
           <span>Tags</span>
@@ -36,7 +47,9 @@
         </label>
       </div>
       <div class="form-actions">
-        <button type="button" class="secondary" @click="saveChanges" :disabled="submitting">Save changes</button>
+        <button type="button" class="secondary" :disabled="submitting" @click="saveChanges">
+          Save changes
+        </button>
         <button type="submit" class="primary" :disabled="submitting">Update prompt</button>
       </div>
     </form>
@@ -53,7 +66,7 @@ const props = defineProps<{ id: string }>()
 const { token, hasRepoWriteAccess } = useAuth()
 
 const form = ref({ title: '', description: '', prompt: '' })
-const status = ref<'draft'|'published'|'archived'>('published')
+const status = ref<'draft' | 'published' | 'archived'>('published')
 const tagsInput = ref('')
 const submitting = ref(false)
 
@@ -73,7 +86,9 @@ onMounted(async () => {
       form.value.prompt = p.prompt
       tagsInput.value = (p.tags || []).join(', ')
     }
-  } catch {}
+  } catch {
+    // Silently fail if prompt data cannot be loaded
+  }
 })
 
 async function saveChanges() {
@@ -85,17 +100,24 @@ async function handleSubmit() {
   submitting.value = true
   try {
     const t = token.value!
-    const tags = tagsInput.value.split(',').map((s) => s.trim()).filter(Boolean)
+    const tags = tagsInput.value
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
     const now = new Date().toISOString()
-    const url = await updatePromptById(props.id, (orig) => ({
-      ...orig,
-      title: form.value.title.trim(),
-      description: form.value.description.trim(),
-      prompt: form.value.prompt.trim(),
-      tags,
-      updatedAt: now,
-      status: status.value,
-    }), t)
+    const url = await updatePromptById(
+      props.id,
+      (orig) => ({
+        ...orig,
+        title: form.value.title.trim(),
+        description: form.value.description.trim(),
+        prompt: form.value.prompt.trim(),
+        tags,
+        updatedAt: now,
+        status: status.value,
+      }),
+      t,
+    )
     alert(`Pull Request 已创建：\n${url}`)
   } catch (e) {
     const msg = e instanceof Error ? e.message : '提交失败'
@@ -209,7 +231,9 @@ textarea {
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
   border: 1px solid var(--color-gray-900);
-  transition: background-color var(--transition-base), color var(--transition-base);
+  transition:
+    background-color var(--transition-base),
+    color var(--transition-base);
 }
 
 .primary {

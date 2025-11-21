@@ -15,10 +15,12 @@
       <div class="card-header">
         <h3>My pull requests</h3>
       </div>
-      <ul class="pr-list" v-if="prs.length">
+      <ul v-if="prs.length" class="pr-list">
         <li v-for="item in prs" :key="item.id" class="pr-row">
           <div class="pr-title">
-            <a :href="item.html_url" target="_blank" rel="noopener">#{{ item.number }} · {{ item.title }}</a>
+            <a :href="item.html_url" target="_blank" rel="noopener"
+              >#{{ item.number }} · {{ item.title }}</a
+            >
           </div>
           <div class="pr-meta">
             <span class="state" :data-state="item.state">{{ item.state }}</span>
@@ -78,7 +80,9 @@ onMounted(async () => {
       state: it.state,
       created_at: it.created_at,
     }))
-  } catch {}
+  } catch {
+    // Silently fail if user data cannot be preloaded
+  }
 })
 </script>
 
@@ -152,11 +156,11 @@ onMounted(async () => {
   gap: 0.75rem;
 }
 
-.state[data-state="open"] {
+.state[data-state='open'] {
   color: var(--color-green-600, #16a34a);
 }
 
-.state[data-state="closed"] {
+.state[data-state='closed'] {
   color: var(--color-red-600, #dc2626);
 }
 

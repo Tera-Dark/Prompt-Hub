@@ -8,7 +8,7 @@
       <RouterLink to="/admin/prompts/new" class="new-button">New prompt</RouterLink>
     </header>
 
-    <div class="prompts-card" v-if="items.length">
+    <div v-if="items.length" class="prompts-card">
       <header class="prompts-card__header">
         <span>Title</span>
         <span>Category</span>
@@ -22,10 +22,14 @@
             <p>{{ p.description }}</p>
           </div>
           <span class="prompt-status">{{ p.category }}</span>
-          <RouterLink :to="`/admin/prompts/${p.id}/edit`" class="prompt-edit">{{ formatUpdated(p) }}</RouterLink>
+          <RouterLink :to="`/admin/prompts/${p.id}/edit`" class="prompt-edit">{{
+            formatUpdated(p)
+          }}</RouterLink>
           <div class="row-actions">
             <RouterLink :to="`/admin/prompts/${p.id}/edit`" class="action">Edit</RouterLink>
-            <button class="action danger" @click="onDelete(p.id)" :disabled="submitting">Delete</button>
+            <button class="action danger" :disabled="submitting" @click="onDelete(p.id)">
+              Delete
+            </button>
           </div>
         </li>
       </ul>
@@ -55,7 +59,9 @@ onMounted(async () => {
   try {
     const data = await loadPrompts()
     items.value = data.prompts
-  } catch {}
+  } catch {
+    // Silently fail if prompts data cannot be loaded
+  }
 })
 
 function formatUpdated(p: Prompt) {
