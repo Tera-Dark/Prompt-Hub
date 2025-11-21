@@ -119,6 +119,14 @@ function validatePromptsData() {
         warnings.push(`[${promptId}] Invalid sourceLink URL format`);
       }
     }
+
+    // Optional status
+    if (prompt.status) {
+      const allowed = ['draft', 'published', 'archived']
+      if (!allowed.includes(prompt.status)) {
+        warnings.push(`[${promptId}] Unknown status: ${prompt.status} (allowed: ${allowed.join(', ')})`)
+      }
+    }
   });
 
   console.log('📂 Prompts by category:');

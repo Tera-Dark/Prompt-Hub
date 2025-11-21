@@ -8,6 +8,7 @@ export interface Prompt {
   sourceLink?: string;
   createdAt: string;
   updatedAt?: string;
+  status?: 'draft' | 'published' | 'archived';
 }
 
 export interface PromptsData {

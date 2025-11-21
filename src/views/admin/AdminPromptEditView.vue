@@ -16,7 +16,11 @@
         </label>
         <label class="form-field">
           <span>Status</span>
-          <input v-model="status" type="text" placeholder="Draft | Published" />
+          <select v-model="status">
+            <option value="draft">Draft</option>
+            <option value="published">Published</option>
+            <option value="archived">Archived</option>
+          </select>
         </label>
         <label class="form-field form-field--full">
           <span>Description</span>
@@ -41,20 +45,19 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { loadPrompts, type Prompt } from '@/types/prompt'
+import { loadPrompts } from '@/types/prompt'
 import { useAuth } from '@/composables/useAuth'
-import { getDefaultBranch, getBranchSha, createBranch, getFile, updateFile, createPullRequest } from '@/utils/github-repo'
+import { updatePromptById } from '@/repositories/prompts'
 
 const props = defineProps<{ id: string }>()
 const { token, hasRepoWriteAccess } = useAuth()
 
 const form = ref({ title: '', description: '', prompt: '' })
-const status = ref('Published')
+const status = ref<'draft'|'published'|'archived'>('published')
 const tagsInput = ref('')
 const submitting = ref(false)
 
-const owner = import.meta.env.VITE_GITHUB_REPO_OWNER
-const repo = import.meta.env.VITE_GITHUB_REPO_NAME
+// repo info handled in repository layer
 
 function ensureAuth() {
   if (!token.value || !hasRepoWriteAccess.value) throw new Error('需要登录并具备仓库写权限')
@@ -82,32 +85,17 @@ async function handleSubmit() {
   submitting.value = true
   try {
     const t = token.value!
-    const base = await getDefaultBranch(owner, repo, t)
-    const baseSha = await getBranchSha(owner, repo, base, t)
-    const branch = `prompt-edit-${props.id}-${Date.now()}`
-    await createBranch(owner, repo, branch, baseSha, t)
-
-    const file = await getFile(owner, repo, 'public/data/prompts.json', base, t)
-    const data = JSON.parse(file.content) as { version: string; prompts: Prompt[] }
-    const idx = data.prompts.findIndex((x) => x.id === props.id)
-    if (idx < 0) throw new Error('未找到待编辑的提示词')
     const tags = tagsInput.value.split(',').map((s) => s.trim()).filter(Boolean)
     const now = new Date().toISOString()
-    const updated: Prompt = {
-      ...data.prompts[idx],
+    const url = await updatePromptById(props.id, (orig) => ({
+      ...orig,
       title: form.value.title.trim(),
       description: form.value.description.trim(),
       prompt: form.value.prompt.trim(),
       tags,
       updatedAt: now,
-    }
-    const next = { version: data.version, prompts: [...data.prompts] }
-    next.prompts[idx] = updated
-    const message = `feat: update prompt ${updated.id}`
-    await updateFile(owner, repo, 'public/data/prompts.json', JSON.stringify(next, null, 2), message, branch, file.sha, t)
-    const prTitle = `Update prompt: ${updated.title}`
-    const prBody = `Update prompt ${updated.id}`
-    const url = await createPullRequest(owner, repo, prTitle, branch, base, prBody, t)
+      status: status.value,
+    }), t)
     alert(`Pull Request 已创建：\n${url}`)
   } catch (e) {
     const msg = e instanceof Error ? e.message : '提交失败'

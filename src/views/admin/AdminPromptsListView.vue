@@ -43,14 +43,13 @@ import { RouterLink } from 'vue-router'
 import { onMounted, ref } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { loadPrompts, type Prompt } from '@/types/prompt'
-import { getDefaultBranch, getBranchSha, createBranch, getFile, updateFile, createPullRequest } from '@/utils/github-repo'
+import { deletePromptById } from '@/repositories/prompts'
 
 const items = ref<Prompt[]>([])
 const submitting = ref(false)
 const { token, hasRepoWriteAccess } = useAuth()
 
-const owner = import.meta.env.VITE_GITHUB_REPO_OWNER
-const repo = import.meta.env.VITE_GITHUB_REPO_NAME
+// repo info handled in repository layer
 
 onMounted(async () => {
   try {
@@ -75,21 +74,9 @@ async function onDelete(id: string) {
   submitting.value = true
   try {
     const t = token.value!
-    const base = await getDefaultBranch(owner, repo, t)
-    const baseSha = await getBranchSha(owner, repo, base, t)
-    const branch = `prompt-delete-${id}-${Date.now()}`
-    await createBranch(owner, repo, branch, baseSha, t)
-
-    const file = await getFile(owner, repo, 'public/data/prompts.json', base, t)
-    const data = JSON.parse(file.content) as { version: string; prompts: Prompt[] }
-    const next = { version: data.version, prompts: data.prompts.filter((x) => x.id !== id) }
-    const message = `feat: delete prompt ${id}`
-    await updateFile(owner, repo, 'public/data/prompts.json', JSON.stringify(next, null, 2), message, branch, file.sha, t)
-    const prTitle = `Delete prompt: ${id}`
-    const prBody = `Remove prompt ${id}`
-    const url = await createPullRequest(owner, repo, prTitle, branch, base, prBody, t)
+    const url = await deletePromptById(id, t)
     alert(`Pull Request 已创建：\n${url}`)
-    items.value = next.prompts
+    items.value = items.value.filter((x) => x.id !== id)
   } catch (e) {
     const msg = e instanceof Error ? e.message : '删除失败'
     alert(msg)

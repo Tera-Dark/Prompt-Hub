@@ -39,8 +39,22 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Check required environment variables
+        run: node scripts/check-env.js
+        env:
+          VITE_GITHUB_CLIENT_ID: ${{ vars.VITE_GITHUB_CLIENT_ID }}
+          VITE_OAUTH_PROXY_URL: ${{ vars.VITE_OAUTH_PROXY_URL }}
+          VITE_GITHUB_REPO_OWNER: ${{ vars.VITE_GITHUB_REPO_OWNER }}
+          VITE_GITHUB_REPO_NAME: ${{ vars.VITE_GITHUB_REPO_NAME }}
+
       - name: Validate prompts data
         run: npm run validate:prompts
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm run test
 
       - name: Type check
         run: npm run typecheck

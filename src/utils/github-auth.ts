@@ -260,7 +260,10 @@ export async function handleCallback(code: string, state: string): Promise<AuthS
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },
-      body: JSON.stringify({ code }),
+      body: JSON.stringify({
+        code,
+        redirect_uri: buildRedirectUri(),
+      }),
       credentials: 'omit',
       mode: 'cors',
     })

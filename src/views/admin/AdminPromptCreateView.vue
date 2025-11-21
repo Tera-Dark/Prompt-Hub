@@ -21,6 +21,13 @@
             <option v-for="c in categories" :key="c" :value="c">{{ c }}</option>
           </select>
         </label>
+        <label class="form-field">
+          <span>Status</span>
+          <select v-model="form.status">
+            <option value="draft">Draft</option>
+            <option value="published">Published</option>
+          </select>
+        </label>
         <label class="form-field form-field--full">
           <span>Description</span>
           <textarea v-model="form.description" rows="3" placeholder="Short summary for the library"></textarea>
@@ -47,17 +54,16 @@ import { ref } from 'vue'
 import { usePrompts } from '@/composables/usePrompts'
 import { useAuth } from '@/composables/useAuth'
 import { type Prompt } from '@/types/prompt'
-import { getDefaultBranch, getBranchSha, createBranch, getFile, updateFile, createPullRequest } from '@/utils/github-repo'
+import { addPrompt } from '@/repositories/prompts'
 
 const { categories } = usePrompts()
 const { token, hasRepoWriteAccess } = useAuth()
 
-const form = ref({ title: '', category: '', description: '', prompt: '' })
+const form = ref({ title: '', category: '', description: '', prompt: '', status: 'draft' as 'draft'|'published' })
 const tagsInput = ref('')
 const submitting = ref(false)
 
-const owner = import.meta.env.VITE_GITHUB_REPO_OWNER
-const repo = import.meta.env.VITE_GITHUB_REPO_NAME
+// repo info handled in repository layer
 
 function ensureAuth() {
   if (!token.value || !hasRepoWriteAccess.value) throw new Error('需要登录并具备仓库写权限')
@@ -85,20 +91,13 @@ function onSubmit(_e: SubmitEvent) {
   handleSubmit()
 }
 
-async function handleSubmit(draft = false) {
+async function handleSubmit(_draft = false) {
   ensureAuth()
   const err = validate()
   if (err) throw new Error(err)
   submitting.value = true
   try {
     const t = token.value!
-    const base = await getDefaultBranch(owner, repo, t)
-    const baseSha = await getBranchSha(owner, repo, base, t)
-    const branch = `prompt-add-${Date.now()}`
-    await createBranch(owner, repo, branch, baseSha, t)
-
-    const file = await getFile(owner, repo, 'public/data/prompts.json', base, t)
-    const data = JSON.parse(file.content) as { version: string; prompts: Prompt[] }
     const tags = tagsInput.value.split(',').map((s) => s.trim()).filter(Boolean)
     const now = new Date().toISOString()
     const newItem: Prompt = {
@@ -109,15 +108,11 @@ async function handleSubmit(draft = false) {
       prompt: form.value.prompt.trim(),
       tags,
       createdAt: now,
+      status: form.value.status,
     }
-    const next = { version: data.version, prompts: [newItem, ...data.prompts] }
-    const message = draft ? `chore: add prompt draft ${newItem.id}` : `feat: add prompt ${newItem.id}`
-    await updateFile(owner, repo, 'public/data/prompts.json', JSON.stringify(next, null, 2), message, branch, file.sha, t)
-    const prTitle = draft ? `Add prompt (draft): ${newItem.title}` : `Add prompt: ${newItem.title}`
-    const prBody = `Add a new prompt in category ${newItem.category} with ${tags.length} tags.`
-    const url = await createPullRequest(owner, repo, prTitle, branch, base, prBody, t)
+    const url = await addPrompt(newItem, t)
     alert(`Pull Request 已创建：\n${url}`)
-    form.value = { title: '', category: '', description: '', prompt: '' }
+    form.value = { title: '', category: '', description: '', prompt: '', status: 'draft' }
     tagsInput.value = ''
   } catch (e) {
     const msg = e instanceof Error ? e.message : '提交失败'
