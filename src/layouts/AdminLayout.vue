@@ -5,7 +5,12 @@
     <aside :class="['admin-sidebar', { 'is-open': sidebarOpen }]">
       <div class="sidebar-header">
         <span class="sidebar-logo">Prompt Hub</span>
-        <button type="button" class="sidebar-close" @click="closeSidebar" aria-label="Close navigation">
+        <button
+          type="button"
+          class="sidebar-close"
+          aria-label="Close navigation"
+          @click="closeSidebar"
+        >
           <span aria-hidden="true">×</span>
         </button>
       </div>
@@ -25,7 +30,12 @@
 
     <div class="admin-workspace">
       <header class="admin-header">
-        <button type="button" class="menu-toggle" @click="toggleSidebar" aria-label="Toggle navigation">
+        <button
+          type="button"
+          class="menu-toggle"
+          aria-label="Toggle navigation"
+          @click="toggleSidebar"
+        >
           <span aria-hidden="true">☰</span>
         </button>
         <div class="header-context">
@@ -33,13 +43,7 @@
           <p class="context-subtitle">Manage the tools that power Prompt Hub</p>
         </div>
         <div class="header-actions">
-          <div class="auth-user" v-if="isAuthenticated">
-            <img v-if="currentUser?.avatar_url" :src="currentUser?.avatar_url || ''" alt="avatar" class="avatar" />
-            <a :href="currentUser?.html_url || '#'" target="_blank" rel="noopener" class="user-link">{{ currentUser?.login || 'user' }}</a>
-          </div>
           <RouterLink to="/" class="header-link">Public site</RouterLink>
-          <RouterLink to="/admin/profile" class="header-link">Profile</RouterLink>
-          <RouterLink to="/admin/settings" class="header-link">Settings</RouterLink>
           <button
             v-if="!isAuthenticated"
             type="button"
@@ -48,29 +52,96 @@
           >
             Sign in with GitHub
           </button>
-          <button
-            v-else
-            type="button"
-            class="header-link header-link--ghost"
-            @click="handleLogout"
-          >
-            Sign out
-          </button>
+          <div v-else class="user-menu-wrapper" @click.stop>
+            <button
+              type="button"
+              class="user-menu-trigger"
+              :aria-expanded="userMenuOpen"
+              aria-haspopup="true"
+              @click="toggleUserMenu"
+            >
+              <img
+                v-if="currentUser?.avatar_url"
+                :src="currentUser.avatar_url"
+                alt="User avatar"
+                class="user-avatar"
+              />
+              <div class="user-info">
+                <span class="user-name">{{
+                  currentUser?.name || currentUser?.login || 'User'
+                }}</span>
+                <span class="user-role">{{ hasRepoWriteAccess ? 'Admin' : 'Viewer' }}</span>
+              </div>
+              <span class="menu-arrow" :class="{ 'is-open': userMenuOpen }">▼</span>
+            </button>
+            <div v-if="userMenuOpen" class="user-dropdown" @click.stop>
+              <div class="dropdown-header">
+                <img
+                  v-if="currentUser?.avatar_url"
+                  :src="currentUser.avatar_url"
+                  alt="User avatar"
+                  class="dropdown-avatar"
+                />
+                <div class="dropdown-user-info">
+                  <strong>{{ currentUser?.name || currentUser?.login }}</strong>
+                  <span class="dropdown-email">{{ currentUser?.email || currentUser?.login }}</span>
+                  <a
+                    v-if="currentUser?.html_url"
+                    :href="currentUser.html_url"
+                    target="_blank"
+                    rel="noopener"
+                    class="github-link"
+                  >
+                    View on GitHub →
+                  </a>
+                </div>
+              </div>
+              <div class="dropdown-divider"></div>
+              <nav class="dropdown-nav">
+                <RouterLink to="/admin/profile" class="dropdown-link" @click="closeUserMenu">
+                  <span>👤</span>
+                  <span>My Profile</span>
+                </RouterLink>
+                <RouterLink to="/admin/prompts" class="dropdown-link" @click="closeUserMenu">
+                  <span>📝</span>
+                  <span>My Prompts</span>
+                </RouterLink>
+                <RouterLink to="/admin/settings" class="dropdown-link" @click="closeUserMenu">
+                  <span>⚙️</span>
+                  <span>Settings</span>
+                </RouterLink>
+              </nav>
+              <div class="dropdown-divider"></div>
+              <button
+                type="button"
+                class="dropdown-link dropdown-link--danger"
+                @click="handleLogout"
+              >
+                <span>🚪</span>
+                <span>Sign out</span>
+              </button>
+            </div>
+          </div>
         </div>
       </header>
 
       <main class="admin-content">
         <RouterView v-if="isAuthenticated && hasRepoWriteAccess" />
-        <section v-else-if="isAuthenticated" class="admin-auth-gate" aria-labelledby="admin-auth-heading">
+        <section
+          v-else-if="isAuthenticated"
+          class="admin-auth-gate"
+          aria-labelledby="admin-auth-heading"
+        >
           <div class="auth-card auth-card--warning">
             <h2 id="admin-auth-heading">Write access required</h2>
             <p>
               {{ userDisplayName }} is signed in, but this account does not have write access to
-              <span class="repo-slug">{{ repoTarget }}</span>.
+              <span class="repo-slug">{{ repoTarget }}</span
+              >.
             </p>
             <p>
-              Ask the repository owner to grant the required permissions, or sign in with a different
-              GitHub account.
+              Ask the repository owner to grant the required permissions, or sign in with a
+              different GitHub account.
             </p>
             <div class="auth-actions">
               <button type="button" class="cta-button" @click="handleLogout">Switch account</button>
@@ -83,13 +154,15 @@
             <h2 id="admin-auth-heading">Admin access required</h2>
             <p>
               Sign in to continue to
-              <span class="attempted-route">{{ attemptedRouteLabel }}</span>.
-              Only collaborators with write access to
+              <span class="attempted-route">{{ attemptedRouteLabel }}</span
+              >. Only collaborators with write access to
               <span class="repo-slug">{{ repoTarget }}</span>
               can use the admin tools.
             </p>
             <div class="auth-actions">
-              <button type="button" class="cta-button" @click="handleLogin">Sign in with GitHub</button>
+              <button type="button" class="cta-button" @click="handleLogin">
+                Sign in with GitHub
+              </button>
               <RouterLink to="/" class="secondary-link">Return to public site</RouterLink>
             </div>
           </div>
@@ -119,6 +192,7 @@ const navigation: NavigationItem[] = [
 
 const route = useRoute()
 const sidebarOpen = ref(false)
+const userMenuOpen = ref(false)
 const auth = useAuth()
 
 const isAuthenticated = computed(() => auth.isAuthed.value)
@@ -143,15 +217,24 @@ const currentSection = computed(() => {
 })
 
 const attemptedRouteLabel = computed(() => attemptedRoute.value ?? '/admin/dashboard')
-const userDisplayName = computed(() => currentUser.value?.name || currentUser.value?.login || 'This user')
-
+const userDisplayName = computed(
+  () => currentUser.value?.name || currentUser.value?.login || 'This user',
+)
 
 watch(
   () => route.path,
   () => {
     sidebarOpen.value = false
+    userMenuOpen.value = false
   },
 )
+
+// Close user menu when clicking outside
+if (typeof window !== 'undefined') {
+  window.addEventListener('click', () => {
+    userMenuOpen.value = false
+  })
+}
 
 function toggleSidebar() {
   sidebarOpen.value = !sidebarOpen.value
@@ -161,11 +244,20 @@ function closeSidebar() {
   sidebarOpen.value = false
 }
 
+function toggleUserMenu() {
+  userMenuOpen.value = !userMenuOpen.value
+}
+
+function closeUserMenu() {
+  userMenuOpen.value = false
+}
+
 function handleLogin() {
   auth.login(route.fullPath)
 }
 
 function handleLogout() {
+  userMenuOpen.value = false
   auth.logout()
 }
 </script>
@@ -234,7 +326,10 @@ function handleLogout() {
   color: var(--color-gray-300);
   background: transparent;
   border: 1px solid transparent;
-  transition: background-color var(--transition-base), color var(--transition-base), border-color var(--transition-base);
+  transition:
+    background-color var(--transition-base),
+    color var(--transition-base),
+    border-color var(--transition-base);
 }
 
 .sidebar-link:hover,
@@ -301,6 +396,186 @@ function handleLogout() {
   gap: 0.75rem;
 }
 
+.user-menu-wrapper {
+  position: relative;
+}
+
+.user-menu-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.45rem 0.85rem;
+  background: var(--color-white);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.user-menu-trigger:hover {
+  background: var(--color-gray-50);
+  border-color: var(--color-gray-300);
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  border: 2px solid var(--color-gray-200);
+  object-fit: cover;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+}
+
+.user-name {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-gray-900);
+  line-height: 1.2;
+}
+
+.user-role {
+  font-size: 0.75rem;
+  color: var(--color-gray-500);
+  line-height: 1;
+}
+
+.menu-arrow {
+  font-size: 0.65rem;
+  color: var(--color-gray-500);
+  transition: transform var(--transition-base);
+}
+
+.menu-arrow.is-open {
+  transform: rotate(180deg);
+}
+
+.user-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  min-width: 280px;
+  background: var(--color-white);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: 50;
+  animation: dropdown-slide-in 0.2s ease-out;
+}
+
+@keyframes dropdown-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-header {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--color-gray-50);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.dropdown-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 9999px;
+  border: 2px solid var(--color-gray-300);
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+.dropdown-user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.dropdown-user-info strong {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-gray-900);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dropdown-email {
+  font-size: 0.75rem;
+  color: var(--color-gray-600);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.github-link {
+  font-size: 0.75rem;
+  color: var(--color-gray-700);
+  margin-top: 0.25rem;
+  display: inline-flex;
+  align-items: center;
+  transition: color var(--transition-base);
+}
+
+.github-link:hover {
+  color: var(--color-gray-900);
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: var(--color-gray-200);
+  margin: 0.5rem 0;
+}
+
+.dropdown-nav {
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.dropdown-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--color-gray-700);
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.dropdown-link:hover {
+  background: var(--color-gray-100);
+  color: var(--color-gray-900);
+}
+
+.dropdown-link--danger {
+  color: var(--color-red-600, #dc2626);
+}
+
+.dropdown-link--danger:hover {
+  background: var(--color-red-50, #fef2f2);
+  color: var(--color-red-700, #b91c1c);
+}
+
 .auth-user {
   display: inline-flex;
   align-items: center;
@@ -351,7 +626,9 @@ function handleLogout() {
   padding: 0.45rem 0.85rem;
   border-radius: var(--radius-md);
   border: 1px solid var(--color-gray-200);
-  transition: background-color var(--transition-base), color var(--transition-base);
+  transition:
+    background-color var(--transition-base),
+    color var(--transition-base);
 }
 
 .header-link:hover,
@@ -509,6 +786,15 @@ function handleLogout() {
   .header-actions {
     width: 100%;
     justify-content: flex-end;
+  }
+
+  .user-info {
+    display: none;
+  }
+
+  .user-dropdown {
+    right: 0;
+    left: auto;
   }
 
   .admin-content {
