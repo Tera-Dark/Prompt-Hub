@@ -319,7 +319,12 @@ export async function handleCallback(code: string, state: string): Promise<AuthS
     const permission = payload?.permission ?? payload?.role_name ?? ''
     hasRepoWriteAccess = ['admin', 'maintain', 'write'].includes(permission)
   } else {
-    throw new Error('Unable to verify repository permissions.')
+    console.error(
+      `Permission check failed: ${permissionResponse.status} ${permissionResponse.statusText} for URL: ${permissionUrl}`,
+    )
+    throw new Error(
+      `Unable to verify repository permissions. (Status: ${permissionResponse.status})`,
+    )
   }
 
   const session: AuthSession = {
