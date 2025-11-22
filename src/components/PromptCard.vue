@@ -4,53 +4,79 @@
       <h3 class="card-title">{{ prompt.title }}</h3>
       <span class="category-badge">{{ prompt.category }}</span>
     </div>
-    
+
     <p class="card-description">{{ prompt.description }}</p>
-    
+
     <div class="card-prompt">
       <code class="prompt-text">{{ prompt.prompt }}</code>
     </div>
-    
+
     <div class="card-tags">
-      <span 
-        v-for="tag in prompt.tags" 
-        :key="tag" 
-        class="tag"
-      >
+      <span v-for="tag in prompt.tags" :key="tag" class="tag">
         {{ tag }}
       </span>
     </div>
-    
+
     <div class="card-footer">
-      <button 
+      <button
         class="copy-button"
-        :class="{ 'copied': isCopied }"
-        @click="copyToClipboard"
+        :class="{ copied: isCopied }"
         :aria-label="isCopied ? 'Copied!' : 'Copy prompt'"
+        @click="copyToClipboard"
       >
-        <span class="copy-icon" v-if="!isCopied">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <span v-if="!isCopied" class="copy-icon">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
           </svg>
         </span>
-        <span class="check-icon" v-else>
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <span v-else class="check-icon">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
             <polyline points="20 6 9 17 4 12"></polyline>
           </svg>
         </span>
         <span class="copy-text">{{ isCopied ? 'Copied!' : 'Copy' }}</span>
       </button>
-      
-      <a 
-        v-if="prompt.sourceLink" 
-        :href="prompt.sourceLink" 
-        target="_blank" 
+
+      <a
+        v-if="prompt.sourceLink"
+        :href="prompt.sourceLink"
+        target="_blank"
         rel="noopener noreferrer"
         class="source-link"
       >
         Source
-        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
           <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
           <polyline points="15 3 21 3 21 9"></polyline>
           <line x1="10" y1="14" x2="21" y2="3"></line>
@@ -61,55 +87,55 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import type { Prompt } from '@/types/prompt';
+import { ref } from 'vue'
+import type { Prompt } from '@/types/prompt'
 
 interface Props {
-  prompt: Prompt;
+  prompt: Prompt
 }
 
-const props = defineProps<Props>();
-const isCopied = ref(false);
+const props = defineProps<Props>()
+const isCopied = ref(false)
 
 async function copyToClipboard() {
   try {
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      await navigator.clipboard.writeText(props.prompt.prompt);
-      showCopiedFeedback();
+      await navigator.clipboard.writeText(props.prompt.prompt)
+      showCopiedFeedback()
     } else {
-      fallbackCopy(props.prompt.prompt);
+      fallbackCopy(props.prompt.prompt)
     }
   } catch (err) {
-    console.error('Failed to copy:', err);
-    fallbackCopy(props.prompt.prompt);
+    console.error('Failed to copy:', err)
+    fallbackCopy(props.prompt.prompt)
   }
 }
 
 function fallbackCopy(text: string) {
-  const textArea = document.createElement('textarea');
-  textArea.value = text;
-  textArea.style.position = 'fixed';
-  textArea.style.left = '-999999px';
-  document.body.appendChild(textArea);
-  textArea.focus();
-  textArea.select();
-  
+  const textArea = document.createElement('textarea')
+  textArea.value = text
+  textArea.style.position = 'fixed'
+  textArea.style.left = '-999999px'
+  document.body.appendChild(textArea)
+  textArea.focus()
+  textArea.select()
+
   try {
-    document.execCommand('copy');
-    showCopiedFeedback();
+    document.execCommand('copy')
+    showCopiedFeedback()
   } catch (err) {
-    console.error('Fallback copy failed:', err);
-    alert('Copy failed. Please copy manually.');
+    console.error('Fallback copy failed:', err)
+    alert('Copy failed. Please copy manually.')
   } finally {
-    document.body.removeChild(textArea);
+    document.body.removeChild(textArea)
   }
 }
 
 function showCopiedFeedback() {
-  isCopied.value = true;
+  isCopied.value = true
   setTimeout(() => {
-    isCopied.value = false;
-  }, 2000);
+    isCopied.value = false
+  }, 2000)
 }
 </script>
 

@@ -121,11 +121,13 @@ export default {
 ## 2. Wrangler project setup (CLI)
 
 1. **Install Wrangler**
+
    ```bash
    npm install -g wrangler
    ```
 
 2. **Create a worker project**
+
    ```bash
    mkdir github-oauth-worker
    cd github-oauth-worker
@@ -133,22 +135,26 @@ export default {
    ```
 
 3. **Configure `wrangler.toml`**
+
    ```toml
    name = "prompt-hub-oauth"
    main = "src/worker.ts"
    compatibility_date = "2023-10-30"
    ```
+
    If you use JavaScript instead of TypeScript, set `main = "worker.js"`.
 
 4. **Add the worker source**
    Copy the TypeScript snippet above into `src/worker.ts`.
 
 5. **Store your secrets**
+
    ```bash
    wrangler secret put GITHUB_CLIENT_ID
    wrangler secret put GITHUB_CLIENT_SECRET
    wrangler secret put ALLOWED_ORIGIN
    ```
+
    - `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET`: from your GitHub OAuth App
    - `ALLOWED_ORIGIN`: the site that is allowed to call the worker (e.g. `https://your-name.github.io`). You can provide a comma-separated list for multiple origins.
 
@@ -164,7 +170,7 @@ If you prefer the UI:
 
 1. Create a new **HTTP Worker** in the [Cloudflare dashboard](https://dash.cloudflare.com/)
 2. Replace the default code with the worker snippet
-3. In *Settings → Variables*, add the following **Secrets**: `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, and optionally `ALLOWED_ORIGIN`
+3. In _Settings → Variables_, add the following **Secrets**: `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, and optionally `ALLOWED_ORIGIN`
 4. Save and deploy
 
 You can bind the worker to a custom domain or route later; a workers.dev subdomain is sufficient for this project and is free.

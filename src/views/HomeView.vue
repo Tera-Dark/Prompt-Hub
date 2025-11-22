@@ -4,12 +4,12 @@
       <div class="header-content">
         <div class="header-top">
           <div class="brand">
-            <h1 class="app-title">Prompt Hub</h1>
+            <h1 class="app-title">{{ t('app.name') }}</h1>
             <p class="app-subtitle">Discover and copy AI prompts for any task</p>
           </div>
           <nav class="app-nav" aria-label="Primary">
             <RouterLink v-if="!isAuthenticated" to="/admin" class="nav-link nav-link--login">
-              Login
+              {{ t('nav.login') }}
             </RouterLink>
             <div v-else class="user-info-compact">
               <img
@@ -19,7 +19,7 @@
                 class="nav-avatar"
               />
               <RouterLink to="/admin" class="nav-link nav-link--user">
-                {{ user?.name || user?.login || 'User' }}
+                {{ user?.name || user?.login || t('common.user') }}
               </RouterLink>
             </div>
           </nav>
@@ -52,7 +52,7 @@
       <div class="footer-content">
         <p>&copy; 2024 Prompt Hub. All rights reserved.</p>
         <RouterLink to="/admin" class="footer-admin-link">{{
-          isAuthenticated ? user?.login || 'User' : 'Login'
+          isAuthenticated ? user?.login || t('common.user') : t('nav.login')
         }}</RouterLink>
       </div>
     </footer>
@@ -63,12 +63,14 @@
 import { ref, computed, onMounted } from 'vue'
 import { usePrompts } from '@/composables/usePrompts'
 import { useAuth } from '@/composables/useAuth'
+import { useI18n } from 'vue-i18n'
 import PromptList from '@/components/PromptList.vue'
 import SearchBar from '@/components/SearchBar.vue'
 import CategoryFilter from '@/components/CategoryFilter.vue'
 
 const { prompts, loading, error, categories, fetchPrompts } = usePrompts()
 const auth = useAuth()
+const { t } = useI18n()
 
 const isAuthenticated = computed(() => auth.isAuthed.value)
 const user = computed(() => auth.user.value)

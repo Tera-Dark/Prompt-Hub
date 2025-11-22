@@ -3,6 +3,7 @@
 感谢你对 Prompt-Hub 的关注！为了保持平台内容的高质量与一致性，请在贡献前阅读并遵循以下规范。
 
 ## 📨 如何提交新的提示词
+
 1. 前往仓库的 [GitHub Issues](https://github.com/tera-dark/Prompt-Hub/issues)。
 2. 选择“📮 Prompt 提交”模板，填写以下信息：
    - **提示词名称**：一句简洁的描述
@@ -16,6 +17,7 @@
 > 💬 如果是修复已有提示词或补充说明，同样可以通过 Issue 或 Pull Request 提交。
 
 ## 🧱 提示词格式要求
+
 - 必须遵循 [prompts.json](../public/data/prompts.json) 中的字段定义。
 - ID 命名规则：`{分类英文slug}-{三位数字}`，例如 `writing-012`。
 - 描述应简洁清晰，突出使用场景与目标受众。
@@ -23,6 +25,7 @@
 - 提示词正文建议包含可替换的占位符（如 `[主题]`），并保证复制后即可直接使用。
 
 ## 🔄 Pull Request 提交规范
+
 1. 从 `main` 分支创建功能分支，命名建议使用 `feature/`、`fix/` 前缀。
 2. 在提交前执行：
    ```bash
@@ -36,6 +39,7 @@
 4. 至少等待一位维护者完成代码审查后再合并。
 
 ## 🧭 代码风格与最佳实践
+
 - 使用 TypeScript，优先引用 `@/types/prompt` 提供的类型。
 - Vue 组件推荐使用组合式 API (`<script setup>`) 与 `defineProps`/`defineEmits`。
 - 样式遵循现有的黑白灰设计语言，避免引入复杂色彩。

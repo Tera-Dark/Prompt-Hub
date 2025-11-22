@@ -3,17 +3,9 @@
     <div class="filter-controls">
       <div class="filter-group">
         <label for="category-filter">Category:</label>
-        <select 
-          id="category-filter" 
-          v-model="selectedCategory"
-          @change="applyFilters"
-        >
+        <select id="category-filter" v-model="selectedCategory" @change="applyFilters">
           <option :value="null">All Categories</option>
-          <option 
-            v-for="category in availableCategories" 
-            :key="category" 
-            :value="category"
-          >
+          <option v-for="category in availableCategories" :key="category" :value="category">
             {{ category }}
           </option>
         </select>
@@ -21,17 +13,9 @@
 
       <div class="filter-group">
         <label for="tag-filter">Tag:</label>
-        <select 
-          id="tag-filter" 
-          v-model="selectedTag"
-          @change="applyFilters"
-        >
+        <select id="tag-filter" v-model="selectedTag" @change="applyFilters">
           <option :value="null">All Tags</option>
-          <option 
-            v-for="tag in availableTags" 
-            :key="tag" 
-            :value="tag"
-          >
+          <option v-for="tag in availableTags" :key="tag" :value="tag">
             {{ tag }}
           </option>
         </select>
@@ -39,7 +23,7 @@
 
       <div class="filter-group">
         <label for="search-input">Search:</label>
-        <input 
+        <input
           id="search-input"
           v-model="searchQuery"
           type="text"
@@ -48,92 +32,92 @@
         />
       </div>
 
-      <button 
-        v-if="hasActiveFilters"
-        class="clear-filters"
-        @click="clearFilters"
-      >
+      <button v-if="hasActiveFilters" class="clear-filters" @click="clearFilters">
         Clear Filters
       </button>
     </div>
 
     <div class="filter-results">
-      <p class="result-count">
-        Showing {{ filteredPrompts.length }} of {{ totalPrompts }} prompts
-      </p>
+      <p class="result-count">Showing {{ filteredPrompts.length }} of {{ totalPrompts }} prompts</p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
-import type { Prompt } from '@/types/prompt';
+import { ref, computed, watch } from 'vue'
+import type { Prompt } from '@/types/prompt'
 
 interface Props {
-  prompts: Prompt[];
-  categories: string[];
-  tags: string[];
+  prompts: Prompt[]
+  categories: string[]
+  tags: string[]
 }
 
 interface Emits {
-  (e: 'filter', prompts: Prompt[]): void;
+  (e: 'filter', prompts: Prompt[]): void
 }
 
-const props = defineProps<Props>();
-const emit = defineEmits<Emits>();
+const props = defineProps<Props>()
+const emit = defineEmits<Emits>()
 
-const selectedCategory = ref<string | null>(null);
-const selectedTag = ref<string | null>(null);
-const searchQuery = ref('');
+const selectedCategory = ref<string | null>(null)
+const selectedTag = ref<string | null>(null)
+const searchQuery = ref('')
 
-const availableCategories = computed(() => props.categories);
-const availableTags = computed(() => props.tags);
-const totalPrompts = computed(() => props.prompts.length);
+const availableCategories = computed(() => props.categories)
+const availableTags = computed(() => props.tags)
+const totalPrompts = computed(() => props.prompts.length)
 
-const hasActiveFilters = computed(() => 
-  selectedCategory.value !== null || 
-  selectedTag.value !== null || 
-  searchQuery.value.trim() !== ''
-);
+const hasActiveFilters = computed(
+  () =>
+    selectedCategory.value !== null ||
+    selectedTag.value !== null ||
+    searchQuery.value.trim() !== '',
+)
 
 const filteredPrompts = computed(() => {
-  let result = [...props.prompts];
+  let result = [...props.prompts]
 
   if (selectedCategory.value) {
-    result = result.filter(p => p.category === selectedCategory.value);
+    result = result.filter((p) => p.category === selectedCategory.value)
   }
 
   if (selectedTag.value) {
-    result = result.filter(p => p.tags.includes(selectedTag.value as string));
+    result = result.filter((p) => p.tags.includes(selectedTag.value as string))
   }
 
   if (searchQuery.value.trim()) {
-    const query = searchQuery.value.toLowerCase();
-    result = result.filter(p => 
-      p.title.toLowerCase().includes(query) ||
-      p.description.toLowerCase().includes(query) ||
-      p.prompt.toLowerCase().includes(query) ||
-      p.tags.some(tag => tag.toLowerCase().includes(query))
-    );
+    const query = searchQuery.value.toLowerCase()
+    result = result.filter(
+      (p) =>
+        p.title.toLowerCase().includes(query) ||
+        p.description.toLowerCase().includes(query) ||
+        p.prompt.toLowerCase().includes(query) ||
+        p.tags.some((tag) => tag.toLowerCase().includes(query)),
+    )
   }
 
-  return result;
-});
+  return result
+})
 
 function applyFilters() {
-  emit('filter', filteredPrompts.value);
+  emit('filter', filteredPrompts.value)
 }
 
 function clearFilters() {
-  selectedCategory.value = null;
-  selectedTag.value = null;
-  searchQuery.value = '';
-  applyFilters();
+  selectedCategory.value = null
+  selectedTag.value = null
+  searchQuery.value = ''
+  applyFilters()
 }
 
-watch(filteredPrompts, (newPrompts) => {
-  emit('filter', newPrompts);
-}, { immediate: true });
+watch(
+  filteredPrompts,
+  (newPrompts) => {
+    emit('filter', newPrompts)
+  },
+  { immediate: true },
+)
 </script>
 
 <style scoped>

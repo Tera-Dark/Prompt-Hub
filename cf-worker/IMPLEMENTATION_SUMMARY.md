@@ -7,6 +7,7 @@ This directory contains a complete, production-ready Cloudflare Worker that secu
 ## What's Included
 
 ### 1. Worker Source Code
+
 - **`src/index.ts`** - Complete TypeScript implementation with:
   - POST `/exchange` endpoint for OAuth code exchange
   - GitHub App OAuth flow integration
@@ -15,6 +16,7 @@ This directory contains a complete, production-ready Cloudflare Worker that secu
   - Type-safe interfaces and environment variables
 
 ### 2. Configuration Files
+
 - **`wrangler.toml`** - Cloudflare Worker configuration
   - Worker name: `prompt-hub-gh-app-oauth`
   - TypeScript support enabled
@@ -33,11 +35,13 @@ This directory contains a complete, production-ready Cloudflare Worker that secu
 - **`.env.example`** - Environment template (reference only)
 
 ### 3. Documentation
+
 - **`README.md`** - Quick start guide
 - **`TESTING.md`** - Comprehensive testing instructions
 - **`IMPLEMENTATION_SUMMARY.md`** - This file
 
 ### 4. Build Output
+
 - **`dist/`** - Compiled JavaScript and TypeScript definitions
   - `index.js` - Compiled worker code
   - `index.d.ts` - TypeScript type definitions
@@ -46,11 +50,13 @@ This directory contains a complete, production-ready Cloudflare Worker that secu
 ## Features Implemented
 
 ✅ **OAuth Code Exchange**
+
 - Accepts POST requests with `{ code, redirect_uri }`
 - Exchanges code for GitHub App user access token
 - Returns `{ access_token, token_type, scope, expires_in }`
 
 ✅ **Security**
+
 - Client ID and Secret stored as Cloudflare Secrets (encrypted)
 - CORS 允许源通过环境变量配置
 - Input validation on all parameters
@@ -58,16 +64,19 @@ This directory contains a complete, production-ready Cloudflare Worker that secu
 - TLS 1.3+ encryption for all communication
 
 ✅ **Error Handling**
+
 - Descriptive error messages for debugging
 - Proper HTTP status codes (200, 400, 404, 405)
 - Error responses include `error` and `error_description` fields
 
 ✅ **TypeScript**
+
 - Full type safety with strict mode enabled
 - Proper typing for Cloudflare Workers API
 - Type definitions exported for consuming code
 
 ✅ **Free Plan Compatible**
+
 - Runs on Cloudflare Workers free plan
 - 100,000 requests/day included
 - No monthly charges using workers.dev subdomain
@@ -82,6 +91,7 @@ CLIENT_SECRET: YOUR_CLIENT_SECRET
 ```
 
 Configure these using:
+
 ```bash
 wrangler secret put CLIENT_ID
 wrangler secret put CLIENT_SECRET
@@ -92,6 +102,7 @@ wrangler secret put CLIENT_SECRET
 **POST /exchange**
 
 Request:
+
 ```json
 {
   "code": "string (required) - OAuth code from GitHub",
@@ -100,6 +111,7 @@ Request:
 ```
 
 Success Response (200):
+
 ```json
 {
   "access_token": "gho_...",
@@ -110,6 +122,7 @@ Success Response (200):
 ```
 
 Error Response (400):
+
 ```json
 {
   "error": "error_code",
@@ -120,6 +133,7 @@ Error Response (400):
 ## Deployment
 
 ### First Time Setup
+
 ```bash
 npm install
 wrangler login
@@ -129,12 +143,14 @@ npm run deploy
 ```
 
 ### Subsequent Deployments
+
 ```bash
 npm run build
 npm run deploy
 ```
 
 ### Worker URL Format
+
 ```
 https://prompt-hub-gh-app-oauth.YOUR_ACCOUNT.workers.dev
 ```
@@ -142,23 +158,29 @@ https://prompt-hub-gh-app-oauth.YOUR_ACCOUNT.workers.dev
 ## Testing
 
 ### Build Verification
+
 ```bash
 npm run build
 ```
+
 - Compiles TypeScript to JavaScript
 - Generates type definitions
 - No errors should be present
 
 ### Local Testing
+
 ```bash
 npm run dev
 ```
+
 - Starts local server on `http://localhost:8787`
 - Test with curl commands (see TESTING.md)
 - Live reloading of code changes
 
 ### Production Testing
+
 Use curl to test the deployed worker:
+
 ```bash
 curl -X POST \
   -H "Content-Type: application/json" \
@@ -172,17 +194,21 @@ curl -X POST \
 The worker enforces CORS restrictions:
 
 **Allowed Origin:**
+
 - 通过环境变量 `ALLOWED_ORIGIN` 配置
 
 **Allowed Methods:**
+
 - `POST` - For exchanging OAuth codes
 - `OPTIONS` - For CORS preflight
 
 **Allowed Headers:**
+
 - `Content-Type`
 - `Authorization`
 
 **Response Headers Include:**
+
 - `Access-Control-Allow-Origin: <configured allowed origin>`
 - `Access-Control-Allow-Methods: POST, OPTIONS`
 - `Access-Control-Max-Age: 86400`
@@ -219,20 +245,19 @@ cf-worker/
 ## Frontend Integration
 
 Add to your Vite app's `.env`:
+
 ```
 VITE_GH_APP_OAUTH_PROXY_URL=https://prompt-hub-gh-app-oauth.YOUR_ACCOUNT.workers.dev
 ```
 
 Use in your code:
+
 ```typescript
-const response = await fetch(
-  `${import.meta.env.VITE_GH_APP_OAUTH_PROXY_URL}/exchange`,
-  {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ code, redirect_uri }),
-  }
-)
+const response = await fetch(`${import.meta.env.VITE_GH_APP_OAUTH_PROXY_URL}/exchange`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ code, redirect_uri }),
+})
 
 const data = await response.json()
 // Use data.access_token for authenticated GitHub API requests
@@ -241,6 +266,7 @@ const data = await response.json()
 ## Troubleshooting
 
 See **`TESTING.md`** and **`../../document/CF_WORKER_GH_APP_OAUTH.md`** for:
+
 - Local development issues
 - Deployment problems
 - CORS errors
@@ -249,15 +275,15 @@ See **`TESTING.md`** and **`../../document/CF_WORKER_GH_APP_OAUTH.md`** for:
 
 ## Key Files
 
-| File | Purpose |
-|------|---------|
-| `src/index.ts` | Worker implementation (230 lines) |
-| `wrangler.toml` | Cloudflare configuration |
-| `package.json` | Dependencies and build scripts |
-| `tsconfig.json` | TypeScript compiler options |
-| `dist/index.js` | Compiled worker code |
-| `README.md` | Quick start guide |
-| `TESTING.md` | Testing instructions |
+| File            | Purpose                           |
+| --------------- | --------------------------------- |
+| `src/index.ts`  | Worker implementation (230 lines) |
+| `wrangler.toml` | Cloudflare configuration          |
+| `package.json`  | Dependencies and build scripts    |
+| `tsconfig.json` | TypeScript compiler options       |
+| `dist/index.js` | Compiled worker code              |
+| `README.md`     | Quick start guide                 |
+| `TESTING.md`    | Testing instructions              |
 
 ## Compliance Checklist
 
@@ -274,6 +300,7 @@ See **`TESTING.md`** and **`../../document/CF_WORKER_GH_APP_OAUTH.md`** for:
 ## Next Steps
 
 1. **Deploy the worker:**
+
    ```bash
    npm install
    wrangler login
@@ -298,6 +325,7 @@ See **`TESTING.md`** and **`../../document/CF_WORKER_GH_APP_OAUTH.md`** for:
 ## Support
 
 For detailed setup and troubleshooting:
+
 - See `../../document/CF_WORKER_GH_APP_OAUTH.md`
 - Check `TESTING.md` for testing procedures
 - Review `README.md` for quick reference

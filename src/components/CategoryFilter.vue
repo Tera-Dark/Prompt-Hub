@@ -2,24 +2,28 @@
   <div class="category-filter">
     <div class="filter-label">
       <span>Categories</span>
-      <span class="result-count" v-if="showCount">{{ resultCount }} result{{ resultCount !== 1 ? 's' : '' }}</span>
+      <span v-if="showCount" class="result-count"
+        >{{ resultCount }} result{{ resultCount !== 1 ? 's' : '' }}</span
+      >
     </div>
     <div class="category-pills">
-      <button 
+      <button
         class="category-pill"
         :class="{ active: selectedCategory === null }"
         @click="selectCategory(null)"
       >
         All
       </button>
-      <button 
+      <button
         v-for="category in categories"
         :key="category"
         class="category-pill"
         :class="{ active: selectedCategory === category }"
         @click="selectCategory(category)"
       >
-        <span class="category-icon" v-if="getCategoryIcon(category)">{{ getCategoryIcon(category) }}</span>
+        <span v-if="getCategoryIcon(category)" class="category-icon">{{
+          getCategoryIcon(category)
+        }}</span>
         <span>{{ category }}</span>
       </button>
     </div>
@@ -27,31 +31,31 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { CATEGORY_ICONS } from '@/constants/categories';
+import { ref } from 'vue'
+import { CATEGORY_ICONS } from '@/constants/categories'
 
 interface Props {
-  categories: string[];
-  resultCount?: number;
-  showCount?: boolean;
+  categories: string[]
+  resultCount?: number
+  showCount?: boolean
 }
 
 interface Emits {
-  (e: 'update:selectedCategory', category: string | null): void;
+  (e: 'update:selectedCategory', category: string | null): void
 }
 
-defineProps<Props>();
-const emit = defineEmits<Emits>();
+defineProps<Props>()
+const emit = defineEmits<Emits>()
 
-const selectedCategory = ref<string | null>(null);
+const selectedCategory = ref<string | null>(null)
 
 function selectCategory(category: string | null) {
-  selectedCategory.value = category;
-  emit('update:selectedCategory', category);
+  selectedCategory.value = category
+  emit('update:selectedCategory', category)
 }
 
 function getCategoryIcon(category: string): string {
-  return CATEGORY_ICONS[category] || '';
+  return CATEGORY_ICONS[category] || ''
 }
 </script>
 

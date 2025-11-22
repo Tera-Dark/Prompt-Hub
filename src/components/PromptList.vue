@@ -26,10 +26,10 @@
           </select>
         </label>
       </div>
-      <div class="controls-right" v-if="totalPages > 1">
-        <button class="pager" :disabled="currentPage===1" @click="goPrev">上一页</button>
+      <div v-if="totalPages > 1" class="controls-right">
+        <button class="pager" :disabled="currentPage === 1" @click="goPrev">上一页</button>
         <span class="page-info">第 {{ currentPage }} / {{ totalPages }} 页</span>
-        <button class="pager" :disabled="currentPage===totalPages" @click="goNext">下一页</button>
+        <button class="pager" :disabled="currentPage === totalPages" @click="goNext">下一页</button>
       </div>
     </div>
     <div v-if="loading" class="loading">
@@ -38,17 +38,37 @@
     </div>
 
     <div v-else-if="error" class="error">
-      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="48"
+        height="48"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
         <circle cx="12" cy="12" r="10"></circle>
         <line x1="12" y1="8" x2="12" y2="12"></line>
         <line x1="12" y1="16" x2="12.01" y2="16"></line>
       </svg>
       <p>{{ error }}</p>
-      <button @click="retry" class="retry-button">Retry</button>
+      <button class="retry-button" @click="retry">Retry</button>
     </div>
 
     <div v-else-if="sortedPrompts.length === 0" class="empty">
-      <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="64"
+        height="64"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
         <circle cx="11" cy="11" r="8"></circle>
         <path d="m21 21-4.35-4.35"></path>
       </svg>
@@ -57,88 +77,86 @@
     </div>
 
     <div v-else class="prompt-grid">
-      <PromptCard 
-        v-for="prompt in pagedPrompts" 
-        :key="prompt.id" 
-        :prompt="prompt"
-      />
+      <PromptCard v-for="prompt in pagedPrompts" :key="prompt.id" :prompt="prompt" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
-import type { Prompt } from '@/types/prompt';
-import PromptCard from './PromptCard.vue';
+import { ref, computed, watch, onMounted } from 'vue'
+import type { Prompt } from '@/types/prompt'
+import PromptCard from './PromptCard.vue'
 
 interface Props {
-  prompts: Prompt[];
-  loading?: boolean;
-  error?: string | null;
+  prompts: Prompt[]
+  loading?: boolean
+  error?: string | null
 }
 
 interface Emits {
-  (e: 'retry'): void;
+  (e: 'retry'): void
 }
 
 const props = withDefaults(defineProps<Props>(), {
   loading: false,
-  error: null
-});
+  error: null,
+})
 
-const emit = defineEmits<Emits>();
+const emit = defineEmits<Emits>()
 
-const sortKey = ref<'title'|'createdAt'|'updatedAt'>('title');
-const sortDir = ref<'asc'|'desc'>('asc');
-const pageSize = ref<number>(24);
-const currentPage = ref<number>(1);
+const sortKey = ref<'title' | 'createdAt' | 'updatedAt'>('title')
+const sortDir = ref<'asc' | 'desc'>('asc')
+const pageSize = ref<number>(24)
+const currentPage = ref<number>(1)
 
 const normalizedDate = (v?: string) => {
-  if (!v) return 0;
-  const t = Date.parse(v);
-  return Number.isNaN(t) ? 0 : t;
-};
+  if (!v) return 0
+  const t = Date.parse(v)
+  return Number.isNaN(t) ? 0 : t
+}
 
 const sortedPrompts = computed(() => {
-  const base = [...props.prompts];
+  const base = [...props.prompts]
   return base.sort((a, b) => {
-    let av = '';
-    let bv = '';
+    let av = ''
+    let bv = ''
     if (sortKey.value === 'title') {
-      av = a.title || '';
-      bv = b.title || '';
-      const cmp = av.localeCompare(bv);
-      return sortDir.value === 'asc' ? cmp : -cmp;
+      av = a.title || ''
+      bv = b.title || ''
+      const cmp = av.localeCompare(bv)
+      return sortDir.value === 'asc' ? cmp : -cmp
     }
     if (sortKey.value === 'createdAt') {
-      const cmp = normalizedDate(a.createdAt) - normalizedDate(b.createdAt);
-      return sortDir.value === 'asc' ? cmp : -cmp;
+      const cmp = normalizedDate(a.createdAt) - normalizedDate(b.createdAt)
+      return sortDir.value === 'asc' ? cmp : -cmp
     }
-    const cmp = normalizedDate(a.updatedAt) - normalizedDate(b.updatedAt);
-    return sortDir.value === 'asc' ? cmp : -cmp;
-  });
-});
+    const cmp = normalizedDate(a.updatedAt) - normalizedDate(b.updatedAt)
+    return sortDir.value === 'asc' ? cmp : -cmp
+  })
+})
 
-const totalPages = computed(() => Math.max(1, Math.ceil(sortedPrompts.value.length / pageSize.value)));
+const totalPages = computed(() =>
+  Math.max(1, Math.ceil(sortedPrompts.value.length / pageSize.value)),
+)
 const pagedPrompts = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value;
-  return sortedPrompts.value.slice(start, start + pageSize.value);
-});
+  const start = (currentPage.value - 1) * pageSize.value
+  return sortedPrompts.value.slice(start, start + pageSize.value)
+})
 
 watch([sortKey, sortDir, pageSize, () => props.prompts], () => {
-  currentPage.value = 1;
-});
+  currentPage.value = 1
+})
 
 function goPrev() {
-  if (currentPage.value > 1) currentPage.value -= 1;
+  if (currentPage.value > 1) currentPage.value -= 1
 }
 
 function goNext() {
-  if (currentPage.value < totalPages.value) currentPage.value += 1;
+  if (currentPage.value < totalPages.value) currentPage.value += 1
 }
 
 function retry() {
-  emit('retry');
+  emit('retry')
 }
 onMounted(() => {})
 </script>
@@ -336,9 +354,5 @@ onMounted(() => {})
   }
 }
 </style>
-onMounted(() => {
-  try {
-    const saved = Number(localStorage.getItem('prompt-hub::pref::pageSize'))
-    if (!Number.isNaN(saved) && saved > 0) pageSize.value = saved
-  } catch {}
-})
+onMounted(() => { try { const saved = Number(localStorage.getItem('prompt-hub::pref::pageSize')) if
+(!Number.isNaN(saved) && saved > 0) pageSize.value = saved } catch {} })

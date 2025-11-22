@@ -38,6 +38,7 @@ npm run deploy
 ```
 
 Your worker will be deployed at:
+
 ```
 https://prompt-hub-gh-app-oauth.<your-account>.workers.dev
 ```
@@ -55,6 +56,7 @@ curl -X POST \
 ```
 
 Response:
+
 ```json
 {
   "access_token": "gho_...",

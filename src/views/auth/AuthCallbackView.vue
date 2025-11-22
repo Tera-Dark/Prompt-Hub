@@ -135,7 +135,9 @@ function retryLogin() {
   color: var(--color-gray-600);
   border-bottom: 1px solid transparent;
   padding-bottom: 0.125rem;
-  transition: color var(--transition-base), border-color var(--transition-base);
+  transition:
+    color var(--transition-base),
+    border-color var(--transition-base);
 }
 
 .callback-link:hover,

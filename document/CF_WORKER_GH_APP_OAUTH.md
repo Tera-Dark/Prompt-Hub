@@ -106,6 +106,7 @@ npm install
 ```
 
 This will install:
+
 - **TypeScript**: For type checking and compilation
 - **@cloudflare/workers-types**: TypeScript definitions for Cloudflare Workers API
 - **Wrangler**: The Cloudflare CLI tool
@@ -149,6 +150,7 @@ format = "service-worker"
 ```
 
 **Key Settings:**
+
 - **name**: Your worker's name (used in the public URL)
 - **main**: Entry point to the worker code
 - **compatibility_date**: Cloudflare Workers runtime version to use
@@ -188,6 +190,7 @@ wrangler secret list
 ```
 
 You should see:
+
 ```
 CLIENT_ID
 CLIENT_SECRET
@@ -210,6 +213,7 @@ wrangler deploy
 ```
 
 **Expected Output:**
+
 ```
 ✓ Uploaded prompt-hub-gh-app-oauth
   https://prompt-hub-gh-app-oauth.YOUR_ACCOUNT.workers.dev
@@ -251,14 +255,11 @@ The frontend will use this URL when exchanging the OAuth code:
 
 ```typescript
 // Your frontend code
-const response = await fetch(
-  `${VITE_GH_APP_OAUTH_PROXY_URL}/exchange`,
-  {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ code, redirect_uri }),
-  }
-)
+const response = await fetch(`${VITE_GH_APP_OAUTH_PROXY_URL}/exchange`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ code, redirect_uri }),
+})
 ```
 
 ---
@@ -331,17 +332,14 @@ During GitHub OAuth flow:
 3. Frontend extracts the code and makes a request:
 
 ```typescript
-const response = await fetch(
-  'https://prompt-hub-gh-app-oauth.YOUR_ACCOUNT.workers.dev/exchange',
-  {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      code: 'XXXXX',
-      redirect_uri: 'https://your-pages-domain/Prompt-Hub/auth/callback',
-    }),
-  }
-)
+const response = await fetch('https://prompt-hub-gh-app-oauth.YOUR_ACCOUNT.workers.dev/exchange', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    code: 'XXXXX',
+    redirect_uri: 'https://your-pages-domain/Prompt-Hub/auth/callback',
+  }),
+})
 
 const data = await response.json()
 // Should contain: { access_token, token_type, scope, expires_in }
@@ -354,6 +352,7 @@ const data = await response.json()
 ### 1. Never Commit Secrets
 
 The `.gitignore` file prevents committing:
+
 - `.env.local` - local environment variables
 - `.wrangler/` - local wrangler configuration with secrets
 
@@ -362,6 +361,7 @@ The `.gitignore` file prevents committing:
 ### 2. Use Cloudflare Secrets
 
 Your GitHub App client secret is protected by:
+
 - **Encryption at rest** - Cloudflare encrypts all secrets
 - **Encryption in transit** - TLS 1.3+ for all communication
 - **Access control** - Secrets are only available within your worker code
@@ -370,6 +370,7 @@ Your GitHub App client secret is protected by:
 ### 3. CORS Security
 
 The worker enforces:
+
 - **Allowed Origin**: 通过环境变量 `ALLOWED_ORIGIN` 配置
 - **Method Restrictions**: Only `POST` and `OPTIONS` methods allowed
 - **Credential Handling**: Credentials are not sent or stored by the worker
@@ -377,6 +378,7 @@ The worker enforces:
 ### 4. Input Validation
 
 The worker validates:
+
 - Required `code` parameter
 - Required `redirect_uri` parameter
 - Valid JSON in request body
@@ -385,6 +387,7 @@ The worker validates:
 ### 5. Error Handling
 
 The worker returns helpful error messages without exposing sensitive information:
+
 - `missing_code` - If OAuth code is not provided
 - `missing_redirect_uri` - If redirect URI is not provided
 - `token_exchange_failed` - If GitHub API returns an error
@@ -420,6 +423,7 @@ wrangler tail
 ```
 
 This shows:
+
 - Request details
 - Response status codes
 - Any error messages
@@ -438,13 +442,15 @@ This shows:
 
 ### Issue: "Unauthorized" when running `wrangler login`
 
-**Solution**: 
+**Solution**:
+
 - Clear Wrangler cache: `wrangler logout` then `wrangler login`
 - Ensure you're using a free or paid Cloudflare account
 
 ### Issue: "SECRET_NOT_FOUND" error when deploying
 
 **Solution**:
+
 ```bash
 # Verify secrets are configured
 wrangler secret list
@@ -457,12 +463,14 @@ wrangler secret put CLIENT_SECRET
 ### Issue: CORS errors in browser console
 
 **Solution**:
+
 - Verify the frontend origin matches你配置在 Worker 的允许源
 - For local development, use the environment variable `VITE_GH_APP_OAUTH_PROXY_URL` pointing to the deployed worker
 
 ### Issue: "Invalid OAuth code" error from GitHub
 
 **Solution**:
+
 - Ensure the `code` is freshly obtained (expires in 10 minutes)
 - Verify the `redirect_uri` matches exactly what's registered in GitHub App settings
 - Check GitHub App settings match the provided credentials
@@ -470,6 +478,7 @@ wrangler secret put CLIENT_SECRET
 ### Issue: TypeScript compilation errors
 
 **Solution**:
+
 ```bash
 # Ensure you have the correct TypeScript version
 npm install --save-dev typescript@^5.4.2
@@ -481,6 +490,7 @@ npm run build -- --diagnostics
 ### Issue: Worker returns 404 for `/exchange` endpoint
 
 **Solution**:
+
 - Verify you're sending a `POST` request (not GET)
 - Check the URL path is exactly `/exchange` (no trailing slash)
 - Ensure the worker has been deployed: `npm run deploy`
@@ -551,6 +561,7 @@ This is already included in the provided `wrangler.toml`.
 **POST /exchange**
 
 **Request Body:**
+
 ```json
 {
   "code": "string (required) - OAuth code from GitHub",
@@ -559,6 +570,7 @@ This is already included in the provided `wrangler.toml`.
 ```
 
 **Success Response (200):**
+
 ```json
 {
   "access_token": "gho_16C7e42F292c6912E7710c838347Ae178B4a",
@@ -569,6 +581,7 @@ This is already included in the provided `wrangler.toml`.
 ```
 
 **Error Response (400/405):**
+
 ```json
 {
   "error": "error_code",
@@ -579,6 +592,7 @@ This is already included in the provided `wrangler.toml`.
 ### CORS Headers
 
 All responses include:
+
 ```
 Access-Control-Allow-Origin: <configured allowed origin>
 Access-Control-Allow-Methods: POST, OPTIONS

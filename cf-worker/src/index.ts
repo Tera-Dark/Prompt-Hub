@@ -2,7 +2,7 @@
 
 /**
  * Cloudflare Worker: GitHub App OAuth Proxy
- * 
+ *
  * Exchanges GitHub OAuth code for user access token.
  * Stores CLIENT_ID and CLIENT_SECRET as Cloudflare Secrets.
  * CORS headers restrict to https://tera-dark.github.io
@@ -61,7 +61,7 @@ function buildCorsHeaders(requestOrigin: string | null, env: Env): Record<string
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Max-Age': '86400',
     'Content-Type': 'application/json',
-    'Vary': 'Origin',
+    Vary: 'Origin',
   }
 }
 
@@ -77,7 +77,7 @@ async function exchangeCodeForToken(
     const response = await fetch(GITHUB_TOKEN_URL, {
       method: 'POST',
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -93,7 +93,8 @@ async function exchangeCodeForToken(
     if (!response.ok) {
       return {
         error: (data.error as string) || 'token_exchange_failed',
-        error_description: (data.error_description as string) || 'Failed to exchange code for token',
+        error_description:
+          (data.error_description as string) || 'Failed to exchange code for token',
       }
     }
 

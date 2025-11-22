@@ -1,21 +1,21 @@
 <template>
   <section class="settings">
     <header class="settings-header">
-      <h2>Settings</h2>
-      <p>Personal preferences</p>
+      <h2>{{ t('settings.title') }}</h2>
+      <p>{{ t('settings.subtitle') }}</p>
     </header>
 
     <form class="settings-form" @submit.prevent="save">
       <div class="form-grid">
         <label class="form-field">
-          <span>Theme</span>
+          <span>{{ t('settings.theme') }}</span>
           <select v-model="theme">
             <option value="light">Light</option>
             <option value="dark">Dark</option>
           </select>
         </label>
         <label class="form-field">
-          <span>Prompt list page size</span>
+          <span>{{ t('settings.pageSize') }}</span>
           <select v-model.number="pageSize">
             <option :value="12">12</option>
             <option :value="24">24</option>
@@ -24,7 +24,7 @@
         </label>
       </div>
       <div class="form-actions">
-        <button type="submit" class="primary">Save</button>
+        <button type="submit" class="primary">{{ t('common.save') }}</button>
       </div>
     </form>
   </section>
@@ -32,6 +32,9 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const theme = ref<'light' | 'dark'>('light')
 const pageSize = ref<number>(24)

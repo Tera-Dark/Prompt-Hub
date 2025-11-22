@@ -22,6 +22,7 @@ curl -X OPTIONS \
 ```
 
 Expected response headers:
+
 ```
 HTTP/1.1 204 No Content
 Access-Control-Allow-Origin: https://tera-dark.github.io
@@ -40,6 +41,7 @@ curl -X POST \
 ```
 
 Expected response:
+
 ```json
 {
   "error": "missing_code",
@@ -58,6 +60,7 @@ curl -X POST \
 ```
 
 Expected response:
+
 ```json
 {
   "error": "missing_redirect_uri",
@@ -76,6 +79,7 @@ curl -X POST \
 ```
 
 Expected response:
+
 ```json
 {
   "error": "invalid_request",
@@ -94,6 +98,7 @@ curl -X POST \
 ```
 
 Without real GitHub App secrets configured, this will return a GitHub error:
+
 ```json
 {
   "error": "bad_verification_code",
@@ -104,11 +109,13 @@ Without real GitHub App secrets configured, this will return a GitHub error:
 ## Deployment Testing
 
 After deployment, run the same curl commands but replace:
+
 ```
 http://localhost:8787
 ```
 
 with:
+
 ```
 https://prompt-hub-gh-app-oauth.YOUR_ACCOUNT.workers.dev
 ```
@@ -118,17 +125,14 @@ https://prompt-hub-gh-app-oauth.YOUR_ACCOUNT.workers.dev
 Once deployed, test from the frontend:
 
 ```typescript
-const response = await fetch(
-  'https://prompt-hub-gh-app-oauth.YOUR_ACCOUNT.workers.dev/exchange',
-  {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      code: 'github_oauth_code',
-      redirect_uri: 'https://tera-dark.github.io/Prompt-Hub/auth/callback',
-    }),
-  }
-)
+const response = await fetch('https://prompt-hub-gh-app-oauth.YOUR_ACCOUNT.workers.dev/exchange', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    code: 'github_oauth_code',
+    redirect_uri: 'https://tera-dark.github.io/Prompt-Hub/auth/callback',
+  }),
+})
 
 const data = await response.json()
 if (data.access_token) {
@@ -168,8 +172,9 @@ ab -n 100 -c 10 \
 ```
 
 Create `request.json`:
+
 ```json
-{"code":"test","redirect_uri":"https://tera-dark.github.io/Prompt-Hub/auth/callback"}
+{ "code": "test", "redirect_uri": "https://tera-dark.github.io/Prompt-Hub/auth/callback" }
 ```
 
 ### Expected Results
@@ -183,11 +188,13 @@ Create `request.json`:
 ### Enable Request/Response Logging
 
 The worker automatically logs:
+
 - Request method and URL
 - Response status code
 - Any errors encountered
 
 View logs with:
+
 ```bash
 wrangler tail
 ```
@@ -202,6 +209,7 @@ wrangler secret list
 ```
 
 You should see:
+
 ```
 CLIENT_ID
 CLIENT_SECRET

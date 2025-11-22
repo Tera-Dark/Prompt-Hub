@@ -2,27 +2,42 @@
   <div class="search-bar">
     <div class="search-input-wrapper">
       <span class="search-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
           <circle cx="11" cy="11" r="8"></circle>
           <path d="m21 21-4.35-4.35"></path>
         </svg>
       </span>
-      <input 
+      <input
         ref="searchInput"
         type="text"
         :value="modelValue"
-        @input="handleInput"
         placeholder="Search prompts by title, description, or tags..."
         class="search-input"
         aria-label="Search prompts"
+        @input="handleInput"
       />
-      <button 
-        v-if="modelValue"
-        @click="clearSearch"
-        class="clear-button"
-        aria-label="Clear search"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <button v-if="modelValue" class="clear-button" aria-label="Clear search" @click="clearSearch">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
           <line x1="18" y1="6" x2="6" y2="18"></line>
           <line x1="6" y1="6" x2="18" y2="18"></line>
         </svg>
@@ -32,29 +47,29 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref } from 'vue'
 
 interface Props {
-  modelValue: string;
+  modelValue: string
 }
 
 interface Emits {
-  (e: 'update:modelValue', value: string): void;
+  (e: 'update:modelValue', value: string): void
 }
 
-defineProps<Props>();
-const emit = defineEmits<Emits>();
+defineProps<Props>()
+const emit = defineEmits<Emits>()
 
-const searchInput = ref<HTMLInputElement | null>(null);
+const searchInput = ref<HTMLInputElement | null>(null)
 
 function handleInput(event: Event) {
-  const target = event.target as HTMLInputElement;
-  emit('update:modelValue', target.value);
+  const target = event.target as HTMLInputElement
+  emit('update:modelValue', target.value)
 }
 
 function clearSearch() {
-  emit('update:modelValue', '');
-  searchInput.value?.focus();
+  emit('update:modelValue', '')
+  searchInput.value?.focus()
 }
 </script>
 

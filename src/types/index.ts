@@ -1,4 +1,4 @@
-export type { Prompt, PromptsData } from './prompt';
+export type { Prompt, PromptsData } from './prompt'
 export {
   loadPrompts,
   PromptLoadError,
@@ -7,5 +7,5 @@ export {
   getPromptsByTag,
   searchPrompts,
   getAllCategories,
-  getAllTags
-} from './prompt';
+  getAllTags,
+} from './prompt'

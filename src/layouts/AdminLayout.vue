@@ -4,7 +4,7 @@
 
     <aside :class="['admin-sidebar', { 'is-open': sidebarOpen }]">
       <div class="sidebar-header">
-        <span class="sidebar-logo">Prompt Hub</span>
+        <span class="sidebar-logo">{{ t('app.name') }}</span>
         <button
           type="button"
           class="sidebar-close"
@@ -17,13 +17,13 @@
       <nav v-if="hasRepoWriteAccess" class="sidebar-nav" aria-label="Admin">
         <RouterLink
           v-for="item in navigation"
-          :key="item.label"
+          :key="item.key"
           :to="item.to"
           class="sidebar-link"
           :class="{ 'is-active': item.match.test(route.path) }"
           @click="closeSidebar"
         >
-          <span>{{ item.label }}</span>
+          <span>{{ t(`nav.${item.key}`) }}</span>
         </RouterLink>
       </nav>
     </aside>
@@ -39,18 +39,21 @@
           <span aria-hidden="true">☰</span>
         </button>
         <div class="header-context">
-          <h1 class="context-title">{{ currentSection }}</h1>
-          <p class="context-subtitle">Manage the tools that power Prompt Hub</p>
+          <h1 class="context-title">{{ t(`nav.${currentSectionKey}`) }}</h1>
+          <p class="context-subtitle">{{ t('subtitle.admin') }}</p>
         </div>
         <div class="header-actions">
-          <RouterLink to="/" class="header-link">Public site</RouterLink>
+          <button type="button" class="header-link header-link--ghost" @click="toggleLanguage">
+            {{ locale === 'en' ? '中文' : 'English' }}
+          </button>
+          <RouterLink to="/" class="header-link">{{ t('auth.returnToPublic') }}</RouterLink>
           <button
             v-if="!isAuthenticated"
             type="button"
             class="header-link header-link--cta"
             @click="handleLogin"
           >
-            Sign in with GitHub
+            {{ t('auth.signIn') }}
           </button>
           <div v-else class="user-menu-wrapper" @click.stop>
             <button
@@ -70,7 +73,7 @@
                 <span class="user-name">{{
                   currentUser?.name || currentUser?.login || 'User'
                 }}</span>
-                <span class="user-role">{{ hasRepoWriteAccess ? 'Admin' : 'Viewer' }}</span>
+                <span class="user-role">{{ hasRepoWriteAccess ? t('nav.admin') : 'Viewer' }}</span>
               </div>
               <span class="menu-arrow" :class="{ 'is-open': userMenuOpen }">▼</span>
             </button>
@@ -100,15 +103,15 @@
               <nav class="dropdown-nav">
                 <RouterLink to="/admin/profile" class="dropdown-link" @click="closeUserMenu">
                   <span>👤</span>
-                  <span>My Profile</span>
+                  <span>{{ t('nav.profile') }}</span>
                 </RouterLink>
                 <RouterLink to="/admin/prompts" class="dropdown-link" @click="closeUserMenu">
                   <span>📝</span>
-                  <span>My Prompts</span>
+                  <span>{{ t('nav.myPrompts') }}</span>
                 </RouterLink>
                 <RouterLink to="/admin/settings" class="dropdown-link" @click="closeUserMenu">
                   <span>⚙️</span>
-                  <span>Settings</span>
+                  <span>{{ t('nav.settings') }}</span>
                 </RouterLink>
               </nav>
               <div class="dropdown-divider"></div>
@@ -118,7 +121,7 @@
                 @click="handleLogout"
               >
                 <span>🚪</span>
-                <span>Sign out</span>
+                <span>{{ t('auth.signOut') }}</span>
               </button>
             </div>
           </div>
@@ -133,25 +136,23 @@
           aria-labelledby="admin-auth-heading"
         >
           <div class="auth-card auth-card--warning">
-            <h2 id="admin-auth-heading">Write access required</h2>
+            <h2 id="admin-auth-heading">{{ t('auth.writeAccessRequired') }}</h2>
             <p>
               {{ userDisplayName }} is signed in, but this account does not have write access to
               <span class="repo-slug">{{ repoTarget }}</span
               >.
             </p>
-            <p>
-              Ask the repository owner to grant the required permissions, or sign in with a
-              different GitHub account.
-            </p>
             <div class="auth-actions">
-              <button type="button" class="cta-button" @click="handleLogout">Switch account</button>
-              <RouterLink to="/" class="secondary-link">Return to public site</RouterLink>
+              <button type="button" class="cta-button" @click="handleLogout">
+                {{ t('auth.switchAccount') }}
+              </button>
+              <RouterLink to="/" class="secondary-link">{{ t('auth.returnToPublic') }}</RouterLink>
             </div>
           </div>
         </section>
         <section v-else class="admin-auth-gate" aria-labelledby="admin-auth-heading">
           <div class="auth-card">
-            <h2 id="admin-auth-heading">Admin access required</h2>
+            <h2 id="admin-auth-heading">{{ t('auth.adminAccessRequired') }}</h2>
             <p>
               Sign in to continue to
               <span class="attempted-route">{{ attemptedRouteLabel }}</span
@@ -161,9 +162,9 @@
             </p>
             <div class="auth-actions">
               <button type="button" class="cta-button" @click="handleLogin">
-                Sign in with GitHub
+                {{ t('auth.signIn') }}
               </button>
-              <RouterLink to="/" class="secondary-link">Return to public site</RouterLink>
+              <RouterLink to="/" class="secondary-link">{{ t('auth.returnToPublic') }}</RouterLink>
             </div>
           </div>
         </section>
@@ -177,23 +178,27 @@ import { computed, ref, watch } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 
+import { useI18n } from 'vue-i18n'
+
 type NavigationItem = {
-  label: string
+  key: string
   to: { name: string }
   match: RegExp
 }
 
 const navigation: NavigationItem[] = [
-  { label: 'Dashboard', to: { name: 'AdminDashboard' }, match: /^\/admin(?:\/dashboard)?$/ },
-  { label: 'Prompts', to: { name: 'AdminPrompts' }, match: /^\/admin\/prompts(\/.*)?$/ },
-  { label: 'Review', to: { name: 'AdminReview' }, match: /^\/admin\/review$/ },
-  { label: 'Data tools', to: { name: 'AdminData' }, match: /^\/admin\/data$/ },
+  { key: 'dashboard', to: { name: 'AdminDashboard' }, match: /^\/admin(?:\/dashboard)?$/ },
+  { key: 'prompts', to: { name: 'AdminPrompts' }, match: /^\/admin\/prompts(\/.*)?$/ },
+  { key: 'review', to: { name: 'AdminReview' }, match: /^\/admin\/review$/ },
+  { key: 'data', to: { name: 'AdminData' }, match: /^\/admin\/data$/ },
+  { key: 'aiSettings', to: { name: 'AdminAISettings' }, match: /^\/admin\/ai-settings$/ },
 ]
 
 const route = useRoute()
 const sidebarOpen = ref(false)
 const userMenuOpen = ref(false)
 const auth = useAuth()
+const { t, locale } = useI18n()
 
 const isAuthenticated = computed(() => auth.isAuthed.value)
 const hasRepoWriteAccess = computed(() => auth.hasRepoWriteAccess.value)
@@ -211,9 +216,9 @@ const repoTarget = computed(() => {
   return repoOwner || repoName || 'the configured repository'
 })
 
-const currentSection = computed(() => {
+const currentSectionKey = computed(() => {
   const found = navigation.find((item) => item.match.test(route.path))
-  return found?.label ?? 'Admin'
+  return found?.key ?? 'admin'
 })
 
 const attemptedRouteLabel = computed(() => attemptedRoute.value ?? '/admin/dashboard')
@@ -259,6 +264,12 @@ function handleLogin() {
 function handleLogout() {
   userMenuOpen.value = false
   auth.logout()
+}
+
+function toggleLanguage() {
+  const newLang = locale.value === 'en' ? 'zh' : 'en'
+  locale.value = newLang
+  localStorage.setItem('prompt-hub::pref::lang', newLang)
 }
 </script>
 

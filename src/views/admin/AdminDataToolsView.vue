@@ -9,7 +9,9 @@
       <article class="tool-card">
         <h3>Exports</h3>
         <p>Generate CSV exports of curated prompts for external sharing.</p>
-        <button type="button" class="tool-button" @click="handleClick('export')">Start export</button>
+        <button type="button" class="tool-button" @click="handleClick('export')">
+          Start export
+        </button>
       </article>
 
       <article class="tool-card">
@@ -21,7 +23,9 @@
       <article class="tool-card">
         <h3>Data quality</h3>
         <p>Analyze prompt completeness and identify missing metadata.</p>
-        <button type="button" class="tool-button" @click="handleClick('data quality')">View report</button>
+        <button type="button" class="tool-button" @click="handleClick('data quality')">
+          View report
+        </button>
       </article>
     </div>
   </section>
