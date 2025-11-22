@@ -1,32 +1,64 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Prompt Hub</title>
-  </head>
-  <body>
-    <div id="app"></div>
-    <!-- GitHub Pages SPA 深链接恢复：当从 404.html 重定向过来时，读取 ?p= 原始子路由并还原到真实路径 -->
-    <script>
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prompt Hub</title>
+  <!-- Start Single Page Apps for GitHub Pages -->
+  <script type="text/javascript">
+    // Single Page Apps for GitHub Pages
+    // MIT License
+    // https://github.com/rafgraph/spa-github-pages
+    // This script checks to see if a redirect is present in the query string,
+    // converts it back into the correct url and adds it to the
+    // browser's history using window.history.replaceState(...),
+    // which won't cause the browser to attempt to load the new url.
+    // When the single page app is loaded further down in this file,
+    // the correct url will be waiting in the browser's history for
+    // the single page app to route accordingly.
+    (function (l) {
+      if (l.search[1] === '/') {
+        var decoded = l.search.slice(1).split('&').map(function (s) {
+          return s.replace(/~and~/g, '&')
+        }).join('?');
+        window.history.replaceState(null, null,
+          l.pathname.slice(0, -1) + decoded + l.hash
+        );
+      }
+    }(window.location))
+  </script>
+  <!-- End Single Page Apps for GitHub Pages -->
+  <script>
+      // 处理来自 404.html 的重定向参数 p
       (function () {
-        try {
-          var search = location.search || '';
-          var pMatch = search.match(/[?&]p=([^&]+)/);
-          if (pMatch && pMatch[1]) {
-            var decoded = decodeURIComponent(pMatch[1]);
-            // 避免重复还原
-            if (!sessionStorage.getItem('ghp:restored')) {
-              sessionStorage.setItem('ghp:restored', '1');
-              history.replaceState(null, '', decoded);
-            }
-          }
-        } catch (e) {
-          // 忽略容错
+        const params = new URLSearchParams(window.location.search);
+        const redirectPath = params.get('p');
+        if (redirectPath) {
+          // 移除 p 参数，保留其他参数（如 code, state）
+          // 注意：404.html 传递的 redirectPath 已经包含了完整的路径和查询参数
+          // 我们需要解析它
+
+          // 这里的逻辑需要配合 404.html 的逻辑。
+          // 你的 404.html 是这样构造的：target = '/Prompt-Hub/index.html?p=' + encodeURIComponent(normalized);
+          // normalized 是 /Prompt-Hub/auth/callback?code=...
+
+          // 所以 redirectPath 就是 /Prompt-Hub/auth/callback?code=...
+
+          // 我们直接跳转到这个路径，但要小心死循环。
+          // 实际上，Vue Router 需要的是 path 部分。
+
+          // 更简单的做法：直接使用 history.replaceState 修改当前 URL
+          window.history.replaceState(null, null, redirectPath);
         }
       })();
-    </script>
-    <script type="module" src="/src/main.ts"></script>
-  </body>
+  </script>
+</head>
+
+<body>
+  <div id="app"></div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+
 </html>
