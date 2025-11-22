@@ -302,29 +302,31 @@ export async function handleCallback(code: string, state: string): Promise<AuthS
 
   const user = (await userResponse.json()) as GitHubUser
 
-  const permissionUrl = `${GITHUB_API_BASE_URL}/repos/${owner}/${repo}/collaborators/${encodeURIComponent(user.login)}/permission`
-  const permissionResponse = await fetch(permissionUrl, {
+  const repoUrl = `${GITHUB_API_BASE_URL}/repos/${owner}/${repo}`
+  const repoResponse = await fetch(repoUrl, {
     method: 'GET',
     headers,
   })
 
   let hasRepoWriteAccess = false
 
-  if (permissionResponse.status === 204) {
-    hasRepoWriteAccess = true
-  } else if (permissionResponse.status === 404) {
-    hasRepoWriteAccess = false
-  } else if (permissionResponse.ok) {
-    const payload = await permissionResponse.json()
-    const permission = payload?.permission ?? payload?.role_name ?? ''
-    hasRepoWriteAccess = ['admin', 'maintain', 'write'].includes(permission)
+  if (repoResponse.ok) {
+    const repoData = (await repoResponse.json()) as {
+      permissions?: { admin: boolean; push: boolean; maintain?: boolean }
+    }
+    const permissions = repoData.permissions
+    if (permissions) {
+      hasRepoWriteAccess = permissions.admin || permissions.push || !!permissions.maintain
+    }
   } else {
     console.error(
-      `Permission check failed: ${permissionResponse.status} ${permissionResponse.statusText} for URL: ${permissionUrl}`,
+      `Repo check failed: ${repoResponse.status} ${repoResponse.statusText} for URL: ${repoUrl}`,
     )
-    throw new Error(
-      `Unable to verify repository permissions. (Status: ${permissionResponse.status})`,
-    )
+    // 如果是 404 或 403，可能意味着用户没有权限查看该仓库，或者仓库不存在
+    // 在这种情况下，我们默认没有写入权限，而不是直接抛出错误，除非是其他严重错误
+    if (repoResponse.status !== 404 && repoResponse.status !== 403) {
+      throw new Error(`Unable to verify repository permissions. (Status: ${repoResponse.status})`)
+    }
   }
 
   const session: AuthSession = {
