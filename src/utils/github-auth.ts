@@ -232,7 +232,7 @@ function buildAuthHeaders(token: string) {
   }
 }
 
-function getRequiredEnv(name: 'VITE_GITHUB_REPO_OWNER' | 'VITE_GITHUB_REPO_NAME' | 'VITE_OAUTH_PROXY_URL') {
+function getRequiredEnv(name: 'VITE_GITHUB_REPO_OWNER' | 'VITE_GITHUB_REPO_NAME') {
   const value = import.meta.env[name]
   if (!value) {
     throw new Error(`Missing required configuration: ${name}`)
@@ -248,7 +248,9 @@ export async function handleCallback(code: string, state: string): Promise<AuthS
   ensureBrowserContext()
   readOAuthState(state)
 
-  const proxyUrl = stripTrailingSlash(getRequiredEnv('VITE_OAUTH_PROXY_URL'))
+  // 如果配置了完整的 URL 则使用配置的，否则默认使用同域下的 /api
+  const configuredProxyUrl = import.meta.env.VITE_OAUTH_PROXY_URL
+  const proxyUrl = configuredProxyUrl ? stripTrailingSlash(configuredProxyUrl) : '/api'
   const owner = getRequiredEnv('VITE_GITHUB_REPO_OWNER')
   const repo = getRequiredEnv('VITE_GITHUB_REPO_NAME')
 
@@ -271,7 +273,10 @@ export async function handleCallback(code: string, state: string): Promise<AuthS
     exchangePayload = (await response.json().catch(() => ({}))) as ExchangeResponse
 
     if (!response.ok || !exchangePayload.access_token) {
-      const errorMessage = exchangePayload.error_description || exchangePayload.error || 'Failed to exchange authorization code.'
+      const errorMessage =
+        exchangePayload.error_description ||
+        exchangePayload.error ||
+        'Failed to exchange authorization code.'
       throw new Error(errorMessage)
     }
   } catch (error) {
