@@ -6,6 +6,7 @@ import {
   getFile,
   updateFile,
   createPullRequest,
+  createIssue,
 } from '@/services/github'
 
 function repoInfo() {
@@ -96,4 +97,28 @@ export async function deletePromptById(id: string, token: string): Promise<strin
   const prTitle = `Delete prompt: ${id}`
   const prBody = `Remove prompt ${id}`
   return await createPullRequest(owner, repo, prTitle, branch, base, prBody, token)
+}
+
+export async function submitPromptIssue(newItem: Prompt, token: string): Promise<string> {
+  const { owner, repo } = repoInfo()
+  const title = `[Submission] ${newItem.title}`
+  const body = `
+### New Prompt Submission
+
+**Title:** ${newItem.title}
+**Category:** ${newItem.category}
+**Description:**
+${newItem.description}
+
+**Prompt:**
+\`\`\`
+${newItem.prompt}
+\`\`\`
+
+**Tags:** ${newItem.tags.join(', ')}
+
+---
+*Submitted via Prompt-Hub*
+`
+  return await createIssue(owner, repo, title, body, token)
 }

@@ -1,6 +1,11 @@
 export default {
   app: {
-    name: 'Prompt Hub',
+    name: 'Prompt-Hub',
+  },
+  home: {
+    title: 'Prompt-Hub',
+    subtitle: 'Discover, share, and manage your AI prompts',
+    searchPlaceholder: 'Search prompts...',
   },
   nav: {
     home: 'Home',

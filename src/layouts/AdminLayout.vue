@@ -16,17 +16,18 @@
           ✕
         </button>
       </div>
-      <nav v-if="hasRepoWriteAccess" class="sidebar-nav" aria-label="Admin">
-        <RouterLink
-          v-for="item in navigation"
-          :key="item.key"
-          :to="item.to"
-          class="sidebar-link"
-          :class="{ 'is-active': item.match.test(route.path) }"
-          @click="closeSidebar"
-        >
-          <span>{{ t(`nav.${item.key}`) }}</span>
-        </RouterLink>
+      <nav class="sidebar-nav" aria-label="Admin">
+        <template v-for="item in navigation" :key="item.key">
+          <RouterLink
+            v-if="!item.restricted || hasRepoWriteAccess"
+            :to="item.to"
+            class="sidebar-link"
+            :class="{ 'is-active': item.match.test(route.path) }"
+            @click="closeSidebar"
+          >
+            <span>{{ t(`nav.${item.key}`) }}</span>
+          </RouterLink>
+        </template>
       </nav>
     </aside>
 
@@ -50,6 +51,16 @@
           </Button>
           <Button variant="ghost" size="sm" @click="$router.push('/')">
             {{ t('auth.returnToPublic') }}
+          </Button>
+
+          <Button
+            v-if="isAuthenticated"
+            variant="primary"
+            size="sm"
+            class="new-prompt-btn"
+            @click="$router.push('/admin/prompts/new')"
+          >
+            + New Prompt
           </Button>
 
           <div v-if="isAuthenticated" class="user-menu-wrapper" @click.stop>
@@ -82,8 +93,7 @@
       </header>
 
       <main class="admin-content">
-        <RouterView v-if="isAuthenticated && hasRepoWriteAccess" />
-        <div v-else class="auth-gate-message">Access Restricted</div>
+        <RouterView v-if="isAuthenticated" />
       </main>
     </div>
   </div>
@@ -100,14 +110,20 @@ type NavigationItem = {
   key: string
   to: { name: string }
   match: RegExp
+  restricted?: boolean
 }
 
 const navigation: NavigationItem[] = [
   { key: 'dashboard', to: { name: 'AdminDashboard' }, match: /^\/admin(?:\/dashboard)?$/ },
   { key: 'prompts', to: { name: 'AdminPrompts' }, match: /^\/admin\/prompts(\/.*)?$/ },
-  { key: 'review', to: { name: 'AdminReview' }, match: /^\/admin\/review$/ },
-  { key: 'data', to: { name: 'AdminData' }, match: /^\/admin\/data$/ },
-  { key: 'aiSettings', to: { name: 'AdminAISettings' }, match: /^\/admin\/ai-settings$/ },
+  { key: 'review', to: { name: 'AdminReview' }, match: /^\/admin\/review$/, restricted: true },
+  { key: 'data', to: { name: 'AdminData' }, match: /^\/admin\/data$/, restricted: true },
+  {
+    key: 'aiSettings',
+    to: { name: 'AdminAISettings' },
+    match: /^\/admin\/ai-settings$/,
+    restricted: true,
+  },
 ]
 
 const route = useRoute()
@@ -276,6 +292,18 @@ function toggleLanguage() {
   display: flex;
   align-items: center;
   gap: 1rem;
+}
+
+.new-prompt-btn {
+  background-color: var(--color-black);
+  color: var(--color-white);
+  font-weight: 500;
+  box-shadow: var(--shadow-sm);
+}
+
+.new-prompt-btn:hover {
+  background-color: var(--color-gray-900);
+  transform: translateY(-1px);
 }
 
 .user-menu-wrapper {

@@ -42,6 +42,17 @@ export class GitHubService {
     })
     return data
   }
+
+  async createIssue(title: string, body: string) {
+    if (!this.octokit) throw new Error('Not authenticated')
+    const { data } = await this.octokit.issues.create({
+      owner: this.owner,
+      repo: this.repo,
+      title,
+      body,
+    })
+    return data.html_url
+  }
 }
 
 export const githubService = new GitHubService()
@@ -136,6 +147,23 @@ export async function createPullRequest(
     title,
     head,
     base,
+    body,
+  })
+  return data.html_url
+}
+
+export async function createIssue(
+  owner: string,
+  repo: string,
+  title: string,
+  body: string,
+  token: string,
+) {
+  const octokit = new Octokit({ auth: token })
+  const { data } = await octokit.issues.create({
+    owner,
+    repo,
+    title,
     body,
   })
   return data.html_url

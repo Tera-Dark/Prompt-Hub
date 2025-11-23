@@ -1,8 +1,8 @@
 <template>
   <section class="review">
     <header class="review-header">
-      <h2>Pull requests</h2>
-      <p>Review and jump to repository PRs</p>
+      <h2>Review</h2>
+      <p>Review Pull Requests and Issues</p>
     </header>
 
     <div v-if="!isAuthed" class="auth-hint">
@@ -42,6 +42,8 @@
               >
             </h3>
             <span class="badge" :data-state="pr.state">{{ pr.state }}</span>
+            <span v-if="pr.pull_request" class="badge badge-type">PR</span>
+            <span v-else class="badge badge-type">Issue</span>
           </div>
           <div class="card-meta">
             <div class="author">
@@ -77,6 +79,7 @@ type Pull = {
   state: 'open' | 'closed'
   created_at: string
   user?: GitHubUserRef
+  pull_request?: any
 }
 
 const { token, user: current } = useAuth()
@@ -100,7 +103,7 @@ async function load() {
   if (!token.value) return
   loading.value = true
   try {
-    const url = new URL(`https://api.github.com/repos/${owner}/${repo}/pulls`)
+    const url = new URL(`https://api.github.com/repos/${owner}/${repo}/issues`)
     if (state.value !== 'all') url.searchParams.set('state', state.value)
     url.searchParams.set('sort', 'created')
     url.searchParams.set('direction', 'desc')
@@ -272,6 +275,11 @@ watch(onlyMine, (v) => {
 }
 .badge[data-state='closed'] {
   background-color: var(--color-red-600, #dc2626);
+}
+
+.badge-type {
+  background-color: var(--color-gray-500);
+  margin-left: 0.5rem;
 }
 
 .card-meta {

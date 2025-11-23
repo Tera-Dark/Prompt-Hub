@@ -60,6 +60,52 @@
             placeholder="https://api.example.com/v1"
           />
 
+          <div class="params-grid">
+            <label class="param-field">
+              <div class="param-header">
+                <span>Temperature</span>
+                <span class="param-value">{{ selectedProvider.config.temperature ?? 0.7 }}</span>
+              </div>
+              <input
+                v-model.number="selectedProvider.config.temperature"
+                type="range"
+                min="0"
+                max="2"
+                step="0.1"
+                class="range-slider"
+              />
+            </label>
+
+            <label class="param-field">
+              <div class="param-header">
+                <span>Top P</span>
+                <span class="param-value">{{ selectedProvider.config.topP ?? 1 }}</span>
+              </div>
+              <input
+                v-model.number="selectedProvider.config.topP"
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                class="range-slider"
+              />
+            </label>
+
+            <label class="param-field">
+              <div class="param-header">
+                <span>Max Tokens</span>
+                <span class="param-value">{{ selectedProvider.config.maxTokens ?? 2000 }}</span>
+              </div>
+              <input
+                v-model.number="selectedProvider.config.maxTokens"
+                type="number"
+                min="1"
+                step="100"
+                class="number-input"
+              />
+            </label>
+          </div>
+
           <div class="models-section">
             <div class="section-header">
               <h4>{{ t('ai.models') }}</h4>
@@ -403,14 +449,51 @@ input:checked + .slider:before {
   background-color: var(--color-danger-light);
 }
 
-@media (max-width: 768px) {
-  .settings-layout {
-    grid-template-columns: 1fr;
-    height: auto;
-  }
-
   .providers-sidebar {
     max-height: 300px;
   }
+}
+
+.params-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  padding: 1rem;
+  background: var(--color-surface-alt);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+.param-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.param-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.param-value {
+  font-family: monospace;
+  color: var(--color-text-primary);
+}
+
+.range-slider {
+  width: 100%;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.number-input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
 }
 </style>

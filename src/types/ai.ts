@@ -7,6 +7,10 @@ export interface AIConfig {
   apiKey: string
   baseUrl: string
   models: AIModel[]
+  temperature?: number
+  maxTokens?: number
+  topP?: number
+  systemPrompt?: string
 }
 
 export interface AIProvider {
@@ -30,6 +34,9 @@ export const DEFAULT_PROVIDERS: AIProvider[] = [
         { id: 'gpt-4-turbo', name: 'GPT-4 Turbo' },
         { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo' },
       ],
+      temperature: 0.7,
+      maxTokens: 2000,
+      topP: 1,
     },
   },
   {
@@ -44,6 +51,9 @@ export const DEFAULT_PROVIDERS: AIProvider[] = [
         { id: 'gemini-pro', name: 'Gemini Pro' },
         { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro' },
       ],
+      temperature: 0.7,
+      maxTokens: 2000,
+      topP: 1,
     },
   },
   {
@@ -58,6 +68,9 @@ export const DEFAULT_PROVIDERS: AIProvider[] = [
         { id: 'claude-3-opus-20240229', name: 'Claude 3 Opus' },
         { id: 'claude-3-sonnet-20240229', name: 'Claude 3 Sonnet' },
       ],
+      temperature: 0.7,
+      maxTokens: 2000,
+      topP: 1,
     },
   },
 ]

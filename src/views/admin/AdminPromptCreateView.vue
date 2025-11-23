@@ -5,14 +5,32 @@
         <h2>New prompt</h2>
         <p>Draft a new prompt template. Fields are placeholders until the API is ready.</p>
       </div>
-      <RouterLink to="/admin/prompts" class="back-link">Back to list</RouterLink>
+      <div>
+        <h2>New prompt</h2>
+        <p v-pre>
+          Draft a new prompt template. Use <code>{{ variable }}</code> syntax for dynamic content.
+        </p>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="secondary" @click="showPlayground = true">
+          <span class="icon">🧪</span> Test in Playground
+        </button>
+        <RouterLink to="/admin/prompts" class="back-link">Back to list</RouterLink>
+      </div>
     </header>
+
+    <AIPlaygroundDrawer
+      :is-open="showPlayground"
+      :prompt-template="form.prompt"
+      @close="showPlayground = false"
+    />
 
     <form class="editor-form" @submit.prevent="onSubmit">
       <div class="form-grid">
         <label class="form-field">
           <span>Title</span>
-          <input v-model="form.title" type="text" placeholder="e.g. Product launch teaser" />
+          <span>Title</span>
+          <input v-model="form.title" type="text" placeholder="e.g. Professional Email Rewriter" />
         </label>
         <label class="form-field">
           <span>Category</span>
@@ -33,20 +51,28 @@
           <textarea
             v-model="form.description"
             rows="3"
-            placeholder="Short summary for the library"
+            placeholder="Briefly describe what this prompt does. E.g. 'Rewrites casual emails into a professional tone while maintaining the core message.'"
           ></textarea>
         </label>
         <label class="form-field form-field--full">
           <span>Prompt body</span>
           <textarea
             v-model="form.prompt"
-            rows="8"
-            placeholder="Prompt instructions will be entered here"
+            rows="12"
+            placeholder="You are an expert copywriter. Rewrite the following email to be more professional:
+
+Email: {{email_content}}
+
+Requirements:
+- Use formal language
+- Keep it concise"
+            class="prompt-textarea"
           ></textarea>
         </label>
         <label class="form-field form-field--full">
           <span>Tags</span>
-          <input v-model="tagsInput" type="text" placeholder="comma, separated" />
+          <span>Tags</span>
+          <input v-model="tagsInput" type="text" placeholder="email, writing, productivity" />
         </label>
       </div>
       <div class="form-actions">
@@ -64,10 +90,13 @@ import { ref } from 'vue'
 import { usePrompts } from '@/composables/usePrompts'
 import { useAuth } from '@/composables/useAuth'
 import { type Prompt } from '@/types/prompt'
-import { addPrompt } from '@/repositories/prompts'
+import { addPrompt, submitPromptIssue } from '@/repositories/prompts'
+import AIPlaygroundDrawer from '@/components/admin/AIPlaygroundDrawer.vue'
 
 const { categories } = usePrompts()
 const { token, hasRepoWriteAccess } = useAuth()
+
+const showPlayground = ref(false)
 
 const form = ref({
   title: '',
@@ -82,7 +111,7 @@ const submitting = ref(false)
 // repo info handled in repository layer
 
 function ensureAuth() {
-  if (!token.value || !hasRepoWriteAccess.value) throw new Error('需要登录并具备仓库写权限')
+  if (!token.value) throw new Error('需要登录')
 }
 
 function genId(title: string, category: string) {
@@ -135,8 +164,12 @@ async function handleSubmit(_draft = false) {
       createdAt: now,
       status: form.value.status,
     }
-    const url = await addPrompt(newItem, t)
-    alert(`Pull Request 已创建：\n${url}`)
+    const url = hasRepoWriteAccess.value
+      ? await addPrompt(newItem, t)
+      : await submitPromptIssue(newItem, t)
+
+    const action = hasRepoWriteAccess.value ? 'Pull Request' : 'Issue'
+    alert(`${action} 已创建：\n${url}`)
     form.value = { title: '', category: '', description: '', prompt: '', status: 'draft' }
     tagsInput.value = ''
   } catch (e) {
@@ -289,5 +322,20 @@ select {
   .editor-form {
     padding: 1.5rem;
   }
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.icon {
+  margin-right: 0.5rem;
+}
+
+.prompt-textarea {
+  font-family: monospace;
+  line-height: 1.5;
 }
 </style>

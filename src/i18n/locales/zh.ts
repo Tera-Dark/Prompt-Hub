@@ -1,6 +1,11 @@
 export default {
   app: {
-    name: '提示词中心',
+    name: 'Prompt-Hub',
+  },
+  home: {
+    title: 'Prompt-Hub',
+    subtitle: '发现、分享和管理您的 AI 提示词',
+    searchPlaceholder: '搜索提示词...',
   },
   nav: {
     home: '首页',
