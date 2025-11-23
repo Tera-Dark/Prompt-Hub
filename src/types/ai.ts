@@ -10,6 +10,8 @@ export interface AIConfig {
   temperature?: number
   maxTokens?: number
   topP?: number
+  presencePenalty?: number
+  frequencyPenalty?: number
   systemPrompt?: string
 }
 
@@ -68,6 +70,20 @@ export const DEFAULT_PROVIDERS: AIProvider[] = [
         { id: 'claude-3-opus-20240229', name: 'Claude 3 Opus' },
         { id: 'claude-3-sonnet-20240229', name: 'Claude 3 Sonnet' },
       ],
+      temperature: 0.7,
+      maxTokens: 2000,
+      topP: 1,
+    },
+  },
+  {
+    id: 'custom',
+    name: 'Custom',
+    icon: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Google_%22G%22_Logo.svg/120px-Google_%22G%22_Logo.svg.png', // Generic icon or placeholder
+    enabled: false,
+    config: {
+      apiKey: '',
+      baseUrl: 'http://localhost:8000/v1',
+      models: [{ id: 'local-model', name: 'Local Model' }],
       temperature: 0.7,
       maxTokens: 2000,
       topP: 1,

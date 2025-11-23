@@ -104,6 +104,36 @@
                 class="number-input"
               />
             </label>
+
+            <label class="param-field">
+              <div class="param-header">
+                <span>Presence Penalty</span>
+                <span class="param-value">{{ selectedProvider.config.presencePenalty ?? 0 }}</span>
+              </div>
+              <input
+                v-model.number="selectedProvider.config.presencePenalty"
+                type="range"
+                min="-2"
+                max="2"
+                step="0.1"
+                class="range-slider"
+              />
+            </label>
+
+            <label class="param-field">
+              <div class="param-header">
+                <span>Frequency Penalty</span>
+                <span class="param-value">{{ selectedProvider.config.frequencyPenalty ?? 0 }}</span>
+              </div>
+              <input
+                v-model.number="selectedProvider.config.frequencyPenalty"
+                type="range"
+                min="-2"
+                max="2"
+                step="0.1"
+                class="range-slider"
+              />
+            </label>
           </div>
 
           <div class="models-section">
