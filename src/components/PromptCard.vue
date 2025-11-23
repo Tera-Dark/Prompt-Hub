@@ -1,94 +1,58 @@
 <template>
-  <article class="prompt-card">
-    <div class="card-header">
-      <h3 class="card-title">{{ prompt.title }}</h3>
-      <span class="category-badge">{{ prompt.category }}</span>
-    </div>
+  <Card class="prompt-card-modern">
+    <template #header>
+      <div class="card-header-content">
+        <h3 class="card-title">{{ prompt.title }}</h3>
+        <Badge variant="primary" rounded>{{ prompt.category }}</Badge>
+      </div>
+    </template>
 
     <p class="card-description">{{ prompt.description }}</p>
 
-    <div class="card-prompt">
+    <div class="prompt-preview">
       <code class="prompt-text">{{ prompt.prompt }}</code>
     </div>
 
     <div class="card-tags">
-      <span v-for="tag in prompt.tags" :key="tag" class="tag">
-        {{ tag }}
-      </span>
+      <Badge v-for="tag in prompt.tags" :key="tag" variant="default">{{ tag }}</Badge>
     </div>
 
-    <div class="card-footer">
-      <button
-        class="copy-button"
-        :class="{ copied: isCopied }"
-        :aria-label="isCopied ? 'Copied!' : 'Copy prompt'"
-        @click="copyToClipboard"
-      >
-        <span v-if="!isCopied" class="copy-icon">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-          </svg>
-        </span>
-        <span v-else class="check-icon">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <polyline points="20 6 9 17 4 12"></polyline>
-          </svg>
-        </span>
-        <span class="copy-text">{{ isCopied ? 'Copied!' : 'Copy' }}</span>
-      </button>
-
-      <a
-        v-if="prompt.sourceLink"
-        :href="prompt.sourceLink"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="source-link"
-      >
-        Source
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="12"
-          height="12"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
+    <template #footer>
+      <div class="card-actions">
+        <Button
+          :variant="isCopied ? 'success' : 'secondary'"
+          size="sm"
+          class="copy-btn"
+          @click="copyToClipboard"
         >
-          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-          <polyline points="15 3 21 3 21 9"></polyline>
-          <line x1="10" y1="14" x2="21" y2="3"></line>
-        </svg>
-      </a>
-    </div>
-  </article>
+          <template #icon-left>
+            <span v-if="isCopied">✓</span>
+            <span v-else>📋</span>
+          </template>
+          {{ isCopied ? 'Copied!' : 'Copy' }}
+        </Button>
+
+        <a
+          v-if="prompt.sourceLink"
+          :href="prompt.sourceLink"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="source-link"
+        >
+          Source ↗
+        </a>
+      </div>
+    </template>
+  </Card>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { Prompt } from '@/types/prompt'
+import Card from '@/components/ui/Card.vue'
+import Badge from '@/components/ui/Badge.vue'
+import Button from '@/components/ui/Button.vue'
+import { useToast } from '@/composables/useToast'
 
 interface Props {
   prompt: Prompt
@@ -96,81 +60,31 @@ interface Props {
 
 const props = defineProps<Props>()
 const isCopied = ref(false)
+const { success, error } = useToast()
 
 async function copyToClipboard() {
   try {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      await navigator.clipboard.writeText(props.prompt.prompt)
-      showCopiedFeedback()
-    } else {
-      fallbackCopy(props.prompt.prompt)
-    }
+    await navigator.clipboard.writeText(props.prompt.prompt)
+    isCopied.value = true
+    success('Prompt copied to clipboard!')
+    setTimeout(() => {
+      isCopied.value = false
+    }, 2000)
   } catch (err) {
     console.error('Failed to copy:', err)
-    fallbackCopy(props.prompt.prompt)
+    error('Failed to copy prompt')
   }
-}
-
-function fallbackCopy(text: string) {
-  const textArea = document.createElement('textarea')
-  textArea.value = text
-  textArea.style.position = 'fixed'
-  textArea.style.left = '-999999px'
-  document.body.appendChild(textArea)
-  textArea.focus()
-  textArea.select()
-
-  try {
-    document.execCommand('copy')
-    showCopiedFeedback()
-  } catch (err) {
-    console.error('Fallback copy failed:', err)
-    alert('Copy failed. Please copy manually.')
-  } finally {
-    document.body.removeChild(textArea)
-  }
-}
-
-function showCopiedFeedback() {
-  isCopied.value = true
-  setTimeout(() => {
-    isCopied.value = false
-  }, 2000)
 }
 </script>
 
 <style scoped>
-.prompt-card {
-  background-color: var(--color-white);
-  border: 1px solid var(--color-gray-300);
-  border-radius: 8px;
-  padding: 1.5rem;
-  transition: all 0.2s ease;
+.prompt-card-modern {
+  height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  height: 100%;
-  animation: fadeIn 0.3s ease;
 }
 
-.prompt-card:hover {
-  border-color: var(--color-gray-400);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  transform: translateY(-2px);
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.card-header {
+.card-header-content {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -178,164 +92,61 @@ function showCopiedFeedback() {
 }
 
 .card-title {
-  margin: 0;
-  font-size: 1.125rem;
+  font-size: var(--text-lg);
   font-weight: 600;
-  color: var(--color-gray-900);
-  flex: 1;
+  color: var(--color-text-primary);
+  margin: 0;
   line-height: 1.4;
 }
 
-.category-badge {
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  background-color: var(--color-gray-900);
-  color: var(--color-white);
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
 .card-description {
-  margin: 0;
-  font-size: 0.875rem;
-  color: var(--color-gray-600);
-  line-height: 1.6;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: 1rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.card-prompt {
-  background-color: var(--color-gray-100);
-  border: 1px solid var(--color-gray-200);
-  border-radius: 4px;
+.prompt-preview {
+  background-color: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   padding: 0.75rem;
-  overflow-x: auto;
-  max-height: 150px;
+  margin-bottom: 1rem;
+  max-height: 120px;
   overflow-y: auto;
 }
 
 .prompt-text {
-  display: block;
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 0.813rem;
-  color: var(--color-gray-800);
-  line-height: 1.5;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
   white-space: pre-wrap;
-  word-break: break-word;
 }
 
 .card-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-}
-
-.tag {
-  display: inline-block;
-  padding: 0.25rem 0.625rem;
-  background-color: var(--color-gray-200);
-  color: var(--color-gray-700);
-  border-radius: 3px;
-  font-size: 0.75rem;
-  transition: background-color 0.15s ease;
-}
-
-.tag:hover {
-  background-color: var(--color-gray-300);
-}
-
-.card-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--color-gray-200);
   margin-top: auto;
 }
 
-.copy-button {
+.card-actions {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background-color: var(--color-gray-900);
-  color: var(--color-white);
-  border: none;
-  border-radius: 4px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.copy-button:hover {
-  background-color: var(--color-gray-800);
-  transform: translateY(-1px);
-}
-
-.copy-button:active {
-  transform: translateY(0);
-}
-
-.copy-button.copied {
-  background-color: var(--color-gray-700);
-  pointer-events: none;
-}
-
-.copy-icon,
-.check-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.copy-text {
-  font-weight: 500;
+  width: 100%;
 }
 
 .source-link {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  font-size: 0.813rem;
-  color: var(--color-gray-600);
-  transition: color 0.15s ease;
-  text-decoration: none;
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  transition: color var(--transition-base);
 }
 
 .source-link:hover {
-  color: var(--color-gray-900);
-}
-
-.source-link:focus {
-  outline: 2px solid var(--color-gray-400);
-  outline-offset: 2px;
-  border-radius: 2px;
-}
-
-@media (max-width: 640px) {
-  .prompt-card {
-    padding: 1rem;
-  }
-
-  .card-title {
-    font-size: 1rem;
-  }
-
-  .card-footer {
-    flex-direction: column;
-    gap: 0.75rem;
-    align-items: stretch;
-  }
-
-  .copy-button {
-    justify-content: center;
-  }
-
-  .source-link {
-    text-align: center;
-    justify-content: center;
-  }
+  color: var(--color-primary);
 }
 </style>

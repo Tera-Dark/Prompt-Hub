@@ -1,14 +1,11 @@
 <template>
-  <div class="ai-settings">
-    <header class="settings-header">
-      <h2>{{ t('ai.title') }}</h2>
-      <p>{{ t('ai.subtitle') }}</p>
-    </header>
-
+  <div class="ai-settings-container">
     <div class="settings-layout">
-      <!-- Sidebar: Provider List -->
-      <aside class="providers-sidebar">
-        <div class="sidebar-title">{{ t('ai.providers') }}</div>
+      <!-- Sidebar -->
+      <Card class="providers-sidebar">
+        <div class="sidebar-header">
+          <h3>{{ t('ai.providers') }}</h3>
+        </div>
         <div class="provider-list">
           <div
             v-for="provider in providers"
@@ -31,62 +28,62 @@
             </label>
           </div>
         </div>
-      </aside>
+      </Card>
 
-      <!-- Main Content: Configuration Form -->
-      <main v-if="selectedProvider" class="config-panel">
-        <div class="panel-header">
-          <div class="provider-badge">
-            <img :src="selectedProvider.icon" :alt="selectedProvider.name" class="badge-icon" />
-            <h3>{{ selectedProvider.name }}</h3>
+      <!-- Main Content -->
+      <Card v-if="selectedProvider" class="config-panel">
+        <template #header>
+          <div class="panel-header">
+            <div class="provider-badge">
+              <img :src="selectedProvider.icon" :alt="selectedProvider.name" class="badge-icon" />
+              <div>
+                <h2 class="provider-title">{{ selectedProvider.name }}</h2>
+                <Badge :variant="selectedProvider.enabled ? 'success' : 'default'">
+                  {{ selectedProvider.enabled ? t('ai.enabled') : 'Disabled' }}
+                </Badge>
+              </div>
+            </div>
           </div>
-          <div class="status-badge" :class="{ 'is-enabled': selectedProvider.enabled }">
-            {{ selectedProvider.enabled ? t('ai.enabled') : 'Disabled' }}
-          </div>
-        </div>
+        </template>
 
         <div class="config-form">
-          <div class="form-group">
-            <label>{{ t('ai.apiKey') }}</label>
-            <div class="input-wrapper">
-              <input
-                v-model="selectedProvider.config.apiKey"
-                type="password"
-                placeholder="sk-..."
-                @change="updateConfig"
-              />
-            </div>
-          </div>
+          <Input
+            v-model="selectedProvider.config.apiKey"
+            type="password"
+            :label="t('ai.apiKey')"
+            placeholder="sk-..."
+          />
 
-          <div class="form-group">
-            <label>{{ t('ai.baseUrl') }}</label>
-            <div class="input-wrapper">
-              <input
-                v-model="selectedProvider.config.baseUrl"
-                type="text"
-                placeholder="https://api.example.com/v1"
-                @change="updateConfig"
-              />
-            </div>
-          </div>
+          <Input
+            v-model="selectedProvider.config.baseUrl"
+            :label="t('ai.baseUrl')"
+            placeholder="https://api.example.com/v1"
+          />
 
           <div class="models-section">
             <div class="section-header">
               <h4>{{ t('ai.models') }}</h4>
-              <button v-if="!showAddModel" class="btn-sm" @click="showAddModel = true">
+              <Button
+                v-if="!showAddModel"
+                size="sm"
+                variant="secondary"
+                @click="showAddModel = true"
+              >
                 + {{ t('ai.addModel') }}
-              </button>
+              </Button>
             </div>
 
             <!-- Add Model Form -->
             <div v-if="showAddModel" class="add-model-form">
-              <input v-model="newModel.id" :placeholder="t('ai.modelId')" class="input-sm" />
-              <input v-model="newModel.name" :placeholder="t('ai.modelName')" class="input-sm" />
+              <Input v-model="newModel.id" :placeholder="t('ai.modelId')" class="flex-1" />
+              <Input v-model="newModel.name" :placeholder="t('ai.modelName')" class="flex-1" />
               <div class="form-actions">
-                <button class="btn-sm primary" @click="confirmAddModel">
+                <Button size="sm" variant="primary" @click="confirmAddModel">
                   {{ t('common.add') }}
-                </button>
-                <button class="btn-sm" @click="cancelAddModel">{{ t('common.cancel') }}</button>
+                </Button>
+                <Button size="sm" variant="ghost" @click="cancelAddModel">
+                  {{ t('common.cancel') }}
+                </Button>
               </div>
             </div>
 
@@ -101,18 +98,19 @@
                   <span class="model-name">{{ model.name }}</span>
                   <span class="model-id">{{ model.id }}</span>
                 </div>
-                <button
-                  class="btn-icon delete"
-                  :title="t('common.delete')"
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  class="delete-btn"
                   @click="removeModel(selectedProvider!.id, model.id)"
                 >
-                  ×
-                </button>
+                  ✕
+                </Button>
               </div>
             </div>
           </div>
         </div>
-      </main>
+      </Card>
     </div>
   </div>
 </template>
@@ -121,6 +119,10 @@
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAIConfig } from '@/composables/useAIConfig'
+import Card from '@/components/ui/Card.vue'
+import Button from '@/components/ui/Button.vue'
+import Input from '@/components/ui/Input.vue'
+import Badge from '@/components/ui/Badge.vue'
 
 const { t } = useI18n()
 const { providers, toggleProvider, addModel, removeModel } = useAIConfig()
@@ -138,11 +140,6 @@ function selectProvider(id: string) {
   showAddModel.value = false
 }
 
-function updateConfig() {
-  // Changes are reactive, but we might want to trigger explicit save or validation here if needed
-  // The composable watches for changes and persists them
-}
-
 function confirmAddModel() {
   if (newModel.value.id && newModel.value.name && selectedProviderId.value) {
     addModel(selectedProviderId.value, { ...newModel.value })
@@ -158,57 +155,44 @@ function cancelAddModel() {
 </script>
 
 <style scoped>
-.ai-settings {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+.ai-settings-container {
   height: 100%;
 }
 
-.settings-header h2 {
-  font-size: var(--text-xl);
-  font-weight: 600;
-  color: var(--color-gray-900);
-}
-
-.settings-header p {
-  color: var(--color-gray-500);
-  font-size: var(--text-sm);
-}
-
 .settings-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 1.5rem;
+  height: calc(100vh - 140px); /* Adjust based on header height */
+}
+
+.providers-sidebar {
   display: flex;
-  gap: 2rem;
-  flex: 1;
-  min-height: 0; /* For scrolling */
-  background: var(--color-white);
-  border: 1px solid var(--color-gray-200);
-  border-radius: var(--radius-lg);
+  flex-direction: column;
   overflow: hidden;
 }
 
-/* Sidebar */
-.providers-sidebar {
-  width: 280px;
-  border-right: 1px solid var(--color-gray-200);
-  background: var(--color-gray-50);
-  display: flex;
-  flex-direction: column;
+.sidebar-header {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 1rem;
 }
 
-.sidebar-title {
-  padding: 1rem;
-  font-size: var(--text-xs);
+.sidebar-header h3 {
+  font-size: var(--text-sm);
   font-weight: 600;
   text-transform: uppercase;
-  color: var(--color-gray-500);
+  color: var(--color-text-secondary);
   letter-spacing: 0.05em;
+  margin: 0;
 }
 
 .provider-list {
   flex: 1;
   overflow-y: auto;
-  padding: 0 0.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .provider-item {
@@ -216,20 +200,18 @@ function cancelAddModel() {
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 1rem;
-  margin-bottom: 0.25rem;
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color var(--transition-base);
 }
 
 .provider-item:hover {
-  background-color: var(--color-gray-100);
+  background-color: var(--color-surface-hover);
 }
 
 .provider-item.is-active {
-  background-color: var(--color-white);
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--color-gray-200);
+  background-color: var(--color-primary-subtle);
+  border: 1px solid var(--color-primary-light);
 }
 
 .provider-info {
@@ -247,7 +229,7 @@ function cancelAddModel() {
 .provider-name {
   font-weight: 500;
   font-size: var(--text-sm);
-  color: var(--color-gray-900);
+  color: var(--color-text-primary);
 }
 
 /* Switch Toggle */
@@ -271,7 +253,7 @@ function cancelAddModel() {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: var(--color-gray-300);
+  background-color: var(--color-text-tertiary);
   transition: 0.4s;
 }
 
@@ -295,7 +277,7 @@ function cancelAddModel() {
 }
 
 input:checked + .slider {
-  background-color: var(--color-green-500, #10b981);
+  background-color: var(--color-success);
 }
 
 input:checked + .slider:before {
@@ -304,18 +286,15 @@ input:checked + .slider:before {
 
 /* Main Content */
 .config-panel {
-  flex: 1;
-  padding: 2rem;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .panel-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--color-gray-200);
 }
 
 .provider-badge {
@@ -329,57 +308,24 @@ input:checked + .slider:before {
   height: 48px;
 }
 
-.status-badge {
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: var(--text-xs);
+.provider-title {
+  font-size: var(--text-xl);
   font-weight: 600;
-  background: var(--color-gray-100);
-  color: var(--color-gray-500);
-}
-
-.status-badge.is-enabled {
-  background: var(--color-green-50, #ecfdf5);
-  color: var(--color-green-700, #047857);
+  color: var(--color-text-primary);
+  margin: 0 0 0.25rem 0;
 }
 
 .config-form {
-  max-width: 600px;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  overflow-y: auto;
+  padding-right: 0.5rem;
 }
 
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.form-group label {
-  font-size: var(--text-sm);
-  font-weight: 500;
-  color: var(--color-gray-700);
-}
-
-.input-wrapper input {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid var(--color-gray-300);
-  border-radius: var(--radius-md);
-  font-size: var(--text-sm);
-  transition: border-color 0.2s;
-}
-
-.input-wrapper input:focus {
-  outline: none;
-  border-color: var(--color-black);
-}
-
-/* Models Section */
 .models-section {
   margin-top: 1rem;
-  border-top: 1px solid var(--color-gray-200);
+  border-top: 1px solid var(--color-border);
   padding-top: 1.5rem;
 }
 
@@ -393,21 +339,7 @@ input:checked + .slider:before {
 .section-header h4 {
   font-size: var(--text-base);
   font-weight: 600;
-}
-
-.btn-sm {
-  padding: 0.35rem 0.75rem;
-  font-size: var(--text-xs);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--color-gray-300);
-  background: var(--color-white);
-  cursor: pointer;
-}
-
-.btn-sm.primary {
-  background: var(--color-black);
-  color: var(--color-white);
-  border-color: var(--color-black);
+  margin: 0;
 }
 
 .add-model-form {
@@ -415,16 +347,13 @@ input:checked + .slider:before {
   gap: 0.5rem;
   margin-bottom: 1rem;
   padding: 1rem;
-  background: var(--color-gray-50);
+  background: var(--color-surface-alt);
   border-radius: var(--radius-md);
+  align-items: center;
 }
 
-.input-sm {
+.flex-1 {
   flex: 1;
-  padding: 0.35rem 0.5rem;
-  border: 1px solid var(--color-gray-300);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-sm);
 }
 
 .form-actions {
@@ -443,9 +372,9 @@ input:checked + .slider:before {
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem;
-  background: var(--color-gray-50);
+  background: var(--color-surface-alt);
   border-radius: var(--radius-md);
-  border: 1px solid var(--color-gray-100);
+  border: 1px solid var(--color-border);
 }
 
 .model-info {
@@ -456,24 +385,32 @@ input:checked + .slider:before {
 .model-name {
   font-weight: 500;
   font-size: var(--text-sm);
+  color: var(--color-text-primary);
 }
 
 .model-id {
   font-size: var(--text-xs);
-  color: var(--color-gray-500);
+  color: var(--color-text-secondary);
   font-family: monospace;
 }
 
-.btn-icon {
-  background: transparent;
-  border: none;
-  color: var(--color-gray-400);
-  font-size: 1.25rem;
-  cursor: pointer;
-  padding: 0 0.5rem;
+.delete-btn {
+  color: var(--color-text-tertiary);
 }
 
-.btn-icon:hover {
-  color: var(--color-red-600, #dc2626);
+.delete-btn:hover {
+  color: var(--color-danger);
+  background-color: var(--color-danger-light);
+}
+
+@media (max-width: 768px) {
+  .settings-layout {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .providers-sidebar {
+    max-height: 300px;
+  }
 }
 </style>

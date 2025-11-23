@@ -1,59 +1,97 @@
 <template>
-  <div class="app-container">
-    <header class="app-header">
-      <div class="header-content">
-        <div class="header-top">
-          <div class="brand">
-            <h1 class="app-title">{{ t('app.name') }}</h1>
-            <p class="app-subtitle">Discover and copy AI prompts for any task</p>
+  <div class="home-container">
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <div class="hero-content">
+        <div class="brand-badge">{{ t('app.name') }}</div>
+        <h1 class="hero-title">
+          Discover & Share <br />
+          <span class="text-gradient">AI Prompts</span>
+        </h1>
+        <p class="hero-subtitle">
+          The open-source collection of high-quality prompts for ChatGPT, Gemini, Claude, and more.
+        </p>
+
+        <div class="hero-search">
+          <div class="search-wrapper">
+            <Input v-model="searchQuery" placeholder="Search prompts..." class="hero-input">
+              <template #prefix>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+              </template>
+            </Input>
           </div>
-          <nav class="app-nav" aria-label="Primary">
-            <RouterLink v-if="!isAuthenticated" to="/admin" class="nav-link nav-link--login">
+          <div class="hero-actions">
+            <Button
+              v-if="!isAuthenticated"
+              variant="primary"
+              size="lg"
+              @click="$router.push('/admin')"
+            >
               {{ t('nav.login') }}
-            </RouterLink>
-            <div v-else class="user-info-compact">
-              <img
-                v-if="user?.avatar_url"
-                :src="user.avatar_url"
-                alt="User avatar"
-                class="nav-avatar"
-              />
-              <RouterLink to="/admin" class="nav-link nav-link--user">
-                {{ user?.name || user?.login || t('common.user') }}
-              </RouterLink>
-            </div>
-          </nav>
+            </Button>
+            <Button v-else variant="secondary" size="lg" @click="$router.push('/admin')">
+              {{ t('nav.dashboard') }}
+            </Button>
+          </div>
         </div>
       </div>
-    </header>
+    </section>
 
-    <main class="app-main">
-      <div class="content-wrapper">
-        <div class="controls-section">
-          <SearchBar v-model="searchQuery" />
-          <CategoryFilter
-            :categories="categories"
-            :result-count="filteredPrompts.length"
-            :show-count="true"
-            @update:selected-category="handleCategoryChange"
-          />
+    <!-- Main Content -->
+    <main class="main-content container">
+      <div class="content-header">
+        <div class="filter-scroll">
+          <Button
+            v-for="cat in categories"
+            :key="cat"
+            :variant="selectedCategory === cat ? 'primary' : 'ghost'"
+            size="sm"
+            class="filter-btn"
+            @click="handleCategoryChange(selectedCategory === cat ? null : cat)"
+          >
+            {{ cat }}
+          </Button>
         </div>
-
-        <PromptList
-          :prompts="filteredPrompts"
-          :loading="loading"
-          :error="error"
-          @retry="fetchPrompts"
-        />
+        <div class="results-count">{{ filteredPrompts.length }} prompts</div>
       </div>
+
+      <PromptList
+        :prompts="filteredPrompts"
+        :loading="loading"
+        :error="error"
+        @retry="fetchPrompts"
+      />
     </main>
 
     <footer class="app-footer">
-      <div class="footer-content">
-        <p>&copy; 2024 Prompt Hub. All rights reserved.</p>
-        <RouterLink to="/admin" class="footer-admin-link">{{
-          isAuthenticated ? user?.login || t('common.user') : t('nav.login')
-        }}</RouterLink>
+      <div class="container footer-inner">
+        <p>&copy; 2024 Prompt Hub. Open Source.</p>
+        <div class="footer-links">
+          <a
+            href="https://github.com/terobox/Prompt-Hub"
+            target="_blank"
+            rel="noopener"
+            class="footer-link"
+          >
+            GitHub
+          </a>
+          <RouterLink to="/admin" class="footer-link">
+            {{ isAuthenticated ? t('nav.admin') : t('nav.login') }}
+          </RouterLink>
+        </div>
       </div>
     </footer>
   </div>
@@ -61,20 +99,18 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { usePrompts } from '@/composables/usePrompts'
 import { useAuth } from '@/composables/useAuth'
-import { useI18n } from 'vue-i18n'
 import PromptList from '@/components/PromptList.vue'
-import SearchBar from '@/components/SearchBar.vue'
-import CategoryFilter from '@/components/CategoryFilter.vue'
+import Button from '@/components/ui/Button.vue'
+import Input from '@/components/ui/Input.vue'
 
+const { t } = useI18n()
 const { prompts, loading, error, categories, fetchPrompts } = usePrompts()
 const auth = useAuth()
-const { t } = useI18n()
 
 const isAuthenticated = computed(() => auth.isAuthed.value)
-const user = computed(() => auth.user.value)
-
 const searchQuery = ref('')
 const selectedCategory = ref<string | null>(null)
 
@@ -109,207 +145,168 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.app-container {
-  display: flex;
-  flex-direction: column;
+.home-container {
   min-height: 100vh;
-}
-
-.app-header {
-  background-color: var(--color-gray-900);
-  color: var(--color-white);
-  padding: 2.5rem 1.5rem;
-  border-bottom: 1px solid var(--color-gray-800);
-}
-
-.header-content {
-  max-width: 1280px;
-  margin: 0 auto;
-}
-
-.header-top {
   display: flex;
   flex-direction: column;
+  background-color: var(--color-background);
+}
+
+/* Hero Section */
+.hero-section {
+  position: relative;
+  padding: 6rem 1.5rem 4rem;
+  background: linear-gradient(to bottom, var(--color-surface) 0%, var(--color-background) 100%);
+  border-bottom: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+.hero-content {
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 1.5rem;
+  animation: slideUp 0.6s ease-out;
 }
 
-.brand {
+.brand-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.375rem 1rem;
+  background-color: var(--color-primary-subtle);
+  color: var(--color-primary-dark);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
+
+.hero-title {
+  font-size: var(--text-4xl);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-info) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-subtitle {
+  font-size: var(--text-lg);
+  color: var(--color-text-secondary);
+  max-width: 600px;
+  line-height: 1.6;
+}
+
+.hero-search {
+  width: 100%;
+  max-width: 500px;
+  margin-top: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 1rem;
+  align-items: center;
 }
 
-.app-title {
-  font-size: 2.25rem;
-  font-weight: 700;
-  letter-spacing: -0.025em;
+.search-wrapper {
+  width: 100%;
 }
 
-.app-subtitle {
-  font-size: 1.125rem;
-  color: var(--color-gray-400);
-  font-weight: 400;
-}
-
-.app-nav {
+.hero-actions {
   display: flex;
-  align-items: center;
-  justify-content: flex-start;
+  gap: 1rem;
 }
 
-.user-info-compact {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.nav-avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 9999px;
-  border: 2px solid var(--color-gray-700);
-  object-fit: cover;
-}
-
-.nav-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: var(--text-sm);
-  color: var(--color-white);
-  border: 1px solid var(--color-gray-800);
-  border-radius: var(--radius-md);
-  padding: 0.5rem 1rem;
-  transition:
-    background-color var(--transition-base),
-    color var(--transition-base),
-    border-color var(--transition-base);
-}
-
-.nav-link--login {
-  background-color: var(--color-gray-800);
-  font-weight: 600;
-}
-
-.nav-link--user {
-  font-weight: 500;
-}
-
-.nav-link:hover,
-.nav-link:focus-visible {
-  background-color: var(--color-gray-800);
-  border-color: var(--color-gray-700);
-  color: var(--color-white);
-}
-
-.app-main {
+/* Main Content */
+.main-content {
   flex: 1;
-  padding: 2.5rem 1.5rem;
-  background-color: var(--color-gray-100);
+  padding-top: 3rem;
+  padding-bottom: 4rem;
 }
 
-.content-wrapper {
-  max-width: 1280px;
-  margin: 0 auto;
-}
-
-.controls-section {
+.content-header {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
   margin-bottom: 2rem;
-  background-color: var(--color-white);
-  padding: 1.5rem;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--color-gray-300);
-  box-shadow: var(--shadow-sm);
 }
 
-.app-footer {
-  background-color: var(--color-gray-900);
-  color: var(--color-gray-500);
-  padding: 2rem 1.5rem;
-  border-top: 1px solid var(--color-gray-800);
-}
-
-.footer-content {
-  max-width: 1280px;
-  margin: 0 auto;
+.filter-scroll {
   display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  align-items: center;
-  justify-content: center;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
-.app-footer p {
-  font-size: 0.875rem;
-  margin: 0;
+.filter-scroll::-webkit-scrollbar {
+  display: none;
 }
 
-.footer-admin-link {
+.filter-btn {
+  white-space: nowrap;
+  border-radius: var(--radius-full);
+}
+
+.results-count {
   font-size: var(--text-sm);
-  color: var(--color-gray-300);
-  border-bottom: 1px solid transparent;
-  padding-bottom: 0.125rem;
-  transition:
-    color var(--transition-base),
-    border-color var(--transition-base);
+  color: var(--color-text-tertiary);
+  font-weight: 500;
 }
 
-.footer-admin-link:hover,
-.footer-admin-link:focus-visible {
-  color: var(--color-white);
-  border-color: var(--color-white);
+/* Footer */
+.app-footer {
+  background-color: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  padding: 2rem 0;
+  margin-top: auto;
 }
 
-@media (max-width: 768px) {
-  .app-header {
-    padding: 2rem 1rem;
-  }
+.footer-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
 
-  .app-title {
-    font-size: 1.75rem;
-  }
+.footer-links {
+  display: flex;
+  gap: 1.5rem;
+}
 
-  .app-subtitle {
-    font-size: 1rem;
-  }
+.footer-link {
+  color: var(--color-text-secondary);
+  transition: color var(--transition-base);
+}
 
-  .app-main {
-    padding: 1.5rem 1rem;
-  }
-
-  .controls-section {
-    padding: 1rem;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .app-footer {
-    padding: 1.5rem 1rem;
-  }
+.footer-link:hover {
+  color: var(--color-primary);
 }
 
 @media (min-width: 768px) {
-  .header-top {
+  .hero-section {
+    padding: 8rem 1.5rem 6rem;
+  }
+
+  .hero-title {
+    font-size: 4rem;
+  }
+
+  .content-header {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-  }
-
-  .app-nav {
-    justify-content: flex-end;
-  }
-}
-
-@media (min-width: 1400px) {
-  .content-wrapper {
-    max-width: 1400px;
-  }
-
-  .footer-content {
-    max-width: 1400px;
   }
 }
 </style>

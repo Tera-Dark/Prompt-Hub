@@ -15,6 +15,7 @@
     "prepare": "husky install"
   },
   "dependencies": {
+    "@octokit/rest": "^22.0.1",
     "vue": "^3.4.21",
     "vue-i18n": "^11.1.12",
     "vue-router": "^4.6.3"
