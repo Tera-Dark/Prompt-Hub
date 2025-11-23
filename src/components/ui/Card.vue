@@ -28,14 +28,8 @@ defineProps<Props>()
 .ui-card {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
-  transition: box-shadow var(--transition-base);
-}
-
-.ui-card:hover {
-  box-shadow: var(--shadow-md);
+  border-radius: var(--radius-md);
+  /* No shadow for minimalist look */
 }
 
 .ui-card-header {
@@ -48,6 +42,7 @@ defineProps<Props>()
   font-weight: 600;
   color: var(--color-text-primary);
   margin: 0;
+  letter-spacing: -0.01em;
 }
 
 .ui-card-subtitle {
@@ -62,7 +57,7 @@ defineProps<Props>()
 
 .ui-card-footer {
   padding: 1rem 1.5rem;
-  background-color: var(--color-surface-alt);
+  background-color: var(--color-surface); /* Same as body */
   border-top: 1px solid var(--color-border-light);
 }
 </style>

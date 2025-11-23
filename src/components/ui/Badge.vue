@@ -20,52 +20,53 @@ withDefaults(defineProps<Props>(), {
 .ui-badge {
   display: inline-flex;
   align-items: center;
-  padding: 0.125rem 0.625rem;
+  padding: 0.125rem 0.5rem;
   font-size: var(--text-xs);
   font-weight: 500;
   border-radius: var(--radius-sm);
   white-space: nowrap;
   line-height: 1.5;
+  border: 1px solid transparent;
 }
 
 .ui-badge--rounded {
   border-radius: 9999px;
 }
 
-/* Variants */
+/* Variants - Minimalist */
 .ui-badge--default {
   background-color: var(--color-surface-alt);
   color: var(--color-text-secondary);
-  border: 1px solid var(--color-border);
+  border-color: var(--color-border);
 }
 
 .ui-badge--primary {
-  background-color: var(--color-primary-light);
-  color: var(--color-primary-dark);
-  border: 1px solid var(--color-primary-light);
+  background-color: var(--color-black);
+  color: var(--color-white);
 }
 
 .ui-badge--success {
-  background-color: var(--color-success-light);
-  color: var(--color-success-dark);
-  border: 1px solid var(--color-success-light);
+  background-color: transparent;
+  color: var(--color-text-primary);
+  border-color: var(--color-text-primary);
 }
 
 .ui-badge--warning {
-  background-color: var(--color-warning-light);
-  color: var(--color-warning-dark);
-  border: 1px solid var(--color-warning-light);
+  background-color: transparent;
+  color: var(--color-text-primary);
+  border-color: var(--color-text-primary);
+  border-style: dashed;
 }
 
 .ui-badge--danger {
-  background-color: var(--color-danger-light);
-  color: var(--color-danger-dark);
-  border: 1px solid var(--color-danger-light);
+  background-color: transparent;
+  color: var(--color-text-primary);
+  border-color: var(--color-text-primary);
+  text-decoration: line-through;
 }
 
 .ui-badge--info {
-  background-color: var(--color-info-light);
-  color: var(--color-info-dark);
-  border: 1px solid var(--color-info-light);
+  background-color: var(--color-surface-alt);
+  color: var(--color-text-primary);
 }
 </style>

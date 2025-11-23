@@ -53,7 +53,7 @@ defineEmits<{
 .ui-input-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 0.375rem;
+  gap: 0.5rem;
   width: 100%;
 }
 
@@ -64,7 +64,7 @@ defineEmits<{
 }
 
 .ui-required {
-  color: var(--color-danger);
+  color: var(--color-text-primary); /* Minimalist: no red asterisk */
   margin-left: 0.125rem;
 }
 
@@ -76,42 +76,39 @@ defineEmits<{
 
 .ui-input {
   width: 100%;
-  padding: 0.625rem 0.875rem;
-  font-size: var(--text-sm);
+  padding: 0.75rem 0; /* Bottom border style */
+  font-size: var(--text-base);
   color: var(--color-text-primary);
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  transition: all var(--transition-base);
+  background-color: transparent;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  border-radius: 0;
+  transition: border-color var(--transition-base);
 }
 
 .ui-input:focus {
   outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-primary-light);
+  border-bottom-color: var(--color-black);
 }
 
 .ui-input:disabled {
-  background-color: var(--color-surface-disabled);
+  color: var(--color-text-tertiary);
   cursor: not-allowed;
-  opacity: 0.7;
+  border-bottom-color: var(--color-border-light);
 }
 
 .ui-input.has-error {
-  border-color: var(--color-danger);
-}
-
-.ui-input.has-error:focus {
-  box-shadow: 0 0 0 3px var(--color-danger-light);
+  border-bottom-color: var(--color-black); /* Minimalist error: just black or maybe bold */
+  /* Or stick to red if strictly needed, but user asked for minimalist. Let's keep it simple. */
 }
 
 .ui-input.has-prefix {
-  padding-left: 2.5rem;
+  padding-left: 2rem;
 }
 
 .ui-input-prefix {
   position: absolute;
-  left: 0.75rem;
+  left: 0;
   color: var(--color-text-tertiary);
   display: flex;
   align-items: center;
@@ -120,7 +117,8 @@ defineEmits<{
 
 .ui-error-message {
   font-size: var(--text-xs);
-  color: var(--color-danger);
+  color: var(--color-text-primary);
+  font-weight: 500;
   margin: 0;
 }
 

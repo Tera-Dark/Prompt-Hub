@@ -48,10 +48,11 @@ withDefaults(defineProps<Props>(), {
   transition: all var(--transition-base);
   font-family: inherit;
   line-height: 1;
+  text-decoration: none;
 }
 
 .ui-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
@@ -68,38 +69,37 @@ withDefaults(defineProps<Props>(), {
 }
 
 .ui-btn--md {
-  padding: 0.5rem 1rem;
+  padding: 0.625rem 1.25rem;
   font-size: var(--text-sm);
   gap: 0.5rem;
 }
 
 .ui-btn--lg {
-  padding: 0.75rem 1.5rem;
+  padding: 0.875rem 1.75rem;
   font-size: var(--text-base);
   gap: 0.75rem;
 }
 
-/* Variants */
+/* Variants - Minimalist */
 .ui-btn--primary {
-  background-color: var(--color-primary);
+  background-color: var(--color-black);
   color: var(--color-white);
-  border-color: var(--color-primary);
+  border-color: var(--color-black);
 }
 
 .ui-btn--primary:not(:disabled):hover {
-  background-color: var(--color-primary-dark);
-  border-color: var(--color-primary-dark);
+  background-color: #333;
+  border-color: #333;
 }
 
 .ui-btn--secondary {
   background-color: var(--color-surface-hover);
   color: var(--color-text-primary);
-  border-color: var(--color-border);
+  border-color: transparent;
 }
 
 .ui-btn--secondary:not(:disabled):hover {
-  background-color: var(--color-surface-active);
-  border-color: var(--color-border-hover);
+  background-color: #e5e5e5;
 }
 
 .ui-btn--outline {
@@ -109,7 +109,6 @@ withDefaults(defineProps<Props>(), {
 }
 
 .ui-btn--outline:not(:disabled):hover {
-  background-color: var(--color-surface-hover);
   border-color: var(--color-text-primary);
 }
 
@@ -124,25 +123,27 @@ withDefaults(defineProps<Props>(), {
 }
 
 .ui-btn--danger {
-  background-color: var(--color-danger);
-  color: var(--color-white);
-  border-color: var(--color-danger);
+  background-color: transparent;
+  color: var(--color-text-primary);
+  border-color: var(--color-text-primary);
 }
 
 .ui-btn--danger:not(:disabled):hover {
-  background-color: var(--color-danger-dark);
-  border-color: var(--color-danger-dark);
+  background-color: #000;
+  color: #fff;
+  border-color: #000;
 }
 
 .ui-btn--success {
-  background-color: var(--color-success);
-  color: var(--color-white);
-  border-color: var(--color-success);
+  background-color: transparent;
+  color: var(--color-text-primary);
+  border-color: var(--color-text-primary);
 }
 
 .ui-btn--success:not(:disabled):hover {
-  background-color: var(--color-success-dark);
-  border-color: var(--color-success-dark);
+  background-color: #000;
+  color: #fff;
+  border-color: #000;
 }
 
 /* Loading */

@@ -1,9 +1,11 @@
 <template>
-  <Card class="prompt-card-modern">
+  <Card class="prompt-card-minimal">
     <template #header>
       <div class="card-header-content">
-        <h3 class="card-title">{{ prompt.title }}</h3>
-        <Badge variant="primary" rounded>{{ prompt.category }}</Badge>
+        <div class="title-row">
+          <h3 class="card-title">{{ prompt.title }}</h3>
+          <Badge variant="default" rounded>{{ prompt.category }}</Badge>
+        </div>
       </div>
     </template>
 
@@ -14,22 +16,18 @@
     </div>
 
     <div class="card-tags">
-      <Badge v-for="tag in prompt.tags" :key="tag" variant="default">{{ tag }}</Badge>
+      <span v-for="tag in prompt.tags" :key="tag" class="minimal-tag">#{{ tag }}</span>
     </div>
 
     <template #footer>
       <div class="card-actions">
         <Button
-          :variant="isCopied ? 'success' : 'secondary'"
+          :variant="isCopied ? 'primary' : 'outline'"
           size="sm"
           class="copy-btn"
           @click="copyToClipboard"
         >
-          <template #icon-left>
-            <span v-if="isCopied">✓</span>
-            <span v-else>📋</span>
-          </template>
-          {{ isCopied ? 'Copied!' : 'Copy' }}
+          {{ isCopied ? 'Copied' : 'Copy' }}
         </Button>
 
         <a
@@ -66,25 +64,29 @@ async function copyToClipboard() {
   try {
     await navigator.clipboard.writeText(props.prompt.prompt)
     isCopied.value = true
-    success('Prompt copied to clipboard!')
+    success('Copied to clipboard')
     setTimeout(() => {
       isCopied.value = false
     }, 2000)
   } catch (err) {
     console.error('Failed to copy:', err)
-    error('Failed to copy prompt')
+    error('Failed to copy')
   }
 }
 </script>
 
 <style scoped>
-.prompt-card-modern {
+.prompt-card-minimal {
   height: 100%;
   display: flex;
   flex-direction: column;
 }
 
 .card-header-content {
+  width: 100%;
+}
+
+.title-row {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -96,13 +98,13 @@ async function copyToClipboard() {
   font-weight: 600;
   color: var(--color-text-primary);
   margin: 0;
-  line-height: 1.4;
+  line-height: 1.3;
 }
 
 .card-description {
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -111,26 +113,32 @@ async function copyToClipboard() {
 
 .prompt-preview {
   background-color: var(--color-surface-alt);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: 0.75rem;
-  margin-bottom: 1rem;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  border-radius: var(--radius-sm);
   max-height: 120px;
   overflow-y: auto;
+  border: 1px solid transparent; /* Placeholder for potential border */
 }
 
 .prompt-text {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'JetBrains Mono', monospace; /* Or system monospace */
   font-size: var(--text-xs);
-  color: var(--color-text-secondary);
+  color: var(--color-text-primary);
   white-space: pre-wrap;
 }
 
 .card-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.75rem;
   margin-top: auto;
+  margin-bottom: 0.5rem;
+}
+
+.minimal-tag {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
 }
 
 .card-actions {
@@ -142,11 +150,12 @@ async function copyToClipboard() {
 
 .source-link {
   font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
-  transition: color var(--transition-base);
+  color: var(--color-text-secondary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .source-link:hover {
-  color: var(--color-primary);
+  color: var(--color-text-primary);
 }
 </style>

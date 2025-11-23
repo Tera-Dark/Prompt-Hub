@@ -25,46 +25,47 @@ body {
     color 0.3s ease;
 }
 
-/* Color Palette Variables */
+/* Color Palette Variables - Minimalist (Black & White) */
 :root {
-  /* Brand Colors - Indigo/Violet */
-  --color-primary: #6366f1;
-  --color-primary-light: #818cf8;
-  --color-primary-dark: #4f46e5;
-  --color-primary-subtle: #e0e7ff;
+  /* Brand Colors */
+  --color-primary: #000000;
+  --color-primary-light: #333333;
+  --color-primary-dark: #000000;
+  --color-primary-subtle: #f5f5f5;
 
   /* Semantic Colors */
-  --color-success: #10b981;
-  --color-success-light: #d1fae5;
-  --color-success-dark: #047857;
+  --color-success: #000000;
+  /* Minimalist: Success is just black or bold */
+  --color-success-light: #f0f0f0;
+  --color-success-dark: #000000;
 
-  --color-warning: #f59e0b;
-  --color-warning-light: #fef3c7;
-  --color-warning-dark: #b45309;
+  --color-warning: #000000;
+  --color-warning-light: #f0f0f0;
+  --color-warning-dark: #000000;
 
-  --color-danger: #ef4444;
-  --color-danger-light: #fee2e2;
-  --color-danger-dark: #b91c1c;
+  --color-danger: #000000;
+  --color-danger-light: #f0f0f0;
+  --color-danger-dark: #000000;
 
-  --color-info: #3b82f6;
-  --color-info-light: #dbeafe;
-  --color-info-dark: #1d4ed8;
+  --color-info: #000000;
+  --color-info-light: #f0f0f0;
+  --color-info-dark: #000000;
 
-  /* Neutral Colors (Light Mode Default) */
-  --color-background: #f8fafc;
+  /* Neutral Colors */
+  --color-background: #ffffff;
   --color-surface: #ffffff;
-  --color-surface-alt: #f1f5f9;
-  --color-surface-hover: #e2e8f0;
-  --color-surface-active: #cbd5e1;
-  --color-surface-disabled: #f1f5f9;
+  --color-surface-alt: #fafafa;
+  --color-surface-hover: #f5f5f5;
+  --color-surface-active: #eeeeee;
+  --color-surface-disabled: #f5f5f5;
 
-  --color-border: #e2e8f0;
-  --color-border-light: #f1f5f9;
-  --color-border-hover: #cbd5e1;
+  --color-border: #e5e5e5;
+  --color-border-light: #f5f5f5;
+  --color-border-hover: #d4d4d4;
 
-  --color-text-primary: #0f172a;
-  --color-text-secondary: #475569;
-  --color-text-tertiary: #94a3b8;
+  --color-text-primary: #000000;
+  --color-text-secondary: #666666;
+  --color-text-tertiary: #a3a3a3;
   --color-text-inverse: #ffffff;
 
   --color-white: #ffffff;
@@ -89,11 +90,11 @@ body {
   --text-3xl: 2.25rem;
   --text-4xl: 3rem;
 
-  /* Border Radius */
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
+  /* Border Radius - Minimalist (Sharp or slightly rounded) */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+  --radius-xl: 8px;
   --radius-full: 9999px;
 
   /* Transitions */
@@ -101,30 +102,30 @@ body {
   --transition-base: 0.2s ease;
   --transition-slow: 0.3s ease;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  /* Shadows - Minimalist (None or very subtle) */
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: none;
+  --shadow-xl: none;
 }
 
-/* Dark Mode Overrides */
+/* Dark Mode Overrides - Minimalist (Inverted) */
 [data-theme='dark'] {
-  --color-background: #0f172a;
-  --color-surface: #1e293b;
-  --color-surface-alt: #334155;
-  --color-surface-hover: #334155;
-  --color-surface-active: #475569;
-  --color-surface-disabled: #1e293b;
+  --color-background: #000000;
+  --color-surface: #000000;
+  --color-surface-alt: #111111;
+  --color-surface-hover: #222222;
+  --color-surface-active: #333333;
+  --color-surface-disabled: #111111;
 
-  --color-border: #334155;
-  --color-border-light: #1e293b;
-  --color-border-hover: #475569;
+  --color-border: #333333;
+  --color-border-light: #222222;
+  --color-border-hover: #444444;
 
-  --color-text-primary: #f8fafc;
-  --color-text-secondary: #cbd5e1;
-  --color-text-tertiary: #94a3b8;
-  --color-text-inverse: #0f172a;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #a3a3a3;
+  --color-text-tertiary: #666666;
+  --color-text-inverse: #000000;
 }
 
 #app {
@@ -158,7 +159,7 @@ ol {
 
 /* Focus Styles for Accessibility */
 *:focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 1px solid var(--color-primary);
   outline-offset: 2px;
 }
 
@@ -169,8 +170,8 @@ html {
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -179,16 +180,16 @@ html {
 
 ::-webkit-scrollbar-thumb {
   background: var(--color-border-hover);
-  border-radius: 4px;
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-text-tertiary);
+  background: var(--color-text-secondary);
 }
 
 /* Selection */
 ::selection {
-  background-color: var(--color-primary-light);
+  background-color: var(--color-primary);
   color: var(--color-white);
 }
 
@@ -206,7 +207,7 @@ html {
 @keyframes slideUp {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(10px);
   }
 
   to {
@@ -218,7 +219,7 @@ html {
 /* Utility Classes */
 .container {
   width: 100%;
-  max-width: 1280px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 0 1.5rem;
 }

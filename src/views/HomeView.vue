@@ -1,97 +1,78 @@
 <template>
   <div class="home-container">
-    <!-- Hero Section -->
-    <section class="hero-section">
-      <div class="hero-content">
-        <div class="brand-badge">{{ t('app.name') }}</div>
-        <h1 class="hero-title">
-          Discover & Share <br />
-          <span class="text-gradient">AI Prompts</span>
-        </h1>
-        <p class="hero-subtitle">
-          The open-source collection of high-quality prompts for ChatGPT, Gemini, Claude, and more.
-        </p>
-
-        <div class="hero-search">
-          <div class="search-wrapper">
-            <Input v-model="searchQuery" placeholder="Search prompts..." class="hero-input">
-              <template #prefix>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <circle cx="11" cy="11" r="8"></circle>
-                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                </svg>
-              </template>
-            </Input>
-          </div>
-          <div class="hero-actions">
-            <Button
-              v-if="!isAuthenticated"
-              variant="primary"
-              size="lg"
-              @click="$router.push('/admin')"
-            >
-              {{ t('nav.login') }}
-            </Button>
-            <Button v-else variant="secondary" size="lg" @click="$router.push('/admin')">
+    <header class="home-header">
+      <div class="container header-content">
+        <div class="brand">
+          <span class="logo-icon">⚡</span>
+          <span class="brand-name">{{ t('app.name') }}</span>
+        </div>
+        <div class="header-actions">
+          <Button variant="ghost" size="sm" @click="toggleLanguage">
+            {{ locale === 'en' ? '中文' : 'English' }}
+          </Button>
+          <div v-if="isAuthenticated" class="user-menu">
+            <Button variant="secondary" size="sm" @click="$router.push('/admin')">
               {{ t('nav.dashboard') }}
             </Button>
           </div>
+          <div v-else class="auth-buttons">
+            <Button variant="primary" size="sm" @click="$router.push('/login')">
+              {{ t('nav.login') }}
+            </Button>
+          </div>
         </div>
       </div>
-    </section>
+    </header>
 
-    <!-- Main Content -->
-    <main class="main-content container">
-      <div class="content-header">
-        <div class="filter-scroll">
-          <Button
-            v-for="cat in categories"
-            :key="cat"
-            :variant="selectedCategory === cat ? 'primary' : 'ghost'"
-            size="sm"
-            class="filter-btn"
-            @click="handleCategoryChange(selectedCategory === cat ? null : cat)"
-          >
-            {{ cat }}
-          </Button>
+    <main class="home-main">
+      <section class="hero-section">
+        <div class="container">
+          <h1 class="hero-title">{{ t('home.title') }}</h1>
+          <p class="hero-subtitle">{{ t('home.subtitle') }}</p>
+
+          <div class="search-wrapper">
+            <Input
+              v-model="searchQuery"
+              :placeholder="t('home.searchPlaceholder')"
+              class="hero-input"
+            >
+              <template #prefix>
+                <span class="search-icon">🔍</span>
+              </template>
+            </Input>
+          </div>
+
+          <div class="categories-wrapper">
+            <Button
+              v-for="cat in categories"
+              :key="cat"
+              size="sm"
+              :variant="selectedCategory === cat ? 'primary' : 'outline'"
+              @click="toggleCategory(cat)"
+            >
+              {{ cat }}
+            </Button>
+          </div>
         </div>
-        <div class="results-count">{{ filteredPrompts.length }} prompts</div>
-      </div>
+      </section>
 
-      <PromptList
-        :prompts="filteredPrompts"
-        :loading="loading"
-        :error="error"
-        @retry="fetchPrompts"
-      />
+      <section class="content-section">
+        <div class="container">
+          <div class="results-header">
+            <h2 class="section-title">
+              {{ selectedCategory || 'All Prompts' }}
+            </h2>
+            <span class="results-count">{{ filteredPrompts.length }} items</span>
+          </div>
+
+          <PromptList :prompts="filteredPrompts" :loading="loading" :error="error" />
+        </div>
+      </section>
     </main>
 
-    <footer class="app-footer">
-      <div class="container footer-inner">
-        <p>&copy; 2024 Prompt Hub. Open Source.</p>
-        <div class="footer-links">
-          <a
-            href="https://github.com/terobox/Prompt-Hub"
-            target="_blank"
-            rel="noopener"
-            class="footer-link"
-          >
-            GitHub
-          </a>
-          <RouterLink to="/admin" class="footer-link">
-            {{ isAuthenticated ? t('nav.admin') : t('nav.login') }}
-          </RouterLink>
-        </div>
+    <footer class="home-footer">
+      <div class="container">
+        <p class="copyright">© {{ new Date().getFullYear() }} {{ t('app.name') }}</p>
       </div>
     </footer>
   </div>
@@ -100,48 +81,64 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { usePrompts } from '@/composables/usePrompts'
 import { useAuth } from '@/composables/useAuth'
-import PromptList from '@/components/PromptList.vue'
+import { loadPrompts, getAllCategories, searchPrompts, type Prompt } from '@/types/prompt'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
+import PromptList from '@/components/PromptList.vue'
 
-const { t } = useI18n()
-const { prompts, loading, error, categories, fetchPrompts } = usePrompts()
+const { t, locale } = useI18n()
 const auth = useAuth()
 
 const isAuthenticated = computed(() => auth.isAuthed.value)
+const prompts = ref<Prompt[]>([])
+const categories = ref<string[]>([])
+const loading = ref(true)
+const error = ref<string | null>(null)
+
 const searchQuery = ref('')
 const selectedCategory = ref<string | null>(null)
+
+onMounted(async () => {
+  try {
+    loading.value = true
+    const data = await loadPrompts()
+    prompts.value = data.prompts
+    categories.value = getAllCategories(data.prompts)
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : 'Failed to load prompts'
+  } finally {
+    loading.value = false
+  }
+})
 
 const filteredPrompts = computed(() => {
   let result = prompts.value
 
   if (selectedCategory.value) {
-    result = result.filter((prompt) => prompt.category === selectedCategory.value)
+    result = result.filter((p) => p.category === selectedCategory.value)
   }
 
-  if (searchQuery.value.trim()) {
-    const query = searchQuery.value.toLowerCase()
-    result = result.filter(
-      (prompt) =>
-        prompt.title.toLowerCase().includes(query) ||
-        prompt.description.toLowerCase().includes(query) ||
-        prompt.prompt.toLowerCase().includes(query) ||
-        prompt.tags.some((tag) => tag.toLowerCase().includes(query)),
-    )
+  if (searchQuery.value) {
+    result = searchPrompts(result, searchQuery.value)
   }
 
   return result
 })
 
-function handleCategoryChange(category: string | null) {
-  selectedCategory.value = category
+function toggleCategory(category: string) {
+  if (selectedCategory.value === category) {
+    selectedCategory.value = null
+  } else {
+    selectedCategory.value = category
+  }
 }
 
-onMounted(() => {
-  fetchPrompts()
-})
+function toggleLanguage() {
+  const newLang = locale.value === 'en' ? 'zh' : 'en'
+  locale.value = newLang
+  localStorage.setItem('prompt-hub::pref::lang', newLang)
+}
 </script>
 
 <style scoped>
@@ -152,161 +149,105 @@ onMounted(() => {
   background-color: var(--color-background);
 }
 
-/* Hero Section */
-.hero-section {
-  position: relative;
-  padding: 6rem 1.5rem 4rem;
-  background: linear-gradient(to bottom, var(--color-surface) 0%, var(--color-background) 100%);
+.home-header {
+  padding: 1.5rem 0;
   border-bottom: 1px solid var(--color-border);
-  overflow: hidden;
 }
 
-.hero-content {
-  max-width: 800px;
-  margin: 0 auto;
-  text-align: center;
+.header-content {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
   align-items: center;
-  gap: 1.5rem;
-  animation: slideUp 0.6s ease-out;
 }
 
-.brand-badge {
-  display: inline-flex;
+.brand {
+  display: flex;
   align-items: center;
-  padding: 0.375rem 1rem;
-  background-color: var(--color-primary-subtle);
-  color: var(--color-primary-dark);
-  border-radius: var(--radius-full);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  letter-spacing: 0.025em;
-  text-transform: uppercase;
+  gap: 0.5rem;
+  font-weight: 700;
+  font-size: var(--text-lg);
+  color: var(--color-text-primary);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.hero-section {
+  padding: 4rem 0 3rem;
+  text-align: center;
 }
 
 .hero-title {
   font-size: var(--text-4xl);
   font-weight: 800;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
   color: var(--color-text-primary);
-}
-
-.text-gradient {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-info) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  margin-bottom: 1rem;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
 }
 
 .hero-subtitle {
   font-size: var(--text-lg);
   color: var(--color-text-secondary);
   max-width: 600px;
-  line-height: 1.6;
-}
-
-.hero-search {
-  width: 100%;
-  max-width: 500px;
-  margin-top: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  align-items: center;
+  margin: 0 auto 2.5rem;
 }
 
 .search-wrapper {
-  width: 100%;
+  max-width: 500px;
+  margin: 0 auto 2rem;
 }
 
-.hero-actions {
+.search-icon {
+  font-size: 1rem;
+  opacity: 0.5;
+}
+
+.categories-wrapper {
   display: flex;
-  gap: 1rem;
-}
-
-/* Main Content */
-.main-content {
-  flex: 1;
-  padding-top: 3rem;
-  padding-bottom: 4rem;
-}
-
-.content-header {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.filter-scroll {
-  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 0.5rem;
-  overflow-x: auto;
+}
+
+.content-section {
+  flex: 1;
+  padding: 2rem 0 4rem;
+}
+
+.results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 2rem;
   padding-bottom: 0.5rem;
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+  border-bottom: 1px solid var(--color-border);
 }
 
-.filter-scroll::-webkit-scrollbar {
-  display: none;
-}
-
-.filter-btn {
-  white-space: nowrap;
-  border-radius: var(--radius-full);
+.section-title {
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
 }
 
 .results-count {
   font-size: var(--text-sm);
   color: var(--color-text-tertiary);
-  font-weight: 500;
+  font-family: monospace;
 }
 
-/* Footer */
-.app-footer {
-  background-color: var(--color-surface);
-  border-top: 1px solid var(--color-border);
+.home-footer {
   padding: 2rem 0;
-  margin-top: auto;
+  border-top: 1px solid var(--color-border);
+  text-align: center;
 }
 
-.footer-inner {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.copyright {
   font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-}
-
-.footer-links {
-  display: flex;
-  gap: 1.5rem;
-}
-
-.footer-link {
-  color: var(--color-text-secondary);
-  transition: color var(--transition-base);
-}
-
-.footer-link:hover {
-  color: var(--color-primary);
-}
-
-@media (min-width: 768px) {
-  .hero-section {
-    padding: 8rem 1.5rem 6rem;
-  }
-
-  .hero-title {
-    font-size: 4rem;
-  }
-
-  .content-header {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-  }
+  color: var(--color-text-tertiary);
 }
 </style>

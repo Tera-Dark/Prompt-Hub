@@ -10,6 +10,11 @@ const routes: RouteRecordRaw[] = [
     component: HomeView,
   },
   {
+    path: '/login',
+    name: 'Login',
+    component: () => import('@/views/auth/LoginView.vue'),
+  },
+  {
     path: '/auth/callback',
     name: 'AuthCallback',
     component: () => import('@/views/auth/AuthCallbackView.vue'),
@@ -94,12 +99,20 @@ router.beforeEach((to) => {
   if (to.meta.requiresAuth) {
     if (!auth.isAuthed.value) {
       auth.setAttemptedRoute(to.fullPath)
-      return true
+      return { name: 'Login' }
     }
 
     if (!auth.hasRepoWriteAccess.value && to.name !== 'AdminDashboard') {
+      // Allow access to dashboard even without write access,
+      // but maybe show a restricted view or redirect to a specific "no access" page if needed.
+      // For now, let's keep it as is, but ensure AdminDashboard handles it.
       return { name: 'AdminDashboard' }
     }
+  }
+
+  // Redirect to admin if already logged in and trying to access login
+  if (to.name === 'Login' && auth.isAuthed.value) {
+    return { name: 'AdminDashboard' }
   }
 
   return true
