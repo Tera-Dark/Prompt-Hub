@@ -449,6 +449,12 @@ input:checked + .slider:before {
   background-color: var(--color-danger-light);
 }
 
+@media (max-width: 768px) {
+  .settings-layout {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
   .providers-sidebar {
     max-height: 300px;
   }
