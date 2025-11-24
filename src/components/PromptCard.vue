@@ -1,5 +1,5 @@
 <template>
-  <Card class="prompt-card-minimal">
+  <Card class="prompt-card-minimal" :class="{ 'is-list-view': viewMode === 'list' }">
     <template #header>
       <div class="card-header-content">
         <div class="title-row">
@@ -27,7 +27,7 @@
           class="copy-btn"
           @click="copyToClipboard"
         >
-          {{ isCopied ? 'Copied' : 'Copy' }}
+          {{ isCopied ? t('common.actions.copied') : t('common.actions.copy') }}
         </Button>
 
         <a
@@ -37,7 +37,7 @@
           rel="noopener noreferrer"
           class="source-link"
         >
-          Source ↗
+          {{ t('common.actions.source') }} ↗
         </a>
       </div>
     </template>
@@ -46,6 +46,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { Prompt } from '@/types/prompt'
 import Card from '@/components/ui/Card.vue'
 import Badge from '@/components/ui/Badge.vue'
@@ -54,9 +55,13 @@ import { useToast } from '@/composables/useToast'
 
 interface Props {
   prompt: Prompt
+  viewMode?: 'grid' | 'list'
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  viewMode: 'grid',
+})
+const { t } = useI18n()
 const isCopied = ref(false)
 const { success, error } = useToast()
 
@@ -157,5 +162,48 @@ async function copyToClipboard() {
 
 .source-link:hover {
   color: var(--color-text-primary);
+}
+
+/* List View Styles */
+.prompt-card-minimal.is-list-view {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 1.5rem;
+  padding: 1.5rem;
+}
+
+.is-list-view .card-header-content {
+  width: 250px;
+  flex-shrink: 0;
+}
+
+.is-list-view .title-row {
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.is-list-view .card-description {
+  width: 200px;
+  flex-shrink: 0;
+  margin-bottom: 0;
+  -webkit-line-clamp: 3;
+}
+
+.is-list-view .prompt-preview {
+  flex: 1;
+  margin-bottom: 0;
+  height: auto;
+  max-height: 100px;
+}
+
+.is-list-view .card-tags {
+  display: none; /* Hide tags in list view for cleaner look, or move them */
+}
+
+.is-list-view .card-actions {
+  width: auto;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-left: 1rem;
 }
 </style>

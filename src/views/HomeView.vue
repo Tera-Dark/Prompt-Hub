@@ -10,13 +10,18 @@
           <Button variant="ghost" size="sm" @click="toggleLanguage">
             {{ locale === 'en' ? '中文' : 'English' }}
           </Button>
+
+          <Button variant="primary" size="sm" class="submit-prompt-btn" @click="handleSubmitPrompt">
+            {{ t('nav.prompts') }} +
+          </Button>
+
           <div v-if="isAuthenticated" class="user-menu">
             <Button variant="secondary" size="sm" @click="$router.push('/admin')">
               {{ t('nav.dashboard') }}
             </Button>
           </div>
           <div v-else class="auth-buttons">
-            <Button variant="primary" size="sm" @click="$router.push('/login')">
+            <Button variant="secondary" size="sm" @click="$router.push('/login')">
               {{ t('nav.login') }}
             </Button>
           </div>
@@ -60,9 +65,11 @@
         <div class="container">
           <div class="results-header">
             <h2 class="section-title">
-              {{ selectedCategory || 'All Prompts' }}
+              {{ selectedCategory || t('prompts.allPrompts') }}
             </h2>
-            <span class="results-count">{{ filteredPrompts.length }} items</span>
+            <span class="results-count"
+              >{{ filteredPrompts.length }} {{ t('common.sort.items') }}</span
+            >
           </div>
 
           <PromptList :prompts="filteredPrompts" :loading="loading" :error="error" />
@@ -75,6 +82,22 @@
         <p class="copyright">© {{ new Date().getFullYear() }} {{ t('app.name') }}</p>
       </div>
     </footer>
+
+    <!-- Floating AI Playground Trigger -->
+    <button
+      class="playground-trigger"
+      :title="t('playground.title')"
+      @click="showPlayground = true"
+    >
+      <span class="icon">⚡</span>
+      <span class="label">{{ t('playground.title') }}</span>
+    </button>
+
+    <AIPlaygroundDrawer
+      :is-open="showPlayground"
+      prompt-template=""
+      @close="showPlayground = false"
+    />
   </div>
 </template>
 
@@ -82,13 +105,16 @@
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '@/composables/useAuth'
+import { useRouter } from 'vue-router'
 import { loadPrompts, getAllCategories, searchPrompts, type Prompt } from '@/types/prompt'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 import PromptList from '@/components/PromptList.vue'
+import AIPlaygroundDrawer from '@/components/admin/AIPlaygroundDrawer.vue'
 
 const { t, locale } = useI18n()
 const auth = useAuth()
+const router = useRouter()
 
 const isAuthenticated = computed(() => auth.isAuthed.value)
 const prompts = ref<Prompt[]>([])
@@ -98,6 +124,7 @@ const error = ref<string | null>(null)
 
 const searchQuery = ref('')
 const selectedCategory = ref<string | null>(null)
+const showPlayground = ref(false)
 
 onMounted(async () => {
   try {
@@ -138,6 +165,14 @@ function toggleLanguage() {
   const newLang = locale.value === 'en' ? 'zh' : 'en'
   locale.value = newLang
   localStorage.setItem('prompt-hub::pref::lang', newLang)
+}
+
+function handleSubmitPrompt() {
+  if (isAuthenticated.value) {
+    router.push('/admin/prompts/new')
+  } else {
+    router.push('/login')
+  }
 }
 </script>
 
@@ -249,5 +284,45 @@ function toggleLanguage() {
 .copyright {
   font-size: var(--text-sm);
   color: var(--color-text-tertiary);
+}
+
+.playground-trigger {
+  position: fixed;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: none;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  padding: 1rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  z-index: 40;
+}
+
+.playground-trigger:hover {
+  background: var(--color-surface-hover);
+  padding-right: 1rem;
+  transform: translateY(-50%) translateX(5px);
+}
+
+.playground-trigger .icon {
+  font-size: 1.5rem;
+}
+
+.playground-trigger .label {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 </style>

@@ -2,42 +2,62 @@
   <div class="drawer-backdrop" :class="{ 'is-open': isOpen }" @click="close">
     <div class="drawer-panel" @click.stop>
       <header class="drawer-header">
-        <h3>AI Playground</h3>
-        <button class="close-btn" @click="close">✕</button>
+        <div class="header-title">
+          <h3>{{ t('playground.title') }}</h3>
+          <span class="badge">{{ t('common.status.beta') }}</span>
+        </div>
+        <div class="header-actions">
+          <button class="icon-btn" :title="t('nav.aiSettings')" @click="openSettings">⚙️</button>
+          <button class="icon-btn close-btn" @click="close">✕</button>
+        </div>
       </header>
 
       <div class="drawer-content">
         <!-- Variables Section -->
         <div v-if="variables.length > 0" class="section">
-          <h4>Variables</h4>
+          <h4>{{ t('playground.variables') }}</h4>
           <div class="variables-grid">
             <label v-for="v in variables" :key="v" class="variable-field">
               <span>{{ v }}</span>
-              <input v-model="variableValues[v]" type="text" :placeholder="`Value for {{${v}}}`" />
+              <input
+                v-model="variableValues[v]"
+                type="text"
+                :placeholder="t('playground.variablePlaceholder', { name: v })"
+              />
             </label>
           </div>
         </div>
 
+        <!-- Manual Prompt Input (if no template) -->
+        <div v-else class="section">
+          <h4>{{ t('playground.promptLabel') }}</h4>
+          <textarea
+            v-model="manualPrompt"
+            rows="6"
+            :placeholder="t('playground.promptPlaceholder')"
+          ></textarea>
+        </div>
+
         <!-- System Prompt Override -->
         <div class="section">
-          <h4>System Prompt</h4>
+          <h4>{{ t('playground.systemPromptLabel') }}</h4>
           <textarea
             v-model="systemPrompt"
             rows="3"
-            placeholder="Override system prompt (optional)"
+            :placeholder="t('playground.systemPromptPlaceholder')"
           ></textarea>
         </div>
 
         <!-- Output Section -->
         <div class="section output-section">
           <div class="section-header">
-            <h4>Output</h4>
+            <h4>{{ t('playground.outputLabel') }}</h4>
             <div v-if="loading" class="loading-spinner"></div>
           </div>
           <div class="output-box" :class="{ 'has-error': error }">
             <pre v-if="output">{{ output }}</pre>
             <div v-else-if="error" class="error-msg">{{ error }}</div>
-            <div v-else class="placeholder">Run the prompt to see output...</div>
+            <div v-else class="placeholder">{{ t('playground.outputPlaceholder') }}</div>
           </div>
         </div>
       </div>
@@ -51,7 +71,7 @@
           </select>
         </div>
         <Button :disabled="loading || !canRun" @click="runPrompt">
-          {{ loading ? 'Running...' : 'Run' }}
+          {{ loading ? t('playground.running') : t('playground.run') }}
         </Button>
       </footer>
     </div>
@@ -60,6 +80,8 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAIConfig } from '@/composables/useAIConfig'
 import { aiService } from '@/services/ai'
 import Button from '@/components/ui/Button.vue'
@@ -73,9 +95,12 @@ const emit = defineEmits<{
   (e: 'close'): void
 }>()
 
+const router = useRouter()
+const { t } = useI18n()
 const { providers } = useAIConfig()
 const selectedProviderId = ref('')
 const variableValues = ref<Record<string, string>>({})
+const manualPrompt = ref('')
 const systemPrompt = ref('')
 const output = ref('')
 const error = ref('')
@@ -89,7 +114,11 @@ const variables = computed(() => {
 })
 
 const activeProviders = computed(() => providers.value.filter((p) => p.enabled))
-const canRun = computed(() => activeProviders.value.length > 0 && props.promptTemplate.trim())
+const canRun = computed(() => {
+  if (activeProviders.value.length === 0) return false
+  if (props.promptTemplate) return true
+  return manualPrompt.value.trim().length > 0
+})
 
 // Auto-select first active provider
 watch(
@@ -106,6 +135,11 @@ function close() {
   emit('close')
 }
 
+function openSettings() {
+  router.push('/admin/ai-settings')
+  close()
+}
+
 async function runPrompt() {
   if (!selectedProviderId.value) return
 
@@ -116,9 +150,13 @@ async function runPrompt() {
   try {
     // Interpolate variables
     let finalPrompt = props.promptTemplate
-    for (const v of variables.value) {
-      const val = variableValues.value[v] || ''
-      finalPrompt = finalPrompt.replace(new RegExp(`\\{\\{${v}\\}\\}`, 'g'), val)
+    if (finalPrompt) {
+      for (const v of variables.value) {
+        const val = variableValues.value[v] || ''
+        finalPrompt = finalPrompt.replace(new RegExp(`\\{\\{${v}\\}\\}`, 'g'), val)
+      }
+    } else {
+      finalPrompt = manualPrompt.value
     }
 
     const provider = providers.value.find((p) => p.id === selectedProviderId.value)
@@ -182,27 +220,63 @@ async function runPrompt() {
 }
 
 .drawer-header {
-  padding: 1rem 1.5rem;
+  padding: 1.25rem 1.5rem;
   border-bottom: 1px solid var(--color-border);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background: var(--color-surface-alt);
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .drawer-header h3 {
   font-size: var(--text-lg);
   font-weight: 600;
   margin: 0;
+  color: var(--color-text-primary);
+}
+
+.badge {
+  font-size: 0.7rem;
+  padding: 0.1rem 0.4rem;
+  background: var(--color-primary-subtle);
+  color: var(--color-primary);
+  border-radius: 999px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  transition: all 0.2s;
+  font-size: 1.1rem;
+}
+
+.icon-btn:hover {
+  background-color: var(--color-surface-hover);
+  color: var(--color-text-primary);
 }
 
 .close-btn {
   font-size: 1.25rem;
-  color: var(--color-text-secondary);
-  transition: color 0.2s;
-}
-
-.close-btn:hover {
-  color: var(--color-text-primary);
 }
 
 .drawer-content {
@@ -211,7 +285,8 @@ async function runPrompt() {
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.5rem;
+  background: var(--color-surface);
 }
 
 .section h4 {
@@ -277,14 +352,17 @@ textarea:focus {
 
 .output-box {
   flex: 1;
-  background: var(--color-black);
-  color: var(--color-white);
+  background: #1e1e1e;
+  color: #e0e0e0;
   border-radius: var(--radius-md);
-  padding: 1rem;
-  font-family: monospace;
+  padding: 1.25rem;
+  font-family: 'Fira Code', monospace;
   font-size: var(--text-sm);
+  line-height: 1.6;
   overflow-y: auto;
-  min-height: 200px;
+  min-height: 250px;
+  border: 1px solid var(--color-border);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .output-box pre {

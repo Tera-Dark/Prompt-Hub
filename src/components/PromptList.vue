@@ -2,39 +2,51 @@
   <div class="prompt-list">
     <div v-if="!loading && !error" class="list-controls">
       <div class="controls-left">
-        <label class="control">
-          <span>排序</span>
-          <select v-model="sortKey">
-            <option value="title">标题</option>
-            <option value="createdAt">创建时间</option>
-            <option value="updatedAt">更新时间</option>
-          </select>
-        </label>
-        <label class="control">
-          <span>方向</span>
-          <select v-model="sortDir">
-            <option value="asc">升序</option>
-            <option value="desc">降序</option>
-          </select>
-        </label>
-        <label class="control">
-          <span>每页</span>
-          <select v-model.number="pageSize">
-            <option :value="12">12</option>
-            <option :value="24">24</option>
-            <option :value="48">48</option>
-          </select>
-        </label>
+        <SortDropdown
+          v-model="sortKey"
+          :label="t('common.sort.sortBy')"
+          :options="[
+            { label: t('common.sort.title'), value: 'title' },
+            { label: t('common.sort.createdAt'), value: 'createdAt' },
+            { label: t('common.sort.updatedAt'), value: 'updatedAt' },
+          ]"
+        />
+        <SortDropdown
+          v-model="sortDir"
+          :label="t('common.sort.order')"
+          :options="[
+            { label: t('common.sort.asc'), value: 'asc' },
+            { label: t('common.sort.desc'), value: 'desc' },
+          ]"
+        />
+        <SortDropdown
+          v-model="pageSize"
+          :label="t('common.sort.show')"
+          :options="[
+            { label: `12 ${t('common.sort.items')}`, value: 12 },
+            { label: `24 ${t('common.sort.items')}`, value: 24 },
+            { label: `48 ${t('common.sort.items')}`, value: 48 },
+          ]"
+        />
       </div>
-      <div v-if="totalPages > 1" class="controls-right">
-        <button class="pager" :disabled="currentPage === 1" @click="goPrev">上一页</button>
-        <span class="page-info">第 {{ currentPage }} / {{ totalPages }} 页</span>
-        <button class="pager" :disabled="currentPage === totalPages" @click="goNext">下一页</button>
+      <div class="controls-right">
+        <ViewToggle v-model="viewMode" />
+        <div v-if="totalPages > 1" class="pagination-controls">
+          <button class="pager" :disabled="currentPage === 1" @click="goPrev">
+            {{ t('common.pagination.prev') }}
+          </button>
+          <span class="page-info">{{
+            t('common.pagination.pageInfo', { current: currentPage, total: totalPages })
+          }}</span>
+          <button class="pager" :disabled="currentPage === totalPages" @click="goNext">
+            {{ t('common.pagination.next') }}
+          </button>
+        </div>
       </div>
     </div>
     <div v-if="loading" class="loading">
       <div class="loading-spinner"></div>
-      <p>Loading prompts...</p>
+      <p>{{ t('common.status.loading') }}</p>
     </div>
 
     <div v-else-if="error" class="error">
@@ -72,20 +84,28 @@
         <circle cx="11" cy="11" r="8"></circle>
         <path d="m21 21-4.35-4.35"></path>
       </svg>
-      <h3>No prompts found</h3>
-      <p>Try adjusting your search or filters to find what you're looking for.</p>
+      <h3>{{ t('prompts.noPrompts') }}</h3>
+      <p>{{ t('prompts.noPromptsDesc') }}</p>
     </div>
 
-    <div v-else class="prompt-grid">
-      <PromptCard v-for="prompt in pagedPrompts" :key="prompt.id" :prompt="prompt" />
+    <div v-else class="prompt-container" :class="viewMode">
+      <PromptCard
+        v-for="prompt in pagedPrompts"
+        :key="prompt.id"
+        :prompt="prompt"
+        :view-mode="viewMode"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { Prompt } from '@/types/prompt'
 import PromptCard from './PromptCard.vue'
+import ViewToggle from '@/components/ui/ViewToggle.vue'
+import SortDropdown from '@/components/ui/SortDropdown.vue'
 
 interface Props {
   prompts: Prompt[]
@@ -102,12 +122,14 @@ const props = withDefaults(defineProps<Props>(), {
   error: null,
 })
 
+const { t } = useI18n()
 const emit = defineEmits<Emits>()
 
-const sortKey = ref<'title' | 'createdAt' | 'updatedAt'>('title')
-const sortDir = ref<'asc' | 'desc'>('asc')
-const pageSize = ref<number>(24)
+const sortKey = ref<'title' | 'createdAt' | 'updatedAt'>('createdAt')
+const sortDir = ref<'asc' | 'desc'>('desc')
+const pageSize = ref<number>(12)
 const currentPage = ref<number>(1)
+const viewMode = ref<'grid' | 'list'>('grid')
 
 const normalizedDate = (v?: string) => {
   if (!v) return 0
@@ -171,11 +193,10 @@ onMounted(() => {})
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  background-color: var(--color-white);
-  border: 1px solid var(--color-gray-200);
-  border-radius: 8px;
-  padding: 0.75rem 1rem;
-  margin-bottom: 1rem;
+  background-color: transparent;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 1rem;
+  margin-bottom: 2rem;
 }
 
 .controls-left {
@@ -184,38 +205,32 @@ onMounted(() => {})
   flex-wrap: wrap;
 }
 
-.control {
+.controls-right {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 1rem;
 }
 
-.control span {
-  font-size: var(--text-sm);
-  color: var(--color-gray-700);
-}
-
-.control select {
-  padding: 0.4rem 0.5rem;
-  border: 1px solid var(--color-gray-300);
-  border-radius: 6px;
-  background-color: var(--color-white);
-  font-size: var(--text-sm);
-}
-
-.controls-right {
+.pagination-controls {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
 .pager {
-  padding: 0.4rem 0.75rem;
-  border: 1px solid var(--color-gray-900);
-  border-radius: 6px;
-  background-color: var(--color-black);
-  color: var(--color-white);
-  font-size: var(--text-sm);
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pager:hover:not(:disabled) {
+  background-color: var(--color-surface-hover);
+  color: var(--color-text-primary);
 }
 
 .pager:disabled {
@@ -328,14 +343,20 @@ onMounted(() => {})
   max-width: 400px;
 }
 
-.prompt-grid {
+.prompt-container.grid {
   display: grid;
   gap: 1.5rem;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
 }
 
+.prompt-container.list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
 @media (max-width: 768px) {
-  .prompt-grid {
+  .prompt-container.grid {
     grid-template-columns: 1fr;
     gap: 1rem;
   }
@@ -349,7 +370,7 @@ onMounted(() => {})
 }
 
 @media (min-width: 1400px) {
-  .prompt-grid {
+  .prompt-container.grid {
     grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
   }
 }

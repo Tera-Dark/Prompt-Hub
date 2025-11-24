@@ -18,8 +18,16 @@
       </div>
       <nav class="sidebar-nav" aria-label="Admin">
         <template v-for="item in navigation" :key="item.key">
+          <a
+            v-if="item.key === 'playground'"
+            href="#"
+            class="sidebar-link"
+            @click.prevent="togglePlayground"
+          >
+            <span>{{ t('nav.playground') || 'Playground' }}</span>
+          </a>
           <RouterLink
-            v-if="!item.restricted || hasRepoWriteAccess"
+            v-else-if="(!item.restricted || hasRepoWriteAccess) && item.to && item.match"
             :to="item.to"
             class="sidebar-link"
             :class="{ 'is-active': item.match.test(route.path) }"
@@ -30,6 +38,12 @@
         </template>
       </nav>
     </aside>
+
+    <AIPlaygroundDrawer
+      :is-open="showPlayground"
+      prompt-template=""
+      @close="showPlayground = false"
+    />
 
     <div class="admin-workspace">
       <header class="admin-header">
@@ -105,17 +119,19 @@ import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { useI18n } from 'vue-i18n'
 import Button from '@/components/ui/Button.vue'
+import AIPlaygroundDrawer from '@/components/admin/AIPlaygroundDrawer.vue'
 
 type NavigationItem = {
   key: string
-  to: { name: string }
-  match: RegExp
+  to?: { name: string }
+  match?: RegExp
   restricted?: boolean
 }
 
 const navigation: NavigationItem[] = [
   { key: 'dashboard', to: { name: 'AdminDashboard' }, match: /^\/admin(?:\/dashboard)?$/ },
   { key: 'prompts', to: { name: 'AdminPrompts' }, match: /^\/admin\/prompts(\/.*)?$/ },
+  { key: 'playground' },
   { key: 'review', to: { name: 'AdminReview' }, match: /^\/admin\/review$/, restricted: true },
   { key: 'data', to: { name: 'AdminData' }, match: /^\/admin\/data$/, restricted: true },
   {
@@ -129,6 +145,7 @@ const navigation: NavigationItem[] = [
 const route = useRoute()
 const sidebarOpen = ref(false)
 const userMenuOpen = ref(false)
+const showPlayground = ref(false)
 const auth = useAuth()
 const { t, locale } = useI18n()
 
@@ -137,7 +154,7 @@ const hasRepoWriteAccess = computed(() => auth.hasRepoWriteAccess.value)
 const currentUser = computed(() => auth.user.value)
 
 const currentSectionKey = computed(() => {
-  const found = navigation.find((item) => item.match.test(route.path))
+  const found = navigation.find((item) => item.match && item.match.test(route.path))
   return found?.key ?? 'admin'
 })
 
@@ -176,6 +193,13 @@ function toggleLanguage() {
   const newLang = locale.value === 'en' ? 'zh' : 'en'
   locale.value = newLang
   localStorage.setItem('prompt-hub::pref::lang', newLang)
+}
+
+function togglePlayground() {
+  showPlayground.value = !showPlayground.value
+  if (window.innerWidth <= 1024) {
+    sidebarOpen.value = false
+  }
 }
 </script>
 

@@ -1,0 +1,14 @@
+
+> prompt-hub@0.0.0 typecheck
+> vue-tsc --noEmit
+
+src/layouts/AdminLayout.vue(119,22): error TS6133: 'RouterView' is declared but its value is never read.
+src/layouts/AdminLayout.vue(122,1): error TS6133: 'Button' is declared but its value is never read.
+src/layouts/AdminLayout.vue(123,1): error TS6133: 'AIPlaygroundDrawer' is declared but its value is never read.
+src/layouts/AdminLayout.vue(153,7): error TS6133: 'isAuthenticated' is declared but its value is never read.
+src/layouts/AdminLayout.vue(155,7): error TS6133: 'currentUser' is declared but its value is never read.
+src/layouts/AdminLayout.vue(157,7): error TS6133: 'currentSectionKey' is declared but its value is never read.
+src/layouts/AdminLayout.vue(176,10): error TS6133: 'toggleSidebar' is declared but its value is never read.
+src/layouts/AdminLayout.vue(184,10): error TS6133: 'toggleUserMenu' is declared but its value is never read.
+src/layouts/AdminLayout.vue(188,10): error TS6133: 'handleLogout' is declared but its value is never read.
+src/layouts/AdminLayout.vue(193,10): error TS6133: 'toggleLanguage' is declared but its value is never read.
