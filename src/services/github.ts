@@ -125,7 +125,7 @@ export async function updateFile(
     repo,
     path,
     message,
-    content: btoa(content),
+    content: content, // Content should already be base64 encoded if it's an image, or we handle encoding before calling
     branch,
     sha,
   })

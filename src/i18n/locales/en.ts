@@ -6,6 +6,11 @@ export default {
     title: 'Prompt-Hub',
     subtitle: 'Discover, share, and manage your AI prompts',
     searchPlaceholder: 'Search prompts...',
+    nav: {
+      featured: 'Featured',
+      explore: 'Explore',
+      favorites: 'Favorites',
+    },
   },
   nav: {
     home: 'Home',
@@ -41,7 +46,9 @@ export default {
     },
     actions: {
       copy: 'Copy',
-      copied: 'Copied',
+      copied: 'Copied!',
+      save: 'Save',
+      saved: 'Saved',
       source: 'Source',
     },
     status: {
@@ -56,6 +63,10 @@ export default {
     noPromptsDesc: "Try adjusting your search or filters to find what you're looking for.",
     submit: 'Submit Prompt',
   },
+  recommendations: {
+    title: 'Recommended for You',
+    subtitle: 'Curated based on your interests and trending topics.',
+  },
   playground: {
     title: 'AI Playground',
     promptLabel: 'Prompt',
@@ -68,6 +79,28 @@ export default {
     running: 'Running...',
     variables: 'Variables',
     variablePlaceholder: 'Value for {name}',
+  },
+  dashboard: {
+    title: 'Dashboard',
+    subtitle: 'Monitor high-level activity across prompts and moderation.',
+    stats: {
+      published: 'Published prompts',
+      pending: 'Pending review',
+      new: 'New submissions',
+      flagged: 'Flagged issues',
+      meta: {
+        daily: 'Updated daily',
+        moderation: 'Requires moderation',
+        days: 'Last 7 days',
+        followUp: 'Needs follow-up',
+      },
+    },
+    panels: {
+      recent: 'Recent prompt submissions',
+      recentDesc: 'Submission activity will appear here after the data pipeline is connected.',
+      moderation: 'Moderation summary',
+      moderationDesc: 'Track outstanding issues and approvals from the review workspace.',
+    },
   },
   ai: {
     title: 'AI Settings',

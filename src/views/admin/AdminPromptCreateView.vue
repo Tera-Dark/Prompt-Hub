@@ -3,10 +3,6 @@
     <header class="editor-header">
       <div>
         <h2>New prompt</h2>
-        <p>Draft a new prompt template. Fields are placeholders until the API is ready.</p>
-      </div>
-      <div>
-        <h2>New prompt</h2>
         <p v-pre>
           Draft a new prompt template. Use <code>{{ variable }}</code> syntax for dynamic content.
         </p>
@@ -28,7 +24,6 @@
     <form class="editor-form" @submit.prevent="onSubmit">
       <div class="form-grid">
         <label class="form-field">
-          <span>Title</span>
           <span>Title</span>
           <input v-model="form.title" type="text" placeholder="e.g. Professional Email Rewriter" />
         </label>
@@ -71,7 +66,6 @@ Requirements:
         </label>
         <label class="form-field form-field--full">
           <span>Tags</span>
-          <span>Tags</span>
           <input v-model="tagsInput" type="text" placeholder="email, writing, productivity" />
         </label>
       </div>
@@ -103,7 +97,8 @@ const form = ref({
   category: '',
   description: '',
   prompt: '',
-  status: 'draft' as 'draft' | 'published',
+  status: 'draft' as 'draft' | 'published' | 'archived',
+  imageUrl: '',
 })
 const tagsInput = ref('')
 const submitting = ref(false)
@@ -163,6 +158,7 @@ async function handleSubmit(_draft = false) {
       tags,
       createdAt: now,
       status: form.value.status,
+      imageUrl: form.value.imageUrl,
     }
     const url = hasRepoWriteAccess.value
       ? await addPrompt(newItem, t)
@@ -170,7 +166,14 @@ async function handleSubmit(_draft = false) {
 
     const action = hasRepoWriteAccess.value ? 'Pull Request' : 'Issue'
     alert(`${action} 已创建：\n${url}`)
-    form.value = { title: '', category: '', description: '', prompt: '', status: 'draft' }
+    form.value = {
+      title: '',
+      category: '',
+      description: '',
+      prompt: '',
+      status: 'draft',
+      imageUrl: '',
+    }
     tagsInput.value = ''
   } catch (e) {
     const msg = e instanceof Error ? e.message : '提交失败'
@@ -337,5 +340,44 @@ select {
 .prompt-textarea {
   font-family: monospace;
   line-height: 1.5;
+}
+
+.image-upload-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.image-preview {
+  position: relative;
+  width: 200px;
+  height: 120px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+}
+
+.image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.remove-image {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.upload-status {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
 }
 </style>

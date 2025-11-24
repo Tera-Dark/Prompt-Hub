@@ -94,6 +94,7 @@
         :key="prompt.id"
         :prompt="prompt"
         :view-mode="viewMode"
+        @click="$emit('select', prompt)"
       />
     </div>
   </div>
@@ -115,6 +116,7 @@ interface Props {
 
 interface Emits {
   (e: 'retry'): void
+  (e: 'select', prompt: Prompt): void
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -180,7 +182,16 @@ function goNext() {
 function retry() {
   emit('retry')
 }
-onMounted(() => {})
+onMounted(() => {
+  try {
+    const saved = Number(localStorage.getItem('prompt-hub::pref::pageSize'))
+    if (!Number.isNaN(saved) && saved > 0) {
+      pageSize.value = saved
+    }
+  } catch {
+    // ignore
+  }
+})
 </script>
 
 <style scoped>
@@ -197,6 +208,7 @@ onMounted(() => {})
   border-bottom: 1px solid var(--color-border);
   padding-bottom: 1rem;
   margin-bottom: 2rem;
+  flex-wrap: wrap;
 }
 
 .controls-left {
@@ -209,6 +221,34 @@ onMounted(() => {})
   display: flex;
   align-items: center;
   gap: 1rem;
+  margin-left: auto;
+}
+
+@media (max-width: 640px) {
+  .list-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+
+  .controls-left {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .controls-left > * {
+    flex: 1;
+  }
+
+  .controls-right {
+    width: 100%;
+    justify-content: space-between;
+    margin-left: 0;
+  }
+
+  .prompt-container.grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .pagination-controls {
@@ -345,8 +385,8 @@ onMounted(() => {})
 
 .prompt-container.grid {
   display: grid;
-  gap: 1.5rem;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
 }
 
 .prompt-container.list {
@@ -375,5 +415,3 @@ onMounted(() => {})
   }
 }
 </style>
-onMounted(() => { try { const saved = Number(localStorage.getItem('prompt-hub::pref::pageSize')) if
-(!Number.isNaN(saved) && saved > 0) pageSize.value = saved } catch {} })

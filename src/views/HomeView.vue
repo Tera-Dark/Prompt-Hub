@@ -2,79 +2,126 @@
   <div class="home-container">
     <header class="home-header">
       <div class="container header-content">
-        <div class="brand">
-          <span class="logo-icon">⚡</span>
-          <span class="brand-name">{{ t('app.name') }}</span>
-        </div>
-        <div class="header-actions">
-          <Button variant="ghost" size="sm" @click="toggleLanguage">
-            {{ locale === 'en' ? '中文' : 'English' }}
-          </Button>
-
-          <Button variant="primary" size="sm" class="submit-prompt-btn" @click="handleSubmitPrompt">
-            {{ t('nav.prompts') }} +
-          </Button>
-
-          <div v-if="isAuthenticated" class="user-menu">
-            <Button variant="secondary" size="sm" @click="$router.push('/admin')">
-              {{ t('nav.dashboard') }}
-            </Button>
+        <div class="header-top">
+          <div class="brand">
+            <span class="logo-icon">⚡</span>
+            <span class="brand-name">{{ t('app.name') }}</span>
           </div>
-          <div v-else class="auth-buttons">
-            <Button variant="secondary" size="sm" @click="$router.push('/login')">
-              {{ t('nav.login') }}
+          <button
+            class="mobile-menu-toggle visible-mobile"
+            aria-label="Toggle navigation"
+            @click="mobileMenuOpen = !mobileMenuOpen"
+          >
+            <Icon :name="mobileMenuOpen ? 'x' : 'menu'" :size="24" />
+          </button>
+        </div>
+
+        <div class="header-main" :class="{ 'is-open': mobileMenuOpen }">
+          <div class="header-nav">
+            <button
+              class="nav-item"
+              :class="{ active: currentView === 'recommendations' }"
+              @click="switchView('recommendations')"
+            >
+              <Icon name="sparkles" :size="18" />
+              {{ t('home.nav.featured') }}
+            </button>
+            <button
+              class="nav-item"
+              :class="{ active: currentView === 'explore' }"
+              @click="switchView('explore')"
+            >
+              <Icon name="compass-simple" :size="18" />
+              {{ t('home.nav.explore') }}
+            </button>
+            <button
+              class="nav-item"
+              :class="{ active: currentView === 'favorites' }"
+              @click="switchView('favorites')"
+            >
+              <Icon name="bookmark" :size="18" />
+              {{ t('home.nav.favorites') }}
+            </button>
+          </div>
+
+          <div class="header-center">
+            <div class="header-search">
+              <Input
+                v-model="searchQuery"
+                :placeholder="t('home.searchPlaceholder')"
+                class="search-input"
+                @focus="switchView('explore')"
+              >
+                <template #prefix>
+                  <span class="search-icon">🔍</span>
+                </template>
+              </Input>
+            </div>
+          </div>
+
+          <div class="header-actions">
+            <Button variant="ghost" size="sm" @click="toggleLanguage">
+              {{ locale === 'en' ? '中文' : 'English' }}
             </Button>
+
+            <Button
+              variant="primary"
+              size="sm"
+              class="submit-prompt-btn"
+              @click="handleSubmitPrompt"
+            >
+              <Icon name="plus" :size="16" />
+              {{ t('nav.prompts') }}
+            </Button>
+
+            <div v-if="isAuthenticated" class="user-menu">
+              <Button variant="secondary" size="sm" @click="$router.push('/admin')">
+                <Icon name="layout-dashboard" :size="16" />
+                {{ t('nav.dashboard') }}
+              </Button>
+            </div>
+            <div v-else class="auth-buttons">
+              <Button variant="secondary" size="sm" @click="$router.push('/login')">
+                <Icon name="log-in" :size="16" />
+                {{ t('nav.login') }}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
     </header>
 
     <main class="home-main">
-      <section class="hero-section">
-        <div class="container">
-          <h1 class="hero-title">{{ t('home.title') }}</h1>
-          <p class="hero-subtitle">{{ t('home.subtitle') }}</p>
-
-          <div class="search-wrapper">
-            <Input
-              v-model="searchQuery"
-              :placeholder="t('home.searchPlaceholder')"
-              class="hero-input"
-            >
-              <template #prefix>
-                <span class="search-icon">🔍</span>
-              </template>
-            </Input>
+      <div class="container content-area">
+        <!-- Recommendations View -->
+        <Transition name="fade" mode="out-in">
+          <div v-if="currentView === 'recommendations'" key="recs">
+            <RecommendationSection
+              :prompts="featuredPrompts"
+              :loading="isLoading"
+              @select="handlePromptSelect"
+            />
           </div>
 
-          <div class="categories-wrapper">
-            <Button
-              v-for="cat in categories"
-              :key="cat"
-              size="sm"
-              :variant="selectedCategory === cat ? 'primary' : 'outline'"
-              @click="toggleCategory(cat)"
-            >
-              {{ cat }}
-            </Button>
-          </div>
-        </div>
-      </section>
+          <!-- Explore View -->
+          <div v-else key="explore" class="explore-view">
+            <div class="explore-header">
+              <CategoryFilter v-model="selectedCategory" :categories="categories" />
+            </div>
 
-      <section class="content-section">
-        <div class="container">
-          <div class="results-header">
-            <h2 class="section-title">
-              {{ selectedCategory || t('prompts.allPrompts') }}
-            </h2>
-            <span class="results-count"
-              >{{ filteredPrompts.length }} {{ t('common.sort.items') }}</span
-            >
-          </div>
+            <div v-if="isLoading" class="prompts-grid">
+              <PromptCardSkeleton v-for="i in 6" :key="i" />
+            </div>
 
-          <PromptList :prompts="filteredPrompts" :loading="loading" :error="error" />
-        </div>
-      </section>
+            <PromptList
+              v-else
+              :prompts="filteredPrompts"
+              :view-mode="viewMode"
+              @select="handlePromptSelect"
+            />
+          </div>
+        </Transition>
+      </div>
     </main>
 
     <footer class="home-footer">
@@ -98,67 +145,88 @@
       prompt-template=""
       @close="showPlayground = false"
     />
+
+    <PromptDetailModal
+      v-if="selectedPrompt"
+      :is-open="!!selectedPrompt"
+      :prompt="selectedPrompt"
+      @close="selectedPrompt = null"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '@/composables/useAuth'
 import { useRouter } from 'vue-router'
-import { loadPrompts, getAllCategories, searchPrompts, type Prompt } from '@/types/prompt'
+import type { Prompt } from '@/types/prompt'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
-import PromptList from '@/components/PromptList.vue'
+import Icon from '@/components/ui/Icon.vue'
+
+import CategoryFilter from '@/components/prompts/CategoryFilter.vue'
+import PromptList from '@/components/prompts/PromptList.vue'
+import PromptCardSkeleton from '@/components/prompts/PromptCardSkeleton.vue'
 import AIPlaygroundDrawer from '@/components/admin/AIPlaygroundDrawer.vue'
+import RecommendationSection from '@/components/home/RecommendationSection.vue'
+import PromptDetailModal from '@/components/prompts/PromptDetailModal.vue'
+import { recommendationService } from '@/services/recommendations'
+import { usePromptStore } from '@/stores/prompts'
 
 const { t, locale } = useI18n()
 const auth = useAuth()
 const router = useRouter()
+const promptStore = usePromptStore()
 
 const isAuthenticated = computed(() => auth.isAuthed.value)
-const prompts = ref<Prompt[]>([])
-const categories = ref<string[]>([])
-const loading = ref(true)
-const error = ref<string | null>(null)
 
 const searchQuery = ref('')
 const selectedCategory = ref<string | null>(null)
 const showPlayground = ref(false)
+const mobileMenuOpen = ref(false)
+const selectedPrompt = ref<Prompt | null>(null)
+const currentView = ref<'recommendations' | 'explore' | 'favorites'>('recommendations')
+const viewMode = ref<'grid' | 'list'>('grid')
+
+const isLoading = computed(() => promptStore.isLoading.value)
+const featuredPrompts = computed(() => promptStore.featuredPrompts.value)
+const categories = computed(() => promptStore.categories.value)
 
 onMounted(async () => {
   try {
-    loading.value = true
-    const data = await loadPrompts()
-    prompts.value = data.prompts
-    categories.value = getAllCategories(data.prompts)
-  } catch (err) {
-    error.value = err instanceof Error ? err.message : 'Failed to load prompts'
-  } finally {
-    loading.value = false
+    // auth is auto-initialized
+    await promptStore.fetchPrompts()
+  } catch (e) {
+    console.error('Failed to init:', e)
   }
 })
 
 const filteredPrompts = computed(() => {
-  let result = prompts.value
-
-  if (selectedCategory.value) {
-    result = result.filter((p) => p.category === selectedCategory.value)
-  }
-
-  if (searchQuery.value) {
-    result = searchPrompts(result, searchQuery.value)
-  }
-
-  return result
+  return promptStore.getFilteredPrompts(
+    searchQuery.value,
+    selectedCategory.value,
+    currentView.value,
+  )
 })
 
-function toggleCategory(category: string) {
-  if (selectedCategory.value === category) {
+function switchView(view: 'recommendations' | 'explore' | 'favorites') {
+  currentView.value = view
+  if (view === 'recommendations') {
     selectedCategory.value = null
-  } else {
-    selectedCategory.value = category
+    searchQuery.value = ''
   }
+}
+
+watch(searchQuery, (newVal) => {
+  if (newVal) {
+    currentView.value = 'explore'
+  }
+})
+
+function handlePromptSelect(prompt: Prompt) {
+  recommendationService.trackInteraction(prompt)
+  selectedPrompt.value = prompt
 }
 
 function toggleLanguage() {
@@ -191,8 +259,23 @@ function handleSubmitPrompt() {
 
 .header-content {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 1rem;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: auto;
+}
+
+.header-main {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  justify-content: space-between;
+  gap: 1rem;
 }
 
 .brand {
@@ -202,38 +285,66 @@ function handleSubmitPrompt() {
   font-weight: 700;
   font-size: var(--text-lg);
   color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+.header-nav {
+  display: flex;
+  gap: 1.5rem;
+  margin-left: 2rem;
+}
+
+.nav-item {
+  background: none;
+  border: none;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: 0.5rem 0;
+  position: relative;
+  transition: color var(--transition-base);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
+.nav-item:hover {
+  color: var(--color-text-primary);
+}
+
+.nav-item.active {
+  color: var(--color-primary);
+}
+
+.nav-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: var(--color-primary);
+  border-radius: 2px;
+}
+
+.header-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: 0 1rem;
+  max-width: 500px;
+}
+
+.header-search {
+  width: 100%;
 }
 
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 1rem;
-}
-
-.hero-section {
-  padding: 4rem 0 3rem;
-  text-align: center;
-}
-
-.hero-title {
-  font-size: var(--text-4xl);
-  font-weight: 800;
-  color: var(--color-text-primary);
-  margin-bottom: 1rem;
-  letter-spacing: -0.03em;
-  line-height: 1.1;
-}
-
-.hero-subtitle {
-  font-size: var(--text-lg);
-  color: var(--color-text-secondary);
-  max-width: 600px;
-  margin: 0 auto 2.5rem;
-}
-
-.search-wrapper {
-  max-width: 500px;
-  margin: 0 auto 2rem;
+  gap: 0.75rem;
 }
 
 .search-icon {
@@ -241,11 +352,96 @@ function handleSubmitPrompt() {
   opacity: 0.5;
 }
 
+.mobile-menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  padding: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  .header-content {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+  }
+
+  .header-top {
+    width: 100%;
+    padding: 0.5rem 0;
+  }
+
+  .mobile-menu-toggle {
+    display: block;
+  }
+
+  .header-main {
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-border);
+    margin-top: 0.5rem;
+  }
+
+  .header-main.is-open {
+    display: flex;
+  }
+
+  .header-nav {
+    margin-left: 0;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .nav-item {
+    width: 100%;
+    padding: 0.75rem;
+    border-radius: var(--radius-md);
+  }
+
+  .nav-item:hover {
+    background-color: var(--color-surface-hover);
+  }
+
+  .nav-item.active::after {
+    display: none;
+  }
+
+  .nav-item.active {
+    background-color: var(--color-surface-active);
+  }
+
+  .header-center {
+    padding: 0;
+    max-width: none;
+  }
+
+  .header-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .header-actions > * {
+    width: 100%;
+  }
+}
+
+.content-area {
+  padding-top: 3rem;
+  padding-bottom: 5rem;
+}
+
 .categories-wrapper {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 0.5rem;
+  margin-bottom: 2rem;
 }
 
 .content-section {

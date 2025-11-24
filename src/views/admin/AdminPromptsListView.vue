@@ -46,8 +46,8 @@
 import { RouterLink } from 'vue-router'
 import { onMounted, ref } from 'vue'
 import { useAuth } from '@/composables/useAuth'
-import { loadPrompts, type Prompt } from '@/types/prompt'
-import { deletePromptById } from '@/repositories/prompts'
+import { type Prompt } from '@/types/prompt'
+import { deletePromptById, loadPrompts } from '@/repositories/prompts'
 
 const items = ref<Prompt[]>([])
 const submitting = ref(false)

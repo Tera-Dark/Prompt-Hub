@@ -8,6 +8,9 @@ export interface Prompt {
   sourceLink?: string
   createdAt: string
   updatedAt?: string
+  views?: number
+  likes?: number
+  imageUrl?: string
   status?: 'draft' | 'published' | 'archived'
 }
 
@@ -23,40 +26,6 @@ export class PromptLoadError extends Error {
   ) {
     super(message)
     this.name = 'PromptLoadError'
-  }
-}
-
-export async function loadPrompts(): Promise<PromptsData> {
-  try {
-    const response = await fetch(`${import.meta.env.BASE_URL}data/prompts.json`)
-
-    if (!response.ok) {
-      throw new PromptLoadError(
-        `Failed to fetch prompts: ${response.status} ${response.statusText}`,
-      )
-    }
-
-    const data = await response.json()
-
-    if (!data || typeof data !== 'object') {
-      throw new PromptLoadError('Invalid prompts data: expected an object')
-    }
-
-    if (!Array.isArray(data.prompts)) {
-      throw new PromptLoadError('Invalid prompts data: prompts field must be an array')
-    }
-
-    return data as PromptsData
-  } catch (error) {
-    if (error instanceof PromptLoadError) {
-      throw error
-    }
-
-    if (error instanceof Error) {
-      throw new PromptLoadError('Failed to load prompts data', error)
-    }
-
-    throw new PromptLoadError('An unknown error occurred while loading prompts')
   }
 }
 

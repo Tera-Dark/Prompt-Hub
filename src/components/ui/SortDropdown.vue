@@ -114,25 +114,34 @@ const vClickOutside = {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
+  padding: 0.5rem 1rem;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  border-radius: 100px; /* Pill shape */
   color: var(--color-text-primary);
   font-size: var(--text-sm);
   cursor: pointer;
   transition: all 0.2s;
+  box-shadow: var(--shadow-sm);
 }
 
 .trigger-btn:hover,
 .trigger-btn.active {
-  border-color: var(--color-primary);
+  border-color: var(--color-gray-400);
   background: var(--color-surface-hover);
+  transform: translateY(-1px);
 }
 
 .label {
   color: var(--color-text-tertiary);
   font-weight: 500;
+  display: none; /* Hide label on mobile or generally to save space? Let's keep it but maybe hide on small screens */
+}
+
+@media (min-width: 768px) {
+  .label {
+    display: inline;
+  }
 }
 
 .value {

@@ -58,9 +58,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { loadPrompts } from '@/types/prompt'
 import { useAuth } from '@/composables/useAuth'
-import { updatePromptById } from '@/repositories/prompts'
+import { updatePromptById, loadPrompts } from '@/repositories/prompts'
 
 const props = defineProps<{ id: string }>()
 const { token, hasRepoWriteAccess } = useAuth()

@@ -16,6 +16,42 @@ function repoInfo() {
   return { owner, repo }
 }
 
+import { PromptLoadError, type PromptsData } from '@/types/prompt'
+
+export async function loadPrompts(): Promise<PromptsData> {
+  try {
+    const response = await fetch(`${import.meta.env.BASE_URL}data/prompts.json`)
+
+    if (!response.ok) {
+      throw new PromptLoadError(
+        `Failed to fetch prompts: ${response.status} ${response.statusText}`,
+      )
+    }
+
+    const data = await response.json()
+
+    if (!data || typeof data !== 'object') {
+      throw new PromptLoadError('Invalid prompts data: expected an object')
+    }
+
+    if (!Array.isArray(data.prompts)) {
+      throw new PromptLoadError('Invalid prompts data: prompts field must be an array')
+    }
+
+    return data as PromptsData
+  } catch (error) {
+    if (error instanceof PromptLoadError) {
+      throw error
+    }
+
+    if (error instanceof Error) {
+      throw new PromptLoadError('Failed to load prompts data', error)
+    }
+
+    throw new PromptLoadError('An unknown error occurred while loading prompts')
+  }
+}
+
 export async function addPrompt(newItem: Prompt, token: string): Promise<string> {
   const { owner, repo } = repoInfo()
   const base = await getDefaultBranch(owner, repo, token)
@@ -121,4 +157,71 @@ ${newItem.prompt}
 *Submitted via Prompt-Hub*
 `
   return await createIssue(owner, repo, title, body, token)
+}
+
+export async function uploadImage(file: File, token: string): Promise<string> {
+  const { owner, repo } = repoInfo()
+  const base = await getDefaultBranch(owner, repo, token)
+  const baseSha = await getBranchSha(owner, repo, base, token)
+
+  // Create a unique filename
+  const ext = file.name.split('.').pop() || 'png'
+  const filename = `upload-${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${ext}`
+  const path = `public/uploads/${filename}`
+
+  // Convert file to base64
+  const content = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = reader.result as string
+      // Remove data URL prefix (e.g., "data:image/png;base64,")
+      const base64 = result.split(',')[1]
+      resolve(base64)
+    }
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+
+  const branch = `upload-${filename}`
+  await createBranch(owner, repo, branch, baseSha, token)
+
+  await updateFile(
+    owner,
+    repo,
+    path,
+    content,
+    `chore: upload image ${filename}`,
+    branch,
+    baseSha, // We use baseSha as we are creating a new file
+    token,
+  )
+
+  // Create PR to merge the image
+  // Note: For a real app, we might want to just commit directly if we have permissions,
+  // but following the pattern, we create a PR.
+  // HOWEVER, for images, we might want to just use the raw URL after merge.
+  // Since we are "Serverless", we need the image to be available.
+  // If we use PR, the image won't be available until merged.
+  // For this demo, let's assume we merge it or just return the blob URL for preview?
+  // No, the user wants "upload support".
+  // Let's create a PR. The user will see the image after merge.
+  // OR, better: if we have write access, we can commit directly to main?
+  // The current `updateFile` takes a branch.
+
+  // Let's stick to the PR flow for consistency, but return the "future" URL.
+  // The URL will be: https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}
+  // Or via jsdelivr: https://cdn.jsdelivr.net/gh/{owner}/{repo}@{branch}/{path}
+
+  await createPullRequest(
+    owner,
+    repo,
+    `Upload image: ${filename}`,
+    branch,
+    base,
+    `Upload image ${filename}`,
+    token,
+  )
+
+  // Return a URL that is accessible (raw from the branch)
+  return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}`
 }

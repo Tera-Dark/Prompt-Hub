@@ -1,7 +1,6 @@
 import { ref, computed, type Ref } from 'vue'
 import type { Prompt, PromptsData } from '@/types/prompt'
 import {
-  loadPrompts,
   PromptLoadError,
   getPromptsByCategory,
   getPromptsByTag,
@@ -9,6 +8,7 @@ import {
   getAllCategories,
   getAllTags,
 } from '@/types/prompt'
+import { loadPrompts } from '@/repositories/prompts'
 
 export function usePrompts() {
   const prompts: Ref<Prompt[]> = ref([])

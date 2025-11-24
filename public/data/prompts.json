@@ -10,7 +10,9 @@
       "description": "生成专业级别的人物肖像图片。请在变量中描述人物特征（如：young woman, smiling, wearing glasses）。",
       "sourceLink": "https://example.com/portrait-guide",
       "createdAt": "2024-01-15T10:30:00Z",
-      "updatedAt": "2024-11-23T12:00:00Z"
+      "updatedAt": "2024-11-23T12:00:00Z",
+      "views": 1250,
+      "likes": 340
     },
     {
       "id": "ai-drawing-002",
@@ -19,7 +21,9 @@
       "tags": ["科幻", "场景", "未来", "概念艺术"],
       "prompt": "Subject: Futuristic sci-fi cityscape\nElements: {{elements}}\nStyle: Cyberpunk aesthetic, concept art style, high detail\nLighting: Neon lights, dramatic lighting, rain reflections, night scene\nComposition: Cinematic composition, towering skyscrapers, flying vehicles",
       "description": "创建充满科技感的未来城市场景。请在变量中添加特定元素（如：giant hologram, flying cars）。",
-      "createdAt": "2024-01-18T09:15:00Z"
+      "createdAt": "2024-01-18T09:15:00Z",
+      "views": 980,
+      "likes": 210
     },
     {
       "id": "ai-drawing-003",
@@ -28,7 +32,9 @@
       "tags": ["卡通", "角色设计", "可爱", "插画"],
       "prompt": "Subject: Cute cartoon character, {{character_type}}\nStyle: Chibi style, digital illustration, clean lines\nFeatures: Big expressive eyes, colorful design, simple shapes, friendly appearance\nBackground: White background, character sheet, multiple poses",
       "description": "设计可爱的卡通角色。请在变量中指定角色类型（如：cat warrior, little wizard）。",
-      "createdAt": "2024-01-20T11:00:00Z"
+      "createdAt": "2024-01-20T11:00:00Z",
+      "views": 1500,
+      "likes": 420
     },
     {
       "id": "ai-drawing-004",
@@ -38,7 +44,9 @@
       "prompt": "Subject: Beautiful landscape, {{landscape_type}}\nStyle: Oil painting style, impressionist technique, thick brushstrokes\nLighting: Golden hour lighting, rich colors\nAtmosphere: Peaceful, serene, artistic",
       "description": "生成印象派风格的自然风景画。请在变量中指定风景类型（如：mountain lake, forest path）。",
       "sourceLink": "https://example.com/landscape-techniques",
-      "createdAt": "2024-01-22T16:20:00Z"
+      "createdAt": "2024-01-22T16:20:00Z",
+      "views": 750,
+      "likes": 150
     },
     {
       "id": "writing-001",
@@ -47,7 +55,9 @@
       "tags": ["商务", "邮件", "润色", "专业"],
       "prompt": "Role: Professional Business Communication Expert\n\nTask: Refine the following email draft to make it more professional, concise, and polite.\n\nContext: The email is intended for {{recipient_role}}.\n\nDraft Email:\n\"{{email_draft}}\"\n\nRequirements:\n- Maintain the core message.\n- Improve tone, grammar, and structure.\n- Ensure it conveys respect while being direct.",
       "description": "将草稿邮件转化为专业、简洁且礼貌的商务邮件。支持指定收件人角色。",
-      "createdAt": "2024-01-10T08:30:00Z"
+      "createdAt": "2024-01-10T08:30:00Z",
+      "views": 2100,
+      "likes": 560
     },
     {
       "id": "writing-002",
@@ -56,7 +66,9 @@
       "tags": ["故事", "创意", "小说", "开头"],
       "prompt": "Role: Creative Writing Coach\n\nTask: Write an engaging story opening.\n\nGenre: {{genre}}\nTheme: {{theme}}\n\nRequirements:\n- Hook the reader immediately.\n- Set the scene with vivid descriptions.\n- Introduce an intriguing character or situation.\n- Establish a compelling tone.",
       "description": "生成引人入胜的故事开头。请指定故事的流派和主题。",
-      "createdAt": "2024-01-12T14:00:00Z"
+      "createdAt": "2024-01-12T14:00:00Z",
+      "views": 890,
+      "likes": 180
     },
     {
       "id": "writing-003",
@@ -66,7 +78,9 @@
       "prompt": "Role: Social Media Manager\n\nTask: Generate an engaging social media post.\n\nPlatform: {{platform}}\nTopic: {{topic}}\nTarget Audience: {{audience}}\n\nRequirements:\n- Concise and catchy.\n- Include a clear call-to-action (CTA).\n- Use relevant emojis and hashtags.\n- Appeal to the target audience's emotions or interests.",
       "description": "创作吸引人的社交媒体文案。支持指定平台（Twitter, LinkedIn等）和受众。",
       "sourceLink": "https://example.com/social-media-guide",
-      "createdAt": "2024-01-14T10:45:00Z"
+      "createdAt": "2024-01-14T10:45:00Z",
+      "views": 1800,
+      "likes": 450
     },
     {
       "id": "writing-004",
@@ -75,7 +89,9 @@
       "tags": ["电商", "产品描述", "销售", "转化"],
       "prompt": "Role: E-commerce Copywriter\n\nTask: Write a compelling product description.\n\nProduct Name: {{product_name}}\nKey Features: {{key_features}}\nTarget Customer: {{target_customer}}\n\nRequirements:\n- Highlight benefits, not just features.\n- Address customer pain points.\n- Use persuasive language.\n- End with a strong reason to buy now.",
       "description": "撰写有说服力的产品描述。输入产品名称和关键特性，自动生成营销文案。",
-      "createdAt": "2024-01-16T13:20:00Z"
+      "createdAt": "2024-01-16T13:20:00Z",
+      "views": 1300,
+      "likes": 320
     },
     {
       "id": "writing-005",
@@ -84,7 +100,9 @@
       "tags": ["博客", "大纲", "结构", "SEO"],
       "prompt": "Role: Content Strategist\n\nTask: Create a detailed blog post outline.\n\nTopic: {{topic}}\nTarget Keywords: {{keywords}}\n\nOutput Format:\n1. Catchy Title\n2. Introduction (Hook & Thesis)\n3. Main Sections (with subheadings and key points)\n4. Conclusion (Summary & CTA)\n\nRequirements:\n- Ensure logical flow.\n- Incorporate SEO keywords naturally.",
       "description": "生成结构完整的博客文章大纲，包含SEO关键词优化建议。",
-      "createdAt": "2024-01-25T09:30:00Z"
+      "createdAt": "2024-01-25T09:30:00Z",
+      "views": 1100,
+      "likes": 280
     },
     {
       "id": "programming-001",
@@ -93,7 +111,9 @@
       "tags": ["代码审查", "最佳实践", "重构", "质量"],
       "prompt": "Role: Senior Software Engineer\n\nTask: Review the following code.\n\nCode:\n```\n{{code_snippet}}\n```\n\nPlease provide feedback on:\n1. **Code Quality & Readability**: Naming conventions, structure.\n2. **Potential Bugs**: Edge cases, logic errors.\n3. **Performance**: Complexity, resource usage.\n4. **Security**: Vulnerabilities.\n5. **Refactoring Suggestions**: How to make it cleaner.",
       "description": "全面审查代码质量，识别问题并提供改进建议。粘贴代码即可获得反馈。",
-      "createdAt": "2024-01-08T15:00:00Z"
+      "createdAt": "2024-01-08T15:00:00Z",
+      "views": 3200,
+      "likes": 890
     },
     {
       "id": "programming-002",
@@ -103,7 +123,9 @@
       "prompt": "Role: Computer Science Professor\n\nTask: Explain the {{algorithm_name}} algorithm.\n\nRequirements:\n1. **Concept**: Explain what problem it solves in simple terms.\n2. **Step-by-Step**: How it works.\n3. **Complexity**: Time and Space analysis.\n4. **Implementation**: Provide a clean implementation in {{programming_language}}.\n5. **Example**: Show usage and output.",
       "description": "详细解释算法原理和实现。支持指定编程语言。",
       "sourceLink": "https://example.com/algorithm-guide",
-      "createdAt": "2024-01-11T11:30:00Z"
+      "createdAt": "2024-01-11T11:30:00Z",
+      "views": 1600,
+      "likes": 410
     },
     {
       "id": "programming-003",
@@ -112,7 +134,9 @@
       "tags": ["API", "文档", "接口", "注释"],
       "prompt": "Role: Technical Writer\n\nTask: Generate API documentation for the following code.\n\nCode:\n```\n{{code_snippet}}\n```\n\nFormat: {{doc_format}} (e.g., JSDoc, Python Docstring, Markdown)\n\nInclude:\n- Function/Method descriptions\n- Parameters (types & descriptions)\n- Return values\n- Usage examples\n- Error handling",
       "description": "为代码生成完整的API文档。支持指定文档格式（如JSDoc）。",
-      "createdAt": "2024-01-13T14:15:00Z"
+      "createdAt": "2024-01-13T14:15:00Z",
+      "views": 1400,
+      "likes": 350
     },
     {
       "id": "programming-004",
@@ -121,7 +145,9 @@
       "tags": ["调试", "错误排查", "问题解决", "troubleshooting"],
       "prompt": "Role: Expert Debugger\n\nTask: Analyze and solve the following issue.\n\nError Message / Behavior:\n{{error_message}}\n\nRelevant Code:\n```\n{{code_snippet}}\n```\n\nAnalysis Required:\n1. Identify the root cause.\n2. Explain why it is happening.\n3. Provide specific solutions/fixes.\n4. Suggest debugging steps to verify.",
       "description": "系统化分析和解决编程问题。提供错误信息和代码即可。",
-      "createdAt": "2024-01-17T10:00:00Z"
+      "createdAt": "2024-01-17T10:00:00Z",
+      "views": 1900,
+      "likes": 480
     },
     {
       "id": "programming-005",
@@ -130,7 +156,9 @@
       "tags": ["测试", "单元测试", "TDD", "质量保证"],
       "prompt": "Role: QA Engineer / Developer\n\nTask: Write unit tests for the following code.\n\nCode:\n```\n{{code_snippet}}\n```\n\nTesting Framework: {{test_framework}} (e.g., Jest, PyTest)\n\nRequirements:\n- Cover normal cases.\n- Cover edge cases and boundaries.\n- Cover error handling.\n- Use clear test names.",
       "description": "编写全面的单元测试。支持指定测试框架。",
-      "createdAt": "2024-01-19T16:45:00Z"
+      "createdAt": "2024-01-19T16:45:00Z",
+      "views": 1150,
+      "likes": 290
     },
     {
       "id": "programming-006",
@@ -139,7 +167,9 @@
       "tags": ["SQL", "数据库", "优化", "性能"],
       "prompt": "Role: Database Administrator (DBA)\n\nTask: Optimize the following SQL query.\n\nQuery:\n```sql\n{{sql_query}}\n```\n\nDatabase Type: {{db_type}} (e.g., MySQL, PostgreSQL)\n\nAnalysis Required:\n1. Explain potential bottlenecks.\n2. Suggest index improvements.\n3. Rewrite the query for better performance.\n4. Explain the reasoning.",
       "description": "分析和优化SQL查询性能。支持指定数据库类型。",
-      "createdAt": "2024-01-23T12:00:00Z"
+      "createdAt": "2024-01-23T12:00:00Z",
+      "views": 1350,
+      "likes": 360
     },
     {
       "id": "productivity-001",
@@ -148,7 +178,9 @@
       "tags": ["会议", "纪要", "整理", "总结"],
       "prompt": "Role: Executive Assistant\n\nTask: Summarize these meeting notes.\n\nNotes:\n\"{{meeting_notes}}\"\n\nOutput Format:\n1. **Meeting Details** (Date, Attendees, Topic)\n2. **Key Discussion Points**\n3. **Decisions Made**\n4. **Action Items** (Owner, Deadline)\n5. **Next Steps**",
       "description": "将杂乱的会议笔记整理为结构化的会议纪要。",
-      "createdAt": "2024-01-09T09:00:00Z"
+      "createdAt": "2024-01-09T09:00:00Z",
+      "views": 2500,
+      "likes": 620
     },
     {
       "id": "productivity-002",
@@ -157,7 +189,9 @@
       "tags": ["时间管理", "计划", "效率", "优先级"],
       "prompt": "Role: Productivity Coach\n\nTask: Create a time management plan.\n\nTime Period: {{time_period}} (e.g., Today, This Week)\nKey Tasks:\n{{task_list}}\n\nRequirements:\n- Prioritize using the Eisenhower Matrix (Urgent/Important).\n- Use time blocking.\n- Include buffer time and breaks.\n- Provide a structured schedule.",
       "description": "制定高效的时间管理计划。输入任务列表，自动生成日程安排。",
-      "createdAt": "2024-01-21T08:15:00Z"
+      "createdAt": "2024-01-21T08:15:00Z",
+      "views": 1050,
+      "likes": 270
     },
     {
       "id": "translation-001",
@@ -166,7 +200,9 @@
       "tags": ["翻译", "专业", "技术文档", "准确性"],
       "prompt": "Role: Professional Translator\n\nTask: Translate the following text.\n\nSource Language: {{source_lang}}\nTarget Language: {{target_lang}}\nContext: {{context}} (e.g., Technical Manual, Marketing Copy)\n\nText:\n\"{{text_to_translate}}\"\n\nRequirements:\n- Maintain professional tone.\n- Ensure technical accuracy.\n- Preserve formatting.\n- Make it sound natural in the target language.",
       "description": "翻译专业或技术文档。支持指定语境以确保准确性。",
-      "createdAt": "2024-01-24T13:30:00Z"
+      "createdAt": "2024-01-24T13:30:00Z",
+      "views": 1700,
+      "likes": 430
     },
     {
       "id": "education-001",
@@ -175,7 +211,9 @@
       "tags": ["教学", "简化", "概念", "易懂"],
       "prompt": "Role: Expert Teacher\n\nTask: Explain a complex concept to a beginner.\n\nConcept: {{concept}}\nTarget Audience Level: {{audience_level}} (e.g., 5-year-old, High School Student)\n\nRequirements:\n- Use clear analogies and real-world examples.\n- Break it down step-by-step.\n- Avoid jargon (or explain it if necessary).\n- Include a practice question to check understanding.",
       "description": "用简单易懂的方式解释复杂概念。支持指定目标受众（如“像给5岁孩子解释一样”）。",
-      "createdAt": "2024-01-26T10:30:00Z"
+      "createdAt": "2024-01-26T10:30:00Z",
+      "views": 1450,
+      "likes": 380
     },
     {
       "id": "marketing-001",
@@ -184,7 +222,9 @@
       "tags": ["品牌", "口号", "slogan", "创意"],
       "prompt": "Role: Creative Director\n\nTask: Create brand slogans.\n\nProduct/Company: {{product_name}}\nValue Proposition: {{value_proposition}}\nBrand Personality: {{brand_personality}}\n\nRequirements:\n- Provide 5-10 options.\n- Keep them concise (under 10 words).\n- Make them memorable and emotional.\n- Include a brief rationale for each.",
       "description": "创作简洁有力、易于记忆的品牌口号。输入品牌个性和价值主张。",
-      "createdAt": "2024-01-27T11:00:00Z"
+      "createdAt": "2024-01-27T11:00:00Z",
+      "views": 1250,
+      "likes": 310
     },
     {
       "id": "analysis-001",
@@ -194,7 +234,9 @@
       "prompt": "Role: Data Analyst\n\nTask: Analyze the following dataset summary/description.\n\nData Description:\n\"{{data_description}}\"\n\nOutput Requirements:\n1. **Executive Summary**\n2. **Key Trends & Patterns**\n3. **Business Insights**\n4. **Recommendations**\n5. **Potential Limitations**",
       "description": "根据数据描述生成分析报告框架和洞察建议。",
       "sourceLink": "https://example.com/data-analysis-guide",
-      "createdAt": "2024-01-28T14:00:00Z"
+      "createdAt": "2024-01-28T14:00:00Z",
+      "views": 950,
+      "likes": 240
     }
   ]
 }

@@ -1,6 +1,5 @@
 export type { Prompt, PromptsData } from './prompt'
 export {
-  loadPrompts,
   PromptLoadError,
   getPromptById,
   getPromptsByCategory,

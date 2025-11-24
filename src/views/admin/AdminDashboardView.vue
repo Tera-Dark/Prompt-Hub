@@ -1,8 +1,8 @@
 <template>
   <section class="dashboard">
     <header class="dashboard-header">
-      <h2>Dashboard</h2>
-      <p>Monitor high-level activity across prompts and moderation.</p>
+      <h2>{{ t('dashboard.title') }}</h2>
+      <p>{{ t('dashboard.subtitle') }}</p>
     </header>
 
     <div class="stats-grid">
@@ -15,24 +15,45 @@
 
     <div class="panels-grid">
       <article class="panel">
-        <h3>Recent prompt submissions</h3>
-        <p>Submission activity will appear here after the data pipeline is connected.</p>
+        <h3>{{ t('dashboard.panels.recent') }}</h3>
+        <p>{{ t('dashboard.panels.recentDesc') }}</p>
       </article>
       <article class="panel">
-        <h3>Moderation summary</h3>
-        <p>Track outstanding issues and approvals from the review workspace.</p>
+        <h3>{{ t('dashboard.panels.moderation') }}</h3>
+        <p>{{ t('dashboard.panels.moderationDesc') }}</p>
       </article>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
-const stats = [
-  { label: 'Published prompts', value: '128', meta: 'Updated daily' },
-  { label: 'Pending review', value: '6', meta: 'Requires moderation' },
-  { label: 'New submissions', value: '14', meta: 'Last 7 days' },
-  { label: 'Flagged issues', value: '3', meta: 'Needs follow-up' },
-]
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
+const stats = computed(() => [
+  {
+    label: t('dashboard.stats.published'),
+    value: '128',
+    meta: t('dashboard.stats.meta.daily'),
+  },
+  {
+    label: t('dashboard.stats.pending'),
+    value: '6',
+    meta: t('dashboard.stats.meta.moderation'),
+  },
+  {
+    label: t('dashboard.stats.new'),
+    value: '14',
+    meta: t('dashboard.stats.meta.days'),
+  },
+  {
+    label: t('dashboard.stats.flagged'),
+    value: '3',
+    meta: t('dashboard.stats.meta.followUp'),
+  },
+])
 </script>
 
 <style scoped>

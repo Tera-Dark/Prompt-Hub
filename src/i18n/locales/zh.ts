@@ -6,6 +6,11 @@ export default {
     title: 'Prompt-Hub',
     subtitle: '发现、分享和管理您的 AI 提示词',
     searchPlaceholder: '搜索提示词...',
+    nav: {
+      featured: '精选推荐',
+      explore: '探索发现',
+      favorites: '我的收藏',
+    },
   },
   nav: {
     home: '首页',
@@ -41,7 +46,9 @@ export default {
     },
     actions: {
       copy: '复制',
-      copied: '已复制',
+      copied: '已复制!',
+      save: '收藏',
+      saved: '已收藏',
       source: '来源',
     },
     status: {
@@ -56,6 +63,10 @@ export default {
     noPromptsDesc: '请尝试调整搜索或筛选条件。',
     submit: '提交提示词',
   },
+  recommendations: {
+    title: '为您推荐',
+    subtitle: '根据您的兴趣和热门话题精选。',
+  },
   playground: {
     title: 'AI 广场',
     promptLabel: '提示词',
@@ -68,6 +79,28 @@ export default {
     running: '运行中...',
     variables: '变量',
     variablePlaceholder: '{name} 的值',
+  },
+  dashboard: {
+    title: '仪表盘',
+    subtitle: '监控提示词和审核的高级活动。',
+    stats: {
+      published: '已发布提示词',
+      pending: '待审核',
+      new: '新提交',
+      flagged: '被标记问题',
+      meta: {
+        daily: '每日更新',
+        moderation: '需要审核',
+        days: '过去 7 天',
+        followUp: '需要跟进',
+      },
+    },
+    panels: {
+      recent: '近期提交',
+      recentDesc: '数据管道连接后，提交活动将显示在此处。',
+      moderation: '审核摘要',
+      moderationDesc: '跟踪审核工作区中的未决问题和批准。',
+    },
   },
   ai: {
     title: 'AI 设置',
