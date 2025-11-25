@@ -62,6 +62,38 @@ export default {
     noPrompts: 'No prompts found',
     noPromptsDesc: "Try adjusting your search or filters to find what you're looking for.",
     submit: 'Submit Prompt',
+    new: 'New Prompt',
+  },
+  review: {
+    title: 'Review',
+    subtitle: 'Review pending prompts',
+    empty: 'No pending prompts',
+    approve: 'Approve',
+    reject: 'Reject',
+    status: {
+      pending: 'Pending',
+      approved: 'Approved',
+      rejected: 'Rejected',
+    },
+  },
+  dataTools: {
+    title: 'Data Tools',
+    subtitle: 'Utilities for managing exports, backups, and catalog health.',
+    exports: {
+      title: 'Exports',
+      desc: 'Generate CSV exports of curated prompts for external sharing.',
+      action: 'Start export',
+    },
+    backups: {
+      title: 'Backups',
+      desc: 'Review automated backup status and trigger manual backups.',
+      action: 'Run backup',
+    },
+    quality: {
+      title: 'Data Quality',
+      desc: 'Analyze prompt completeness and identify missing metadata.',
+      action: 'View report',
+    },
   },
   recommendations: {
     title: 'Recommended for You',

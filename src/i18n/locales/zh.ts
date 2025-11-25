@@ -62,6 +62,38 @@ export default {
     noPrompts: '未找到提示词',
     noPromptsDesc: '请尝试调整搜索或筛选条件。',
     submit: '提交提示词',
+    new: '新建提示词',
+  },
+  review: {
+    title: '审核',
+    subtitle: '审核待发布的提示词',
+    empty: '暂无待审核提示词',
+    approve: '通过',
+    reject: '拒绝',
+    status: {
+      pending: '待审核',
+      approved: '已通过',
+      rejected: '已拒绝',
+    },
+  },
+  dataTools: {
+    title: '数据工具',
+    subtitle: '管理导出、备份和目录健康状况的工具。',
+    exports: {
+      title: '导出',
+      desc: '生成精选提示词的 CSV 导出以供外部共享。',
+      action: '开始导出',
+    },
+    backups: {
+      title: '备份',
+      desc: '查看自动备份状态并触发手动备份。',
+      action: '运行备份',
+    },
+    quality: {
+      title: '数据质量',
+      desc: '分析提示词完整性并识别缺失的元数据。',
+      action: '查看报告',
+    },
   },
   recommendations: {
     title: '为您推荐',

@@ -339,3 +339,19 @@ export async function handleCallback(code: string, state: string): Promise<AuthS
   saveSession(session)
   return session
 }
+
+export function mockLogin(): AuthSession {
+  const session: AuthSession = {
+    token: 'mock-token',
+    user: {
+      login: 'dev-user',
+      name: 'Developer',
+      avatar_url: null,
+      html_url: 'https://github.com',
+    },
+    hasRepoWriteAccess: true,
+    expiresAt: Date.now() + TOKEN_TTL_MS,
+  }
+  saveSession(session)
+  return session
+}

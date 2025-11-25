@@ -18,6 +18,17 @@
           </template>
           {{ t('auth.signInWithGithub') }}
         </Button>
+
+        <Button
+          v-if="isDev"
+          variant="outline"
+          block
+          size="lg"
+          class="dev-login-btn"
+          @click="handleDevLogin"
+        >
+          Dev Login (Local)
+        </Button>
       </div>
 
       <div class="login-footer">
@@ -45,6 +56,15 @@ async function handleLogin() {
     console.error('Login failed:', error)
     isLoading.value = false
   }
+}
+
+const isDev = import.meta.env.DEV
+
+function handleDevLogin() {
+  import('@/utils/github-auth').then((m) => {
+    m.mockLogin()
+    window.location.href = import.meta.env.BASE_URL
+  })
 }
 </script>
 

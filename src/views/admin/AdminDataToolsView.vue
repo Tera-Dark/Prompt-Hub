@@ -1,30 +1,32 @@
 <template>
   <section class="data-tools">
     <header class="tools-header">
-      <h2>Data tools</h2>
-      <p>Utilities for managing exports, backups, and catalog health.</p>
+      <h2>{{ t('dataTools.title') }}</h2>
+      <p>{{ t('dataTools.subtitle') }}</p>
     </header>
 
     <div class="tools-grid">
       <article class="tool-card">
-        <h3>Exports</h3>
-        <p>Generate CSV exports of curated prompts for external sharing.</p>
+        <h3>{{ t('dataTools.exports.title') }}</h3>
+        <p>{{ t('dataTools.exports.desc') }}</p>
         <button type="button" class="tool-button" @click="handleClick('export')">
-          Start export
+          {{ t('dataTools.exports.action') }}
         </button>
       </article>
 
       <article class="tool-card">
-        <h3>Backups</h3>
-        <p>Review automated backup status and trigger manual backups.</p>
-        <button type="button" class="tool-button" @click="handleClick('backup')">Run backup</button>
+        <h3>{{ t('dataTools.backups.title') }}</h3>
+        <p>{{ t('dataTools.backups.desc') }}</p>
+        <button type="button" class="tool-button" @click="handleClick('backup')">
+          {{ t('dataTools.backups.action') }}
+        </button>
       </article>
 
       <article class="tool-card">
-        <h3>Data quality</h3>
-        <p>Analyze prompt completeness and identify missing metadata.</p>
+        <h3>{{ t('dataTools.quality.title') }}</h3>
+        <p>{{ t('dataTools.quality.desc') }}</p>
         <button type="button" class="tool-button" @click="handleClick('data quality')">
-          View report
+          {{ t('dataTools.quality.action') }}
         </button>
       </article>
     </div>
@@ -32,6 +34,10 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 function handleClick(action: string) {
   console.info(`[admin] ${action} action is not connected yet.`)
 }

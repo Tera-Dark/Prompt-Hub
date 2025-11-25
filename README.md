@@ -1,65 +1,125 @@
 # Prompt-Hub
 
-> ⚠️ **首次部署必读**：如果你 fork 了此项目，必须先[手动启用 GitHub Pages](#-部署设置) 才能使用！
-
 <div align="center">
-  <p>🎨 极简黑白灰风格的提示词分享平台</p>
-  <p>通过最简单的方式分享和使用优秀的 AI 提示词</p>
+  <h3>🎨 极简黑白灰风格的 AI 提示词分享平台</h3>
+  <p>通过最简单的方式分享、搜索和使用优秀的 AI 提示词</p>
+
+  [在线演示](https://tera-dark.github.io/Prompt-Hub/) · [报告问题](https://github.com/tera-dark/Prompt-Hub/issues) · [贡献代码](./document/CONTRIBUTING.md)
 </div>
 
-## 🚀 在线访问
+---
 
-[https://tera-dark.github.io/Prompt-Hub/](https://tera-dark.github.io/Prompt-Hub/)
+## 📖 简介
 
-## ⚙️ 部署设置
+Prompt-Hub 是一个专注于提示词（Prompt）分享与管理的开源平台。它采用极简的黑白灰视觉设计，旨在让用户专注于内容本身。无论是寻找灵感，还是管理自己的提示词库，Prompt-Hub 都能提供流畅、高效的体验。
 
-### ❗ 首次部署必须完成以下步骤
+## ✨ 核心特性
 
-**这是强制性的！** GitHub Actions 无法自动启用 Pages，必须手动操作：
+- **🎨 极简设计**：黑白灰配色，无干扰的阅读体验。
+- **🔍 高效检索**：支持关键字搜索、分类筛选和标签过滤。
+- **📱 全端适配**：完美支持桌面端和移动端访问。
+- **🛡️ 内容审核**：内置审核机制，确保提示词质量。
+- **📋 一键复制**：快速复制提示词，提升工作效率。
+- **🛠️ 数据工具**：提供数据导出、备份和质量检查工具。
 
-1. **进入仓库设置**  
-   访问：`https://github.com/你的用户名/Prompt-Hub/settings/pages`
+## 🚀 快速开始
 
-2. **启用 GitHub Pages**
-   - 在 "Build and deployment" 部分
-   - **Source** 选择：`GitHub Actions`
-   - 点击 Save 保存
+### 访问平台
+直接访问我们的在线演示地址：[https://tera-dark.github.io/Prompt-Hub/](https://tera-dark.github.io/Prompt-Hub/)
 
-3. **设置 Actions 权限**（如果部署仍然失败）  
-   访问：`Settings` > `Actions` > `General`
-   - 在 "Workflow permissions" 选择 `Read and write permissions`
-   - 勾选 `Allow GitHub Actions to create and approve pull requests`
-   - 保存设置
+### 使用指南
 
-4. **触发部署**  
-   完成上述设置后，推送代码到 main 分支将自动部署
+1.  **浏览与搜索**：在首页通过分类标签或搜索框查找感兴趣的提示词。
+2.  **查看详情**：点击提示词卡片查看完整内容、参数和标签。
+3.  **一键复制**：点击复制按钮即可将提示词复制到剪贴板。
+4.  **提交提示词**：登录后点击 "+ 新建提示词" 贡献你的创意（需审核）。
 
-### 验证部署成功
+---
 
-- 查看 Actions 标签页，确认工作流运行成功
-- 访问 `https://你的用户名.github.io/Prompt-Hub/`
+## 🛡️ 审核机制
 
-详细文档请查看：[部署指南](./document/DEPLOYMENT.md)
+为了维护平台内容质量，Prompt-Hub 引入了严格的审核流程：
 
-## ✨ 特性
+1.  **提交 (Draft)**：用户提交的提示词初始状态为 `draft`，仅自己可见。
+2.  **审核 (Review)**：管理员在 "审核" 页面查看所有待审核的提示词。
+3.  **发布 (Publish)**：管理员点击 "通过"，状态变为 `published`，全平台可见。
+4.  **拒绝 (Reject)**：管理员点击 "拒绝"，状态变为 `archived`，提示词被隐藏。
 
-- 🎯 黑白灰极简设计
-- 🔍 强大的搜索和分类功能
-- 📋 一键复制提示词
-- 📱 完美的移动端适配
-- 🆓 完全免费，无需注册
+---
 
-## 📚 文档
+## ⚙️ 部署指南 (必读)
+
+如果你希望部署自己的 Prompt-Hub，请务必阅读以下步骤。
+
+> ⚠️ **注意**：GitHub Actions 无法自动启用 Pages，Fork 后必须手动设置！
+
+1.  **Fork 本仓库**。
+2.  **启用 GitHub Pages**：
+    *   进入 `Settings` -> `Pages`。
+    *   **Source** 选择 `GitHub Actions`。
+3.  **设置权限**（如果部署失败）：
+    *   进入 `Settings` -> `Actions` -> `General`。
+    *   选择 `Read and write permissions` 并勾选 `Allow GitHub Actions to create and approve pull requests`。
+4.  **触发部署**：
+    *   修改任意文件并推送，或在 `Actions` 页面手动触发 `Deploy` 工作流。
+
+详细部署文档请参考：[部署指南](./document/DEPLOYMENT.md)
+
+---
+
+## 💻 本地开发
+
+### 环境要求
+- Node.js ≥ 18
+- npm ≥ 9
+
+### 启动项目
+
+```bash
+# 1. 克隆仓库
+git clone https://github.com/your-username/Prompt-Hub.git
+
+# 2. 安装依赖
+npm install
+
+# 3. 启动开发服务器
+npm run dev
+```
+
+### 🛠️ 开发辅助功能
+
+为了方便本地开发和测试审核流程，我们在登录页面提供了 **Dev Login (Local)** 按钮。
+
+*   **仅在开发模式显示** (`npm run dev`)。
+*   **模拟管理员权限**：点击即可模拟登录管理员账户，无需配置 GitHub OAuth。
+*   **用途**：快速测试审核、发布、数据工具等需要权限的功能。
+
+---
+
+## 🗂️ 项目结构
+
+```text
+Prompt-Hub/
+├── document/                 # 📚 详细文档
+├── public/
+│   └── data/prompts.json     # 💾 核心数据源
+├── src/
+│   ├── components/           # UI 组件
+│   ├── composables/          # 组合式函数 (Hooks)
+│   ├── layouts/              # 页面布局
+│   ├── stores/               # 状态管理 (Pinia)
+│   ├── views/                # 页面视图
+│   │   ├── admin/            # 管理后台 (审核/数据)
+│   │   └── ...
+│   └── ...
+└── ...
+```
+
+## 📚 更多文档
 
 - [完整文档](./document/README.md)
 - [贡献指南](./document/CONTRIBUTING.md)
-- [部署指南](./document/DEPLOYMENT.md)
-- [开发指南](./document/DEVELOPMENT.md)
 - [数据结构](./document/DATA_SCHEMA.md)
-
-## 🤝 贡献
-
-欢迎提交优秀的提示词！请查看 [贡献指南](./document/CONTRIBUTING.md)
 
 ## 📄 License
 
