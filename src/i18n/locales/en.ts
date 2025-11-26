@@ -65,7 +65,7 @@ export default {
     new: 'New Prompt',
     create: {
       title: 'New Prompt',
-      subtitle: 'Draft a new prompt template. Use {{ variable }} syntax for dynamic content.',
+      subtitle: 'Draft a new prompt template. Use <variable> syntax for dynamic content.',
       form: {
         title: 'Title',
         titlePlaceholder: 'e.g. Professional Email Rewriter',

@@ -65,7 +65,7 @@ export default {
     new: '新建提示词',
     create: {
       title: '新建提示词',
-      subtitle: '创建新的提示词模版。使用 {{ variable }} 语法添加动态内容。',
+      subtitle: '创建新的提示词模版。使用 <variable> 语法添加动态内容。',
       form: {
         title: '标题',
         titlePlaceholder: '例如：专业邮件润色助手',
