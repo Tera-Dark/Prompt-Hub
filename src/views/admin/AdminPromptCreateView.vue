@@ -14,6 +14,11 @@
       </div>
     </header>
 
+    <div v-if="error" class="error-message" style="color: red; padding: 1rem">
+      Error loading prompts: {{ error }}
+    </div>
+    <div v-if="loading" class="loading-message" style="padding: 1rem">Loading data...</div>
+
     <form class="editor-form" @submit.prevent="onSubmit">
       <div class="form-layout">
         <!-- Left Column: Metadata -->
@@ -111,7 +116,7 @@ import { addPrompt, submitPromptIssue } from '@/repositories/prompts'
 import { useToast } from '@/composables/useToast'
 
 const { t } = useI18n()
-const { categories, fetchPrompts } = usePrompts()
+const { categories, fetchPrompts, loading, error } = usePrompts()
 const { token, hasRepoWriteAccess, user } = useAuth()
 const toast = useToast()
 
