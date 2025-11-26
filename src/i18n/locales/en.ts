@@ -63,6 +63,33 @@ export default {
     noPromptsDesc: "Try adjusting your search or filters to find what you're looking for.",
     submit: 'Submit Prompt',
     new: 'New Prompt',
+    create: {
+      title: 'New Prompt',
+      subtitle: 'Draft a new prompt template. Use {{ variable }} syntax for dynamic content.',
+      form: {
+        title: 'Title',
+        titlePlaceholder: 'e.g. Professional Email Rewriter',
+        category: 'Category',
+        selectCategory: 'Select category',
+        status: 'Status',
+        statusOptions: {
+          draft: 'Draft (Private)',
+          published: 'Published (Public)',
+        },
+        description: 'Description',
+        descriptionPlaceholder: 'Briefly describe what this prompt does...',
+        body: 'Prompt Body',
+        bodyPlaceholder: 'Enter your prompt template here...',
+        tags: 'Tags',
+        tagsPlaceholder: 'email, writing, productivity (comma separated)',
+      },
+      actions: {
+        saveDraft: 'Save Draft',
+        publish: 'Publish',
+        back: 'Back to list',
+        test: 'Test in Playground',
+      },
+    },
   },
   review: {
     title: 'Review',

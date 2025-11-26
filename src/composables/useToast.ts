@@ -18,12 +18,15 @@ export function useToast() {
     if (toast.duration !== 0) {
       setTimeout(() => {
         remove(id)
-      }, toast.duration || 3000)
+      }, toast.duration ?? 3000)
     }
   }
 
   function remove(id: string) {
-    toasts.value = toasts.value.filter((t) => t.id !== id)
+    const index = toasts.value.findIndex((t) => t.id === id)
+    if (index > -1) {
+      toasts.value.splice(index, 1)
+    }
   }
 
   function success(message: string, duration?: number) {

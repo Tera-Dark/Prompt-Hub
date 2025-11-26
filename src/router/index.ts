@@ -79,6 +79,14 @@ const routes: RouteRecordRaw[] = [
     ],
   },
   {
+    path: '/dashboard',
+    name: 'UserDashboard',
+    component: () => import('@/views/user/UserDashboardView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
     path: '/:pathMatch(.*)*',
     redirect: '/',
   },

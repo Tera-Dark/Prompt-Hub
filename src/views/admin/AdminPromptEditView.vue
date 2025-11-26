@@ -4,53 +4,78 @@
       <div>
         <h2>Edit prompt</h2>
         <p>
-          Currently editing prompt <span class="prompt-id">#{{ id }}</span
-          >. Content loading to be wired.
+          Currently editing prompt <span class="prompt-id">#{{ id }}</span>
         </p>
       </div>
-      <RouterLink to="/admin/prompts" class="back-link">Back to list</RouterLink>
+      <div class="header-actions">
+        <RouterLink to="/admin/prompts" class="back-link">
+          {{ t('prompts.create.actions.back') }}
+        </RouterLink>
+      </div>
     </header>
 
     <form class="editor-form" @submit.prevent="handleSubmit">
-      <div class="form-grid">
-        <label class="form-field">
-          <span>Title</span>
-          <input v-model="form.title" type="text" placeholder="Existing title will load here" />
-        </label>
-        <label class="form-field">
-          <span>Status</span>
-          <select v-model="status">
-            <option value="draft">Draft</option>
-            <option value="published">Published</option>
-            <option value="archived">Archived</option>
-          </select>
-        </label>
-        <label class="form-field form-field--full">
-          <span>Description</span>
-          <textarea
-            v-model="form.description"
-            rows="3"
-            placeholder="Description is pending API data"
-          ></textarea>
-        </label>
-        <label class="form-field form-field--full">
-          <span>Prompt body</span>
-          <textarea
-            v-model="form.prompt"
-            rows="8"
-            placeholder="Prompt content will go here"
-          ></textarea>
-        </label>
-        <label class="form-field form-field--full">
-          <span>Tags</span>
-          <input v-model="tagsInput" type="text" placeholder="Comma separated" />
-        </label>
+      <div class="form-layout">
+        <!-- Left Column: Metadata -->
+        <aside class="form-sidebar">
+          <div class="form-group">
+            <label class="form-label">{{ t('prompts.create.form.title') }}</label>
+            <input
+              v-model="form.title"
+              type="text"
+              :placeholder="t('prompts.create.form.titlePlaceholder')"
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">{{ t('prompts.create.form.status') }}</label>
+            <select v-model="status" class="form-select">
+              <option value="draft">{{ t('prompts.create.form.statusOptions.draft') }}</option>
+              <option value="published">
+                {{ t('prompts.create.form.statusOptions.published') }}
+              </option>
+              <option value="archived">Archived</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">{{ t('prompts.create.form.tags') }}</label>
+            <input
+              v-model="tagsInput"
+              type="text"
+              :placeholder="t('prompts.create.form.tagsPlaceholder')"
+              class="form-input"
+            />
+          </div>
+        </aside>
+
+        <!-- Right Column: Content -->
+        <div class="form-main">
+          <div class="form-group">
+            <label class="form-label">{{ t('prompts.create.form.description') }}</label>
+            <textarea
+              v-model="form.description"
+              rows="3"
+              :placeholder="t('prompts.create.form.descriptionPlaceholder')"
+              class="form-textarea"
+            ></textarea>
+          </div>
+
+          <div class="form-group form-group--flex">
+            <label class="form-label">{{ t('prompts.create.form.body') }}</label>
+            <textarea
+              v-model="form.prompt"
+              rows="15"
+              :placeholder="t('prompts.create.form.bodyPlaceholder')"
+              class="form-textarea prompt-body"
+            ></textarea>
+          </div>
+        </div>
       </div>
-      <div class="form-actions">
-        <button type="button" class="secondary" :disabled="submitting" @click="saveChanges">
-          Save changes
-        </button>
-        <button type="submit" class="primary" :disabled="submitting">Update prompt</button>
+
+      <div class="form-footer">
+        <button type="submit" class="btn btn-primary" :disabled="submitting">Update prompt</button>
       </div>
     </form>
   </section>
@@ -58,18 +83,18 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAuth } from '@/composables/useAuth'
 import { updatePromptById, loadPrompts } from '@/repositories/prompts'
 
 const props = defineProps<{ id: string }>()
+const { t } = useI18n()
 const { token, hasRepoWriteAccess } = useAuth()
 
 const form = ref({ title: '', description: '', prompt: '' })
 const status = ref<'draft' | 'published' | 'archived'>('published')
 const tagsInput = ref('')
 const submitting = ref(false)
-
-// repo info handled in repository layer
 
 function ensureAuth() {
   if (!token.value || !hasRepoWriteAccess.value) throw new Error('需要登录并具备仓库写权限')
@@ -83,16 +108,13 @@ onMounted(async () => {
       form.value.title = p.title
       form.value.description = p.description
       form.value.prompt = p.prompt
+      status.value = p.status
       tagsInput.value = (p.tags || []).join(', ')
     }
   } catch {
     // Silently fail if prompt data cannot be loaded
   }
 })
-
-async function saveChanges() {
-  await handleSubmit()
-}
 
 async function handleSubmit() {
   ensureAuth()
@@ -117,9 +139,9 @@ async function handleSubmit() {
       }),
       t,
     )
-    alert(`Pull Request 已创建：\n${url}`)
+    alert(`Pull Request created: \n${url}`)
   } catch (e) {
-    const msg = e instanceof Error ? e.message : '提交失败'
+    const msg = e instanceof Error ? e.message : 'Submission failed'
     alert(msg)
   } finally {
     submitting.value = false
@@ -132,6 +154,8 @@ async function handleSubmit() {
   display: flex;
   flex-direction: column;
   gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .editor-header {
@@ -167,8 +191,7 @@ async function handleSubmit() {
   transition: background-color var(--transition-base);
 }
 
-.back-link:hover,
-.back-link:focus-visible {
+.back-link:hover {
   background-color: var(--color-gray-100);
 }
 
@@ -180,89 +203,111 @@ async function handleSubmit() {
   box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 2rem;
 }
 
-.form-grid {
+.form-layout {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: 300px 1fr;
+  gap: 2rem;
+}
+
+@media (max-width: 768px) {
+  .form-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-sidebar {
+  display: flex;
+  flex-direction: column;
   gap: 1.5rem;
 }
 
-.form-field {
+.form-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-group {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.form-field span {
+.form-group--flex {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-label {
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--color-gray-700);
 }
 
-input,
-textarea {
+.form-input,
+.form-select,
+.form-textarea {
   width: 100%;
-  padding: 0.75rem 0.85rem;
+  padding: 0.75rem;
   border-radius: var(--radius-md);
   border: 1px solid var(--color-gray-200);
   background-color: var(--color-white);
   color: var(--color-gray-900);
   font-size: var(--text-sm);
+  transition: border-color var(--transition-base);
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--color-gray-900);
+}
+
+.form-textarea {
   resize: vertical;
+  line-height: 1.6;
 }
 
-.form-field--full {
-  grid-column: 1 / -1;
+.prompt-body {
+  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+  flex: 1;
+  min-height: 300px;
 }
 
-.form-actions {
+.form-footer {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
   justify-content: flex-end;
+  gap: 1rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-gray-100);
 }
 
-.primary,
-.secondary {
+.btn {
   padding: 0.75rem 1.5rem;
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
-  border: 1px solid var(--color-gray-900);
-  transition:
-    background-color var(--transition-base),
-    color var(--transition-base);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-base);
 }
 
-.primary {
+.btn-primary {
   background-color: var(--color-black);
   color: var(--color-white);
+  border: 1px solid var(--color-black);
 }
 
-.primary:hover,
-.primary:focus-visible {
-  background-color: var(--color-gray-900);
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--color-gray-800);
 }
 
-.primary:disabled {
+.btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-.secondary {
-  background-color: var(--color-white);
-  color: var(--color-gray-900);
-}
-
-.secondary:hover,
-.secondary:focus-visible {
-  background-color: var(--color-gray-100);
-}
-
-@media (max-width: 720px) {
-  .editor-form {
-    padding: 1.5rem;
-  }
 }
 </style>

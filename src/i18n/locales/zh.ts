@@ -63,6 +63,33 @@ export default {
     noPromptsDesc: '请尝试调整搜索或筛选条件。',
     submit: '提交提示词',
     new: '新建提示词',
+    create: {
+      title: '新建提示词',
+      subtitle: '创建新的提示词模版。使用 {{ variable }} 语法添加动态内容。',
+      form: {
+        title: '标题',
+        titlePlaceholder: '例如：专业邮件润色助手',
+        category: '分类',
+        selectCategory: '选择分类',
+        status: '状态',
+        statusOptions: {
+          draft: '草稿 (仅自己可见)',
+          published: '正式发布 (公开可见)',
+        },
+        description: '描述',
+        descriptionPlaceholder: '简要描述此提示词的功能...',
+        body: '提示词内容',
+        bodyPlaceholder: '在此输入您的提示词模版...',
+        tags: '标签',
+        tagsPlaceholder: '邮件, 写作, 效率 (用逗号分隔)',
+      },
+      actions: {
+        saveDraft: '保存草稿',
+        publish: '发布',
+        back: '返回列表',
+        test: '在 Playground 中测试',
+      },
+    },
   },
   review: {
     title: '审核',

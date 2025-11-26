@@ -55,15 +55,30 @@ function getCategoryIcon(category: string): string {
 .category-filter {
   width: 100%;
   margin-bottom: 2rem;
+  position: relative;
 }
 
 .category-scroll-container {
   display: flex;
   gap: 0.75rem;
   overflow-x: auto;
-  padding-bottom: 0.5rem;
+  padding: 0.5rem 0.25rem 1rem; /* Extra bottom padding for shadows */
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE 10+ */
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 20px,
+    black calc(100% - 20px),
+    transparent
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 20px,
+    black calc(100% - 20px),
+    transparent
+  );
 }
 
 .category-scroll-container::-webkit-scrollbar {
@@ -73,49 +88,61 @@ function getCategoryIcon(category: string): string {
 .category-pill {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
+  gap: 0.6rem;
+  padding: 0.6rem 1.2rem;
   background-color: var(--color-surface);
   color: var(--color-text-secondary);
   border: 1px solid var(--color-border);
   border-radius: 100px;
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-size: 0.9rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   white-space: nowrap;
-  flex-shrink: 0; /* Prevent squashing */
-  box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 
 .category-icon {
-  font-size: 1rem;
+  font-size: 1.1rem;
   line-height: 1;
+  opacity: 0.8;
+  transition: transform 0.3s ease;
 }
 
 .category-pill:hover {
-  border-color: var(--color-gray-400);
-  background-color: var(--color-surface-hover);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+  border-color: var(--color-gray-300);
+  background-color: var(--color-white);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  color: var(--color-text-primary);
+}
+
+.category-pill:hover .category-icon {
+  transform: scale(1.1);
+  opacity: 1;
 }
 
 .category-pill:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px var(--color-primary-subtle);
+  box-shadow: 0 0 0 3px var(--color-primary-subtle);
 }
 
 .category-pill.active {
   background-color: var(--color-black);
   color: var(--color-white);
   border-color: var(--color-black);
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .category-pill.active:hover {
   background-color: var(--color-gray-900);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.category-pill.active .category-icon {
+  opacity: 1;
 }
 </style>

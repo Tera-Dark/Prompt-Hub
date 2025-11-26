@@ -43,10 +43,12 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '@/composables/useAuth'
 import Button from '@/components/ui/Button.vue'
+import { useToast } from '@/composables/useToast'
 
 const { t } = useI18n()
 const { login } = useAuth()
 const isLoading = ref(false)
+const toast = useToast()
 
 async function handleLogin() {
   isLoading.value = true
@@ -54,6 +56,7 @@ async function handleLogin() {
     await login()
   } catch (error) {
     console.error('Login failed:', error)
+    toast.error(t('auth.loginFailed') || 'Login failed')
     isLoading.value = false
   }
 }

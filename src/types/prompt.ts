@@ -12,6 +12,10 @@ export interface Prompt {
   likes?: number
   imageUrl?: string
   status?: 'draft' | 'published' | 'archived'
+  author?: {
+    username: string
+    avatarUrl?: string
+  }
 }
 
 export interface PromptsData {

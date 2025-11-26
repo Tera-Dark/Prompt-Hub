@@ -115,10 +115,16 @@
 
             <PromptList
               v-else
-              :prompts="filteredPrompts"
+              :prompts="visiblePrompts"
               :view-mode="viewMode"
               @select="handlePromptSelect"
             />
+
+            <div v-if="hasMore" class="load-more-container">
+              <Button variant="outline" @click="loadMore">
+                {{ t('common.loadMore') }}
+              </Button>
+            </div>
           </div>
         </Transition>
       </div>
@@ -173,6 +179,7 @@ import RecommendationSection from '@/components/home/RecommendationSection.vue'
 import PromptDetailModal from '@/components/prompts/PromptDetailModal.vue'
 import { recommendationService } from '@/services/recommendations'
 import { usePromptStore } from '@/stores/prompts'
+import { useDebounce } from '@/composables/useDebounce'
 
 const { t, locale } = useI18n()
 const auth = useAuth()
@@ -182,12 +189,17 @@ const promptStore = usePromptStore()
 const isAuthenticated = computed(() => auth.isAuthed.value)
 
 const searchQuery = ref('')
+const debouncedSearchQuery = useDebounce(searchQuery, 300)
 const selectedCategory = ref<string | null>(null)
 const showPlayground = ref(false)
 const mobileMenuOpen = ref(false)
 const selectedPrompt = ref<Prompt | null>(null)
 const currentView = ref<'recommendations' | 'explore' | 'favorites'>('recommendations')
 const viewMode = ref<'grid' | 'list'>('grid')
+
+// Pagination
+const PAGE_SIZE = 24
+const currentPage = ref(1)
 
 const isLoading = computed(() => promptStore.isLoading.value)
 const featuredPrompts = computed(() => promptStore.featuredPrompts.value)
@@ -204,11 +216,23 @@ onMounted(async () => {
 
 const filteredPrompts = computed(() => {
   return promptStore.getFilteredPrompts(
-    searchQuery.value,
+    debouncedSearchQuery.value,
     selectedCategory.value,
     currentView.value,
   )
 })
+
+const visiblePrompts = computed(() => {
+  return filteredPrompts.value.slice(0, currentPage.value * PAGE_SIZE)
+})
+
+const hasMore = computed(() => {
+  return visiblePrompts.value.length < filteredPrompts.value.length
+})
+
+function loadMore() {
+  currentPage.value++
+}
 
 function switchView(view: 'recommendations' | 'explore' | 'favorites') {
   currentView.value = view
@@ -216,10 +240,12 @@ function switchView(view: 'recommendations' | 'explore' | 'favorites') {
     selectedCategory.value = null
     searchQuery.value = ''
   }
+  currentPage.value = 1
 }
 
-watch(searchQuery, (newVal) => {
-  if (newVal) {
+watch([debouncedSearchQuery, selectedCategory, currentView], () => {
+  currentPage.value = 1
+  if (debouncedSearchQuery.value) {
     currentView.value = 'explore'
   }
 })
@@ -520,5 +546,12 @@ function handleSubmitPrompt() {
   color: var(--color-text-secondary);
   letter-spacing: 0.1em;
   text-transform: uppercase;
+}
+
+.load-more-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+  padding-bottom: 2rem;
 }
 </style>

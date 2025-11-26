@@ -18,8 +18,25 @@ function repoInfo() {
 
 import { PromptLoadError, type PromptsData } from '@/types/prompt'
 
+const CACHE_KEY = 'prompts_data'
+const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+
 export async function loadPrompts(): Promise<PromptsData> {
   try {
+    // Try to get from cache
+    const cached = localStorage.getItem(CACHE_KEY)
+    if (cached) {
+      try {
+        const { data, timestamp } = JSON.parse(cached)
+        if (Date.now() - timestamp < CACHE_TTL) {
+          return data as PromptsData
+        }
+      } catch (e) {
+        console.warn('Failed to parse cached prompts', e)
+        localStorage.removeItem(CACHE_KEY)
+      }
+    }
+
     const response = await fetch(`${import.meta.env.BASE_URL}data/prompts.json`)
 
     if (!response.ok) {
@@ -36,6 +53,19 @@ export async function loadPrompts(): Promise<PromptsData> {
 
     if (!Array.isArray(data.prompts)) {
       throw new PromptLoadError('Invalid prompts data: prompts field must be an array')
+    }
+
+    // Save to cache
+    try {
+      localStorage.setItem(
+        CACHE_KEY,
+        JSON.stringify({
+          data,
+          timestamp: Date.now(),
+        }),
+      )
+    } catch (e) {
+      console.warn('Failed to cache prompts', e)
     }
 
     return data as PromptsData
@@ -62,11 +92,14 @@ export async function addPrompt(newItem: Prompt, token: string): Promise<string>
   const data = JSON.parse(file.content) as { version: string; prompts: Prompt[] }
   const next = { version: data.version, prompts: [newItem, ...data.prompts] }
   const message = `feat: add prompt ${newItem.id}`
+  // Fix: GitHub API requires content to be Base64 encoded
+  const content = btoa(unescape(encodeURIComponent(JSON.stringify(next, null, 2))))
+
   await updateFile(
     owner,
     repo,
     'public/data/prompts.json',
-    JSON.stringify(next, null, 2),
+    content,
     message,
     branch,
     file.sha,
@@ -95,11 +128,14 @@ export async function updatePromptById(
   const next = { version: data.version, prompts: [...data.prompts] }
   next.prompts[idx] = updated
   const message = `feat: update prompt ${id}`
+  // Fix: GitHub API requires content to be Base64 encoded
+  const content = btoa(unescape(encodeURIComponent(JSON.stringify(next, null, 2))))
+
   await updateFile(
     owner,
     repo,
     'public/data/prompts.json',
-    JSON.stringify(next, null, 2),
+    content,
     message,
     branch,
     file.sha,
@@ -120,11 +156,14 @@ export async function deletePromptById(id: string, token: string): Promise<strin
   const data = JSON.parse(file.content) as { version: string; prompts: Prompt[] }
   const next = { version: data.version, prompts: data.prompts.filter((x) => x.id !== id) }
   const message = `feat: delete prompt ${id}`
+  // Fix: GitHub API requires content to be Base64 encoded
+  const content = btoa(unescape(encodeURIComponent(JSON.stringify(next, null, 2))))
+
   await updateFile(
     owner,
     repo,
     'public/data/prompts.json',
-    JSON.stringify(next, null, 2),
+    content,
     message,
     branch,
     file.sha,
@@ -136,6 +175,11 @@ export async function deletePromptById(id: string, token: string): Promise<strin
 }
 
 export async function submitPromptIssue(newItem: Prompt, token: string): Promise<string> {
+  if (token === 'mock-token') {
+    throw new Error(
+      'Mock login cannot submit to real GitHub. Please sign out and sign in with GitHub.',
+    )
+  }
   const { owner, repo } = repoInfo()
   const title = `[Submission] ${newItem.title}`
   const body = `
@@ -152,6 +196,9 @@ ${newItem.prompt}
 \`\`\`
 
 **Tags:** ${newItem.tags.join(', ')}
+
+**Author:** ${newItem.author?.username || 'Anonymous'}
+${newItem.author?.avatarUrl ? `**Avatar:** ${newItem.author.avatarUrl}` : ''}
 
 ---
 *Submitted via Prompt-Hub*

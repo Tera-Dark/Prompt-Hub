@@ -2,78 +2,100 @@
   <section class="prompt-editor">
     <header class="editor-header">
       <div>
-        <h2>New prompt</h2>
-        <p v-pre>
-          Draft a new prompt template. Use <code>{{ variable }}</code> syntax for dynamic content.
+        <h2>{{ t('prompts.create.title') }}</h2>
+        <p>
+          {{ t('prompts.create.subtitle') }}
         </p>
       </div>
       <div class="header-actions">
-        <button type="button" class="secondary" @click="showPlayground = true">
-          <span class="icon">🧪</span> Test in Playground
-        </button>
-        <RouterLink to="/admin/prompts" class="back-link">Back to list</RouterLink>
+        <RouterLink to="/admin/prompts" class="back-link">
+          {{ t('prompts.create.actions.back') }}
+        </RouterLink>
       </div>
     </header>
 
-    <AIPlaygroundDrawer
-      :is-open="showPlayground"
-      :prompt-template="form.prompt"
-      @close="showPlayground = false"
-    />
-
     <form class="editor-form" @submit.prevent="onSubmit">
-      <div class="form-grid">
-        <label class="form-field">
-          <span>Title</span>
-          <input v-model="form.title" type="text" placeholder="e.g. Professional Email Rewriter" />
-        </label>
-        <label class="form-field">
-          <span>Category</span>
-          <select v-model="form.category">
-            <option value="" disabled>Select category</option>
-            <option v-for="c in categories" :key="c" :value="c">{{ c }}</option>
-          </select>
-        </label>
-        <label class="form-field">
-          <span>Status</span>
-          <select v-model="form.status">
-            <option value="draft">Draft</option>
-            <option value="published">Published</option>
-          </select>
-        </label>
-        <label class="form-field form-field--full">
-          <span>Description</span>
-          <textarea
-            v-model="form.description"
-            rows="3"
-            placeholder="Briefly describe what this prompt does. E.g. 'Rewrites casual emails into a professional tone while maintaining the core message.'"
-          ></textarea>
-        </label>
-        <label class="form-field form-field--full">
-          <span>Prompt body</span>
-          <textarea
-            v-model="form.prompt"
-            rows="12"
-            placeholder="You are an expert copywriter. Rewrite the following email to be more professional:
+      <div class="form-layout">
+        <!-- Left Column: Metadata -->
+        <aside class="form-sidebar">
+          <div class="form-group">
+            <label class="form-label">{{ t('prompts.create.form.title') }}</label>
+            <input
+              v-model="form.title"
+              type="text"
+              :placeholder="t('prompts.create.form.titlePlaceholder')"
+              class="form-input"
+            />
+          </div>
 
-Email: {{email_content}}
+          <div class="form-group">
+            <label class="form-label">{{ t('prompts.create.form.category') }}</label>
+            <div class="category-input-group">
+              <input
+                v-model="form.category"
+                list="category-list"
+                type="text"
+                :placeholder="t('prompts.create.form.selectCategory')"
+                class="form-input"
+              />
+              <datalist id="category-list">
+                <option v-for="c in categories" :key="c" :value="c" />
+              </datalist>
+            </div>
+          </div>
 
-Requirements:
-- Use formal language
-- Keep it concise"
-            class="prompt-textarea"
-          ></textarea>
-        </label>
-        <label class="form-field form-field--full">
-          <span>Tags</span>
-          <input v-model="tagsInput" type="text" placeholder="email, writing, productivity" />
-        </label>
+          <div class="form-group">
+            <label class="form-label">{{ t('prompts.create.form.status') }}</label>
+            <select v-model="form.status" class="form-select">
+              <option value="draft">{{ t('prompts.create.form.statusOptions.draft') }}</option>
+              <option value="published">
+                {{ t('prompts.create.form.statusOptions.published') }}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">{{ t('prompts.create.form.tags') }}</label>
+            <input
+              v-model="tagsInput"
+              type="text"
+              :placeholder="t('prompts.create.form.tagsPlaceholder')"
+              class="form-input"
+            />
+          </div>
+        </aside>
+
+        <!-- Right Column: Content -->
+        <div class="form-main">
+          <div class="form-group">
+            <label class="form-label">{{ t('prompts.create.form.description') }}</label>
+            <textarea
+              v-model="form.description"
+              rows="3"
+              :placeholder="t('prompts.create.form.descriptionPlaceholder')"
+              class="form-textarea"
+            ></textarea>
+          </div>
+
+          <div class="form-group form-group--flex">
+            <label class="form-label">{{ t('prompts.create.form.body') }}</label>
+            <textarea
+              v-model="form.prompt"
+              rows="15"
+              :placeholder="t('prompts.create.form.bodyPlaceholder')"
+              class="form-textarea prompt-body"
+            ></textarea>
+          </div>
+        </div>
       </div>
-      <div class="form-actions">
-        <button type="button" class="secondary" :disabled="submitting" @click="saveDraft">
-          Save draft
+
+      <div class="form-footer">
+        <button type="button" class="btn btn-secondary" :disabled="submitting" @click="saveDraft">
+          {{ t('prompts.create.actions.saveDraft') }}
         </button>
-        <button type="submit" class="primary" :disabled="submitting">Publish</button>
+        <button type="submit" class="btn btn-primary" :disabled="submitting">
+          {{ t('prompts.create.actions.publish') }}
+        </button>
       </div>
     </form>
   </section>
@@ -81,16 +103,20 @@ Requirements:
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { usePrompts } from '@/composables/usePrompts'
 import { useAuth } from '@/composables/useAuth'
 import { type Prompt } from '@/types/prompt'
 import { addPrompt, submitPromptIssue } from '@/repositories/prompts'
-import AIPlaygroundDrawer from '@/components/admin/AIPlaygroundDrawer.vue'
+import { useToast } from '@/composables/useToast'
 
-const { categories } = usePrompts()
-const { token, hasRepoWriteAccess } = useAuth()
+const { t } = useI18n()
+const { categories, fetchPrompts } = usePrompts()
+const { token, hasRepoWriteAccess, user } = useAuth()
+const toast = useToast()
 
-const showPlayground = ref(false)
+// Ensure categories are loaded
+fetchPrompts()
 
 const form = ref({
   title: '',
@@ -102,8 +128,6 @@ const form = ref({
 })
 const tagsInput = ref('')
 const submitting = ref(false)
-
-// repo info handled in repository layer
 
 function ensureAuth() {
   if (!token.value) throw new Error('需要登录')
@@ -122,10 +146,10 @@ function genId(title: string, category: string) {
 }
 
 function validate(): string | null {
-  if (!form.value.title.trim()) return '标题必填'
-  if (!form.value.category.trim()) return '类目必选'
-  if (!form.value.description.trim()) return '描述必填'
-  if (!form.value.prompt.trim()) return '正文必填'
+  if (!form.value.title.trim()) return 'Title is required'
+  if (!form.value.category.trim()) return 'Category is required'
+  if (!form.value.description.trim()) return 'Description is required'
+  if (!form.value.prompt.trim()) return 'Prompt body is required'
   return null
 }
 
@@ -140,7 +164,10 @@ function onSubmit(_e: SubmitEvent) {
 async function handleSubmit(_draft = false) {
   ensureAuth()
   const err = validate()
-  if (err) throw new Error(err)
+  if (err) {
+    toast.error(err)
+    return
+  }
   submitting.value = true
   try {
     const t = token.value!
@@ -159,13 +186,21 @@ async function handleSubmit(_draft = false) {
       createdAt: now,
       status: form.value.status,
       imageUrl: form.value.imageUrl,
+      author: user.value
+        ? {
+            username: user.value.login,
+            avatarUrl: user.value.avatar_url || undefined,
+          }
+        : undefined,
     }
     const url = hasRepoWriteAccess.value
       ? await addPrompt(newItem, t)
       : await submitPromptIssue(newItem, t)
 
     const action = hasRepoWriteAccess.value ? 'Pull Request' : 'Issue'
-    alert(`${action} 已创建：\n${url}`)
+    toast.success(`${action} created`)
+    console.log(`${action} URL:`, url)
+
     form.value = {
       title: '',
       category: '',
@@ -176,8 +211,15 @@ async function handleSubmit(_draft = false) {
     }
     tagsInput.value = ''
   } catch (e) {
-    const msg = e instanceof Error ? e.message : '提交失败'
-    alert(msg)
+    console.error('Submission error:', e)
+    let msg = e instanceof Error ? e.message : 'Submission failed'
+
+    if (msg.includes('Bad credentials') || msg.includes('401')) {
+      msg = 'Authentication expired or invalid. Please sign out and sign in again.'
+      // Optional: trigger logout automatically or show a button
+    }
+
+    toast.error(msg)
   } finally {
     submitting.value = false
   }
@@ -189,6 +231,8 @@ async function handleSubmit(_draft = false) {
   display: flex;
   flex-direction: column;
   gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .editor-header {
@@ -219,8 +263,7 @@ async function handleSubmit(_draft = false) {
   transition: background-color var(--transition-base);
 }
 
-.back-link:hover,
-.back-link:focus-visible {
+.back-link:hover {
   background-color: var(--color-gray-100);
 }
 
@@ -232,152 +275,122 @@ async function handleSubmit(_draft = false) {
   box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 2rem;
 }
 
-.form-grid {
+.form-layout {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: 300px 1fr;
+  gap: 2rem;
+}
+
+@media (max-width: 768px) {
+  .form-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-sidebar {
+  display: flex;
+  flex-direction: column;
   gap: 1.5rem;
 }
 
-.form-field {
+.form-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-group {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.form-field span {
+.form-group--flex {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-label {
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--color-gray-700);
 }
 
-input,
-textarea {
+.form-input,
+.form-select,
+.form-textarea {
   width: 100%;
-  padding: 0.75rem 0.85rem;
+  padding: 0.75rem;
   border-radius: var(--radius-md);
   border: 1px solid var(--color-gray-200);
   background-color: var(--color-white);
   color: var(--color-gray-900);
   font-size: var(--text-sm);
+  transition: border-color var(--transition-base);
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--color-gray-900);
+}
+
+.form-textarea {
   resize: vertical;
+  line-height: 1.6;
 }
 
-select {
-  width: 100%;
-  padding: 0.65rem 0.85rem;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-gray-200);
-  background-color: var(--color-white);
-  color: var(--color-gray-900);
+.prompt-body {
+  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+  flex: 1;
+  min-height: 300px;
 }
 
-.form-field--full {
-  grid-column: 1 / -1;
-}
-
-.form-actions {
+.form-footer {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
   justify-content: flex-end;
+  gap: 1rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-gray-100);
 }
 
-.primary,
-.secondary {
+.btn {
   padding: 0.75rem 1.5rem;
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
-  border: 1px solid var(--color-gray-900);
-  transition:
-    background-color var(--transition-base),
-    color var(--transition-base);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-base);
 }
 
-.primary {
+.btn-primary {
   background-color: var(--color-black);
   color: var(--color-white);
+  border: 1px solid var(--color-black);
 }
 
-.primary:hover,
-.primary:focus-visible {
-  background-color: var(--color-gray-900);
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--color-gray-800);
 }
 
-.primary:disabled {
+.btn-secondary {
+  background-color: var(--color-white);
+  color: var(--color-gray-700);
+  border: 1px solid var(--color-gray-300);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: var(--color-gray-50);
+  border-color: var(--color-gray-400);
+}
+
+.btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-.secondary {
-  background-color: var(--color-white);
-  color: var(--color-gray-900);
-}
-
-.secondary:hover,
-.secondary:focus-visible {
-  background-color: var(--color-gray-100);
-}
-
-@media (max-width: 720px) {
-  .editor-form {
-    padding: 1.5rem;
-  }
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.icon {
-  margin-right: 0.5rem;
-}
-
-.prompt-textarea {
-  font-family: monospace;
-  line-height: 1.5;
-}
-
-.image-upload-container {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.image-preview {
-  position: relative;
-  width: 200px;
-  height: 120px;
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  border: 1px solid var(--color-border);
-}
-
-.image-preview img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.remove-image {
-  position: absolute;
-  top: 0.25rem;
-  right: 0.25rem;
-  background: rgba(0, 0, 0, 0.5);
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
-  cursor: pointer;
-}
-
-.upload-status {
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
 }
 </style>

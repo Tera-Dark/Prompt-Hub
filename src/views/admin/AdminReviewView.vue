@@ -38,14 +38,21 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePromptStore } from '@/stores/prompts'
+import { useAuth } from '@/composables/useAuth'
+import { updatePromptById } from '@/repositories/prompts'
 import Button from '@/components/ui/Button.vue'
+import { useToast } from '@/composables/useToast'
 
 const { t } = useI18n()
 const promptStore = usePromptStore()
+const { token, hasRepoWriteAccess } = useAuth()
 const { prompts: allPrompts, isLoading: loading } = promptStore
+const toast = useToast()
+
+const processingId = ref<string | null>(null)
 
 onMounted(() => {
   promptStore.fetchPrompts()
@@ -58,21 +65,51 @@ function formatDate(s: string) {
   return isNaN(d.getTime()) ? '' : d.toLocaleString()
 }
 
-function handleApprove(id: string) {
-  // In a real app, this would call an API to update status
-  // For now, we'll just update the local store if possible, or mock it
-  console.log('Approve', id)
-  const prompt = allPrompts.value.find((p) => p.id === id)
-  if (prompt) {
-    prompt.status = 'published'
+async function handleApprove(id: string) {
+  if (!hasRepoWriteAccess.value) {
+    toast.error(t('auth.writeAccessRequired'))
+    return
+  }
+
+  processingId.value = id
+  try {
+    const url = await updatePromptById(id, (p) => ({ ...p, status: 'published' }), token.value!)
+    toast.success(`Pull Request created for approval`)
+    console.log('PR URL:', url)
+    // Optimistically update local state
+    const prompt = allPrompts.value.find((p) => p.id === id)
+    if (prompt) prompt.status = 'published'
+  } catch (e) {
+    toast.error(e instanceof Error ? e.message : 'Failed to approve')
+  } finally {
+    processingId.value = null
   }
 }
 
-function handleReject(id: string) {
-  console.log('Reject', id)
-  const prompt = allPrompts.value.find((p) => p.id === id)
-  if (prompt) {
-    prompt.status = 'archived'
+async function handleReject(id: string) {
+  if (!hasRepoWriteAccess.value) {
+    toast.error(t('auth.writeAccessRequired'))
+    return
+  }
+
+  if (!confirm('Are you sure you want to reject (archive) this prompt?')) return
+
+  processingId.value = id
+  try {
+    // Option 1: Delete it
+    // const url = await deletePromptById(id, token.value!)
+
+    // Option 2: Archive it (better for history)
+    const url = await updatePromptById(id, (p) => ({ ...p, status: 'archived' }), token.value!)
+
+    toast.success(`Pull Request created for rejection`)
+    console.log('PR URL:', url)
+    const prompt = allPrompts.value.find((p) => p.id === id)
+    if (prompt) prompt.status = 'archived'
+  } catch (e) {
+    toast.error(e instanceof Error ? e.message : 'Failed to reject')
+  } finally {
+    processingId.value = null
   }
 }
 </script>
