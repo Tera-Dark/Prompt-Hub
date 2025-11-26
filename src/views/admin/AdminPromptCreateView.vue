@@ -163,6 +163,11 @@ function onSubmit(_e: SubmitEvent) {
 
 async function handleSubmit(_draft = false) {
   ensureAuth()
+
+  if (_draft) {
+    form.value.status = 'draft'
+  }
+
   const err = validate()
   if (err) {
     toast.error(err)

@@ -57,24 +57,42 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePromptStore } from '@/stores/prompts'
 import { useAuth } from '@/composables/useAuth'
 import Button from '@/components/ui/Button.vue'
+import { getUserSubmissions } from '@/repositories/prompts'
+import type { Prompt } from '@/types/prompt'
 
 const { t } = useI18n()
 const promptStore = usePromptStore()
-const { user } = useAuth()
-const { prompts: allPrompts, isLoading: loading } = promptStore
+const { user, token } = useAuth()
+const { prompts: allPrompts, isLoading: loadingPrompts } = promptStore
 
-onMounted(() => {
+const pendingSubmissions = ref<Prompt[]>([])
+const loadingSubmissions = ref(false)
+
+onMounted(async () => {
   promptStore.fetchPrompts()
+  if (user.value?.login && token.value) {
+    loadingSubmissions.value = true
+    try {
+      pendingSubmissions.value = await getUserSubmissions(user.value.login, token.value)
+    } catch (e) {
+      console.error('Failed to load submissions', e)
+    } finally {
+      loadingSubmissions.value = false
+    }
+  }
 })
+
+const loading = computed(() => loadingPrompts.value || loadingSubmissions.value)
 
 const userPrompts = computed(() => {
   if (!user.value?.login) return []
-  return allPrompts.value.filter((p) => p.author?.username === user.value?.login)
+  const published = allPrompts.value.filter((p) => p.author?.username === user.value?.login)
+  return [...pendingSubmissions.value, ...published]
 })
 
 function formatDate(dateStr: string) {
@@ -83,7 +101,7 @@ function formatDate(dateStr: string) {
 
 function getStatusLabel(status?: string) {
   if (!status || status === 'published') return 'Published'
-  if (status === 'draft') return 'Pending'
+  if (status === 'draft') return 'Pending Review'
   if (status === 'archived') return 'Archived'
   return status
 }

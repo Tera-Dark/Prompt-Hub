@@ -7,6 +7,7 @@ import {
   updateFile,
   createPullRequest,
   createIssue,
+  listIssues,
 } from '@/services/github'
 
 function repoInfo() {
@@ -204,6 +205,27 @@ ${newItem.author?.avatarUrl ? `**Avatar:** ${newItem.author.avatarUrl}` : ''}
 *Submitted via Prompt-Hub*
 `
   return await createIssue(owner, repo, title, body, token)
+}
+
+export async function getUserSubmissions(username: string, token: string): Promise<Prompt[]> {
+  const { owner, repo } = repoInfo()
+  const issues = await listIssues(owner, repo, username, token)
+
+  return issues.map((issue) => ({
+    id: `issue-${issue.number}`,
+    title: issue.title.replace('[Submission] ', ''),
+    category: 'Pending Review',
+    description: 'This prompt is currently under review.',
+    prompt: '', // Content is in issue body, difficult to parse perfectly without structure
+    tags: [],
+    createdAt: issue.created_at,
+    status: 'draft',
+    author: {
+      username: issue.user?.login || username,
+      avatarUrl: issue.user?.avatar_url,
+    },
+    sourceLink: issue.html_url,
+  }))
 }
 
 export async function uploadImage(file: File, token: string): Promise<string> {
