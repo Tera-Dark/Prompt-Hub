@@ -86,20 +86,29 @@ export async function loadPrompts(): Promise<PromptsData> {
   }
 }
 
-export async function addPrompt(newItem: Prompt, token: string): Promise<string> {
+export async function addPrompt(
+  item: Prompt,
+  token: string,
+  directCommit = false,
+): Promise<string> {
   const { owner, repo } = repoInfo()
   const base = await getDefaultBranch(owner, repo, token)
   const baseSha = await getBranchSha(owner, repo, base, token)
-  const branch = `prompt-add-${Date.now()}`
-  await createBranch(owner, repo, branch, baseSha, token)
+
+  let branch = base
+  if (!directCommit) {
+    branch = `prompt-add-${item.id}-${Date.now()}`
+    await createBranch(owner, repo, branch, baseSha, token)
+  }
+
   const file = await getFile(owner, repo, 'public/data/prompts.json', base, token)
   const data = JSON.parse(file.content) as { version: string; prompts: Prompt[] }
-  const next = { version: data.version, prompts: [newItem, ...data.prompts] }
-  const message = `feat: add prompt ${newItem.id}`
+  const next = { version: data.version, prompts: [item, ...data.prompts] }
   // Fix: GitHub API requires content to be Base64 encoded
   const content = btoa(unescape(encodeURIComponent(JSON.stringify(next, null, 2))))
+  const message = `feat: add prompt ${item.title}`
 
-  await updateFile(
+  const commit = await updateFile(
     owner,
     repo,
     'public/data/prompts.json',
@@ -109,8 +118,13 @@ export async function addPrompt(newItem: Prompt, token: string): Promise<string>
     file.sha,
     token,
   )
-  const prTitle = `Add prompt: ${newItem.title}`
-  const prBody = `Add a new prompt in category ${newItem.category}`
+
+  if (directCommit) {
+    return commit.html_url!
+  }
+
+  const prTitle = `Add prompt: ${item.title}`
+  const prBody = `Add prompt ${item.id}`
   return await createPullRequest(owner, repo, prTitle, branch, base, prBody, token)
 }
 
@@ -118,12 +132,18 @@ export async function updatePromptById(
   id: string,
   updater: (_p: Prompt) => Prompt,
   token: string,
+  directCommit = false,
 ): Promise<string> {
   const { owner, repo } = repoInfo()
   const base = await getDefaultBranch(owner, repo, token)
   const baseSha = await getBranchSha(owner, repo, base, token)
-  const branch = `prompt-edit-${id}-${Date.now()}`
-  await createBranch(owner, repo, branch, baseSha, token)
+
+  let branch = base
+  if (!directCommit) {
+    branch = `prompt-edit-${id}-${Date.now()}`
+    await createBranch(owner, repo, branch, baseSha, token)
+  }
+
   const file = await getFile(owner, repo, 'public/data/prompts.json', base, token)
   const data = JSON.parse(file.content) as { version: string; prompts: Prompt[] }
   const idx = data.prompts.findIndex((x) => x.id === id)
@@ -135,7 +155,7 @@ export async function updatePromptById(
   // Fix: GitHub API requires content to be Base64 encoded
   const content = btoa(unescape(encodeURIComponent(JSON.stringify(next, null, 2))))
 
-  await updateFile(
+  const commit = await updateFile(
     owner,
     repo,
     'public/data/prompts.json',
@@ -145,25 +165,39 @@ export async function updatePromptById(
     file.sha,
     token,
   )
+
+  if (directCommit) {
+    return commit.html_url!
+  }
+
   const prTitle = `Update prompt: ${updated.title}`
   const prBody = `Update prompt ${updated.id}`
   return await createPullRequest(owner, repo, prTitle, branch, base, prBody, token)
 }
 
-export async function deletePromptById(id: string, token: string): Promise<string> {
+export async function deletePromptById(
+  id: string,
+  token: string,
+  directCommit = false,
+): Promise<string> {
   const { owner, repo } = repoInfo()
   const base = await getDefaultBranch(owner, repo, token)
   const baseSha = await getBranchSha(owner, repo, base, token)
-  const branch = `prompt-delete-${id}-${Date.now()}`
-  await createBranch(owner, repo, branch, baseSha, token)
+
+  let branch = base
+  if (!directCommit) {
+    branch = `prompt-delete-${id}-${Date.now()}`
+    await createBranch(owner, repo, branch, baseSha, token)
+  }
+
   const file = await getFile(owner, repo, 'public/data/prompts.json', base, token)
   const data = JSON.parse(file.content) as { version: string; prompts: Prompt[] }
   const next = { version: data.version, prompts: data.prompts.filter((x) => x.id !== id) }
-  const message = `feat: delete prompt ${id}`
   // Fix: GitHub API requires content to be Base64 encoded
   const content = btoa(unescape(encodeURIComponent(JSON.stringify(next, null, 2))))
+  const message = `feat: delete prompt ${id}`
 
-  await updateFile(
+  const commit = await updateFile(
     owner,
     repo,
     'public/data/prompts.json',
@@ -173,8 +207,13 @@ export async function deletePromptById(id: string, token: string): Promise<strin
     file.sha,
     token,
   )
+
+  if (directCommit) {
+    return commit.html_url!
+  }
+
   const prTitle = `Delete prompt: ${id}`
-  const prBody = `Remove prompt ${id}`
+  const prBody = `Delete prompt ${id}`
   return await createPullRequest(owner, repo, prTitle, branch, base, prBody, token)
 }
 
@@ -231,18 +270,9 @@ export async function getUserSubmissions(username: string, token: string): Promi
   }))
 }
 
-export async function uploadImage(file: File, token: string): Promise<string> {
-  const { owner, repo } = repoInfo()
-  const base = await getDefaultBranch(owner, repo, token)
-  const baseSha = await getBranchSha(owner, repo, base, token)
-
-  // Create a unique filename
-  const ext = file.name.split('.').pop() || 'png'
-  const filename = `upload-${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${ext}`
-  const path = `public/uploads/${filename}`
-
-  // Convert file to base64
-  const content = await new Promise<string>((resolve, reject) => {
+// Helper to convert File to Base64 string
+async function fileToBase64(file: File): Promise<string> {
+  return new Promise<string>((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = () => {
       const result = reader.result as string
@@ -253,46 +283,45 @@ export async function uploadImage(file: File, token: string): Promise<string> {
     reader.onerror = reject
     reader.readAsDataURL(file)
   })
+}
 
-  const branch = `upload-${filename}`
-  await createBranch(owner, repo, branch, baseSha, token)
+export async function uploadImage(
+  file: File,
+  token: string,
+  directCommit = false,
+): Promise<string> {
+  const { owner, repo } = repoInfo()
+  const base = await getDefaultBranch(owner, repo, token)
+  const baseSha = await getBranchSha(owner, repo, base, token)
+
+  let branch = base
+  if (!directCommit) {
+    branch = `upload-image-${Date.now()}`
+    await createBranch(owner, repo, branch, baseSha, token)
+  }
+
+  const path = `public/images/${Date.now()}-${file.name}`
+  const content = await fileToBase64(file)
+  const message = `chore: upload image ${file.name}`
 
   await updateFile(
     owner,
     repo,
     path,
     content,
-    `chore: upload image ${filename}`,
+    message,
     branch,
     baseSha, // We use baseSha as we are creating a new file
     token,
   )
 
-  // Create PR to merge the image
-  // Note: For a real app, we might want to just commit directly if we have permissions,
-  // but following the pattern, we create a PR.
-  // HOWEVER, for images, we might want to just use the raw URL after merge.
-  // Since we are "Serverless", we need the image to be available.
-  // If we use PR, the image won't be available until merged.
-  // For this demo, let's assume we merge it or just return the blob URL for preview?
-  // No, the user wants "upload support".
-  // Let's create a PR. The user will see the image after merge.
-  // OR, better: if we have write access, we can commit directly to main?
-  // The current `updateFile` takes a branch.
+  if (directCommit) {
+    return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}`
+  }
 
-  // Let's stick to the PR flow for consistency, but return the "future" URL.
-  // The URL will be: https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}
-  // Or via jsdelivr: https://cdn.jsdelivr.net/gh/{owner}/{repo}@{branch}/{path}
-
-  await createPullRequest(
-    owner,
-    repo,
-    `Upload image: ${filename}`,
-    branch,
-    base,
-    `Upload image ${filename}`,
-    token,
-  )
+  const prTitle = `Upload image: ${file.name}`
+  const prBody = `Upload image ${file.name}`
+  await createPullRequest(owner, repo, prTitle, branch, base, prBody, token)
 
   // Return a URL that is accessible (raw from the branch)
   return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}`
@@ -396,7 +425,7 @@ export async function approveSubmission(
       author: submission.author,
     }
 
-    await addPrompt(newItem, token)
+    await addPrompt(newItem, token, true)
     await closeIssue(owner, repo, submission.number, token)
   }
 }

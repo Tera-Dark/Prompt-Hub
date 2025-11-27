@@ -80,8 +80,12 @@ async function onDelete(id: string) {
   submitting.value = true
   try {
     const t = token.value!
-    const url = await deletePromptById(id, t)
-    alert(`Pull Request 已创建：\n${url}`)
+    const url = await deletePromptById(id, t, hasRepoWriteAccess.value)
+    if (hasRepoWriteAccess.value) {
+      alert('提示词已删除')
+    } else {
+      alert(`Pull Request 已创建：\n${url}`)
+    }
     items.value = items.value.filter((x) => x.id !== id)
   } catch (e) {
     const msg = e instanceof Error ? e.message : '删除失败'

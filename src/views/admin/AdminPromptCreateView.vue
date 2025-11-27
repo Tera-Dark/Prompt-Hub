@@ -112,7 +112,7 @@ import { useI18n } from 'vue-i18n'
 import { usePrompts } from '@/composables/usePrompts'
 import { useAuth } from '@/composables/useAuth'
 import { type Prompt } from '@/types/prompt'
-import { addPrompt, submitPromptIssue } from '@/repositories/prompts'
+import { addPrompt } from '@/repositories/prompts'
 import { useToast } from '@/composables/useToast'
 
 const { t } = useI18n()
@@ -203,23 +203,37 @@ async function handleSubmit(_draft = false) {
           }
         : undefined,
     }
-    const url = hasRepoWriteAccess.value
-      ? await addPrompt(newItem, t)
-      : await submitPromptIssue(newItem, t)
+    const url = await addPrompt(newItem, t, hasRepoWriteAccess.value)
 
-    const action = hasRepoWriteAccess.value ? 'Pull Request' : 'Issue'
-    toast.success(`${action} created`)
-    console.log(`${action} URL:`, url)
-
-    form.value = {
-      title: '',
-      category: '',
-      description: '',
-      prompt: '',
-      status: 'draft',
-      imageUrl: '',
+    if (hasRepoWriteAccess.value) {
+      toast.success(t('prompts.create.actions.directCommitSuccess'))
+      // Clear form
+      form.value = {
+        title: '',
+        category: '',
+        description: '',
+        prompt: '',
+        status: 'draft',
+        imageUrl: '',
+      }
+      tagsInput.value = ''
+      // Assuming router is available and imported, if not, this will cause an error.
+      // For now, I'll comment it out as it's not in the provided context.
+      // router.push('/admin/prompts')
+    } else {
+      toast.success(t('prompts.create.actions.prCreated'))
+      console.log('PR URL:', url)
+      form.value = {
+        title: '',
+        category: '',
+        description: '',
+        prompt: '',
+        status: 'draft',
+        imageUrl: '',
+      }
+      tagsInput.value = ''
+      // router.push('/admin/prompts')
     }
-    tagsInput.value = ''
   } catch (e) {
     console.error('Submission error:', e)
     let msg = e instanceof Error ? e.message : 'Submission failed'

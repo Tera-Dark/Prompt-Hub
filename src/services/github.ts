@@ -152,7 +152,7 @@ export async function updateFile(
   token: string,
 ) {
   const octokit = new Octokit({ auth: token })
-  await octokit.repos.createOrUpdateFileContents({
+  const { data } = await octokit.repos.createOrUpdateFileContents({
     owner,
     repo,
     path,
@@ -161,6 +161,7 @@ export async function updateFile(
     branch,
     sha,
   })
+  return data.commit
 }
 
 export async function createPullRequest(
