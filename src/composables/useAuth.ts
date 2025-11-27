@@ -5,6 +5,8 @@ import {
   getStoredSession,
   handleCallback,
   logout as clearStoredSession,
+  verifyRepoAccess,
+  saveSession,
   type AuthSession,
   type GitHubUser,
 } from '@/utils/github-auth'
@@ -53,7 +55,20 @@ export function useAuth(): AuthComposable {
     if (session) {
       token.value = session.token
       user.value = session.user
-      hasRepoWriteAccess.value = session.hasRepoWriteAccess
+      // Default to false if undefined, but trigger a check
+      hasRepoWriteAccess.value = !!session.hasRepoWriteAccess
+
+      // If hasRepoWriteAccess is undefined (old session), verify it now
+      if (session.hasRepoWriteAccess === undefined) {
+        verifyRepoAccess(session.token).then((access) => {
+          hasRepoWriteAccess.value = access
+          // Update stored session
+          saveSession({
+            ...session,
+            hasRepoWriteAccess: access,
+          })
+        })
+      }
     } else {
       token.value = null
       user.value = null

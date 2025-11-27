@@ -85,7 +85,7 @@ function deobfuscate(value: string) {
   }
 }
 
-function saveSession(session: AuthSession) {
+export function saveSession(session: AuthSession) {
   ensureBrowserContext()
   const encoded = obfuscate(JSON.stringify(session))
   window.localStorage.setItem(TOKEN_STORAGE_KEY, encoded)
@@ -240,6 +240,37 @@ function getRequiredEnv(name: 'VITE_GITHUB_REPO_OWNER' | 'VITE_GITHUB_REPO_NAME'
   return value
 }
 
+export async function verifyRepoAccess(token: string): Promise<boolean> {
+  const owner = getRequiredEnv('VITE_GITHUB_REPO_OWNER')
+  const repo = getRequiredEnv('VITE_GITHUB_REPO_NAME')
+  const headers = buildAuthHeaders(token)
+
+  const repoUrl = `${GITHUB_API_BASE_URL}/repos/${owner}/${repo}`
+  const repoResponse = await fetch(repoUrl, {
+    method: 'GET',
+    headers,
+  })
+
+  if (repoResponse.ok) {
+    const repoData = (await repoResponse.json()) as {
+      permissions?: { admin: boolean; push: boolean; maintain?: boolean }
+    }
+    const permissions = repoData.permissions
+    if (permissions) {
+      return permissions.admin || permissions.push || !!permissions.maintain
+    }
+  } else {
+    console.error(
+      `Repo check failed: ${repoResponse.status} ${repoResponse.statusText} for URL: ${repoUrl}`,
+    )
+    if (repoResponse.status !== 404 && repoResponse.status !== 403) {
+      // Don't throw here, just return false to be safe
+      return false
+    }
+  }
+  return false
+}
+
 export async function handleCallback(code: string, state: string): Promise<AuthSession> {
   if (!code || !state) {
     throw new Error('Missing OAuth code or state parameter.')
@@ -251,8 +282,6 @@ export async function handleCallback(code: string, state: string): Promise<AuthS
   // 如果配置了完整的 URL 则使用配置的，否则默认使用同域下的 /api
   const configuredProxyUrl = import.meta.env.VITE_OAUTH_PROXY_URL
   const proxyUrl = configuredProxyUrl ? stripTrailingSlash(configuredProxyUrl) : '/api'
-  const owner = getRequiredEnv('VITE_GITHUB_REPO_OWNER')
-  const repo = getRequiredEnv('VITE_GITHUB_REPO_NAME')
 
   let exchangePayload: ExchangeResponse
   try {
@@ -302,32 +331,7 @@ export async function handleCallback(code: string, state: string): Promise<AuthS
 
   const user = (await userResponse.json()) as GitHubUser
 
-  const repoUrl = `${GITHUB_API_BASE_URL}/repos/${owner}/${repo}`
-  const repoResponse = await fetch(repoUrl, {
-    method: 'GET',
-    headers,
-  })
-
-  let hasRepoWriteAccess = false
-
-  if (repoResponse.ok) {
-    const repoData = (await repoResponse.json()) as {
-      permissions?: { admin: boolean; push: boolean; maintain?: boolean }
-    }
-    const permissions = repoData.permissions
-    if (permissions) {
-      hasRepoWriteAccess = permissions.admin || permissions.push || !!permissions.maintain
-    }
-  } else {
-    console.error(
-      `Repo check failed: ${repoResponse.status} ${repoResponse.statusText} for URL: ${repoUrl}`,
-    )
-    // 如果是 404 或 403，可能意味着用户没有权限查看该仓库，或者仓库不存在
-    // 在这种情况下，我们默认没有写入权限，而不是直接抛出错误，除非是其他严重错误
-    if (repoResponse.status !== 404 && repoResponse.status !== 403) {
-      throw new Error(`Unable to verify repository permissions. (Status: ${repoResponse.status})`)
-    }
-  }
+  const hasRepoWriteAccess = await verifyRepoAccess(token)
 
   const session: AuthSession = {
     token,

@@ -1,0 +1,4 @@
+  origin/HEAD -> origin/main
+  origin/docs/contribution-flow-issue-template-readme
+  origin/feat/admin-routing-layout-vue-router-guard-minimal-ui
+  origin/main
