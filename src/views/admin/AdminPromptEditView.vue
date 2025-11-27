@@ -108,7 +108,7 @@ onMounted(async () => {
       form.value.title = p.title
       form.value.description = p.description
       form.value.prompt = p.prompt
-      status.value = p.status
+      status.value = p.status || 'draft'
       tagsInput.value = (p.tags || []).join(', ')
     }
   } catch {
