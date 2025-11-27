@@ -33,8 +33,15 @@ export function usePromptStore() {
   })
 
   const categories = computed(() => {
-    const cats = new Set(prompts.value.map((p) => p.category))
-    return Array.from(cats).sort()
+    const counts = new Map<string, number>()
+    prompts.value.forEach((p) => {
+      const c = p.category
+      counts.set(c, (counts.get(c) || 0) + 1)
+    })
+
+    return Array.from(counts.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
   })
 
   function getFilteredPrompts(

@@ -11,15 +11,15 @@
       </button>
       <button
         v-for="category in categories"
-        :key="category"
+        :key="category.name"
         class="category-pill"
-        :class="{ active: modelValue === category }"
-        @click="selectCategory(category)"
+        :class="{ active: modelValue === category.name }"
+        @click="selectCategory(category.name)"
       >
-        <span v-if="getCategoryIcon(category)" class="category-icon">{{
-          getCategoryIcon(category)
+        <span v-if="getCategoryIcon(category.name)" class="category-icon">{{
+          getCategoryIcon(category.name)
         }}</span>
-        <span>{{ category }}</span>
+        <span>{{ category.name }} ({{ category.count }})</span>
       </button>
     </div>
   </div>
@@ -28,9 +28,14 @@
 <script setup lang="ts">
 import { CATEGORY_ICONS } from '@/constants/categories'
 
+interface Category {
+  name: string
+  count: number
+}
+
 interface Props {
   modelValue: string | null
-  categories: string[]
+  categories: Category[]
   resultCount?: number
   showCount?: boolean
 }

@@ -28,6 +28,23 @@
 
       <!-- Right Column (List View) / Footer (Grid View) -->
       <div class="card-section-actions">
+        <div class="card-footer-left">
+          <div v-if="prompt.author" class="author-info">
+            <img
+              v-if="prompt.author.avatarUrl"
+              :src="prompt.author.avatarUrl"
+              :alt="prompt.author.username"
+              class="author-avatar"
+            />
+            <div v-else class="author-avatar-placeholder">
+              {{ prompt.author.username.charAt(0).toUpperCase() }}
+            </div>
+            <span class="author-name">{{ prompt.author.username }}</span>
+          </div>
+          <span v-if="prompt.author" class="separator">•</span>
+          <span class="date">{{ formatDate(prompt.createdAt) }}</span>
+        </div>
+
         <div class="action-buttons">
           <Button
             :variant="isFavorite ? 'primary' : 'ghost'"
@@ -37,9 +54,6 @@
             @click.stop="toggleFavorite"
           >
             <Icon name="bookmark" :size="16" :class="{ 'icon-filled': isFavorite }" />
-            <span class="btn-text">{{
-              isFavorite ? t('common.actions.saved') : t('common.actions.save')
-            }}</span>
           </Button>
           <Button
             :variant="isCopied ? 'primary' : 'ghost'"
@@ -49,21 +63,8 @@
             @click.stop="copyToClipboard"
           >
             <Icon name="copy" :size="16" />
-            <span class="btn-text">{{
-              isCopied ? t('common.actions.copied') : t('common.actions.copy')
-            }}</span>
           </Button>
         </div>
-
-        <a
-          v-if="prompt.sourceLink"
-          :href="prompt.sourceLink"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="source-link"
-        >
-          {{ t('common.actions.source') }} ↗
-        </a>
       </div>
     </div>
   </Card>
@@ -122,6 +123,19 @@ async function copyToClipboard() {
   } catch (err) {
     console.error('Failed to copy:', err)
     error('Failed to copy')
+  }
+}
+
+function formatDate(dateString: string): string {
+  try {
+    const date = new Date(dateString)
+    return new Intl.DateTimeFormat('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(date)
+  } catch (e) {
+    return dateString
   }
 }
 </script>
@@ -368,5 +382,52 @@ async function copyToClipboard() {
     justify-content: space-between;
     width: 100%;
   }
+}
+
+.card-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+}
+
+.author-info {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.author-avatar {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.author-avatar-placeholder {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
+}
+
+.author-name {
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.separator {
+  color: var(--color-border);
+}
+
+.date {
+  color: var(--color-text-tertiary);
 }
 </style>
