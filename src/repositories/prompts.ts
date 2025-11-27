@@ -41,26 +41,21 @@ export async function loadPrompts(): Promise<PromptsData> {
       }
     }
 
-    const response = await fetch(`${import.meta.env.BASE_URL}data/prompts.json`)
-
-    if (!response.ok) {
-      throw new PromptLoadError(
-        `Failed to fetch prompts: ${response.status} ${response.statusText}`,
-      )
-    }
-
-    const data = await response.json()
-
-    if (!data || typeof data !== 'object') {
-      throw new PromptLoadError('Invalid prompts data: expected an object')
-    }
-
-    if (!Array.isArray(data.prompts)) {
-      throw new PromptLoadError('Invalid prompts data: prompts field must be an array')
-    }
-
-    // Save to cache
+    // Try new shard-based loading first
     try {
+      const { loadShardIndex, loadShards } = await import('@/utils/shard')
+      const index = await loadShardIndex()
+
+      // Load all shards
+      const allShardIds = Array.from({ length: index.shardCount }, (_, i) => i)
+      const prompts = await loadShards(allShardIds)
+
+      const data: PromptsData = {
+        version: index.version,
+        prompts,
+      }
+
+      // Cache the result
       localStorage.setItem(
         CACHE_KEY,
         JSON.stringify({
@@ -68,21 +63,42 @@ export async function loadPrompts(): Promise<PromptsData> {
           timestamp: Date.now(),
         }),
       )
-    } catch (e) {
-      console.warn('Failed to cache prompts', e)
-    }
 
-    return data as PromptsData
+      return data
+    } catch (shardError) {
+      // Fallback to old single-file loading if shard loading fails
+      console.warn('Shard loading failed, falling back to single file:', shardError)
+
+      const response = await fetch(`${import.meta.env.BASE_URL}data/prompts.json`)
+
+      if (!response.ok) {
+        throw new PromptLoadError(
+          `Failed to fetch prompts: ${response.status} ${response.statusText}`,
+        )
+      }
+
+      const data: PromptsData = await response.json()
+
+      if (!data || !data.prompts || !Array.isArray(data.prompts)) {
+        throw new PromptLoadError('Invalid prompts data structure')
+      }
+
+      // Cache the result
+      localStorage.setItem(
+        CACHE_KEY,
+        JSON.stringify({
+          data,
+          timestamp: Date.now(),
+        }),
+      )
+
+      return data
+    }
   } catch (error) {
-    if (error instanceof PromptLoadError) {
-      throw error
-    }
-
-    if (error instanceof Error) {
-      throw new PromptLoadError('Failed to load prompts data', error)
-    }
-
-    throw new PromptLoadError('An unknown error occurred while loading prompts')
+    console.error('Error loading prompts:', error)
+    throw error instanceof PromptLoadError
+      ? error
+      : new PromptLoadError(error instanceof Error ? error.message : 'Unknown error')
   }
 }
 

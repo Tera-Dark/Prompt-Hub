@@ -1,0 +1,20 @@
+{
+  "shardId": 7,
+  "prompts": [
+    {
+      "id": "测试-111-202511270758",
+      "title": "测试111",
+      "category": "测试",
+      "description": "描述123",
+      "prompt": "文本123123",
+      "tags": ["测试"],
+      "createdAt": "2025-11-27T07:58:33.318Z",
+      "status": "published",
+      "imageUrl": "",
+      "author": {
+        "username": "Tera-Dark",
+        "avatarUrl": "https://avatars.githubusercontent.com/u/142307294?v=4"
+      }
+    }
+  ]
+}
