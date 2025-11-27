@@ -11,23 +11,47 @@
         <article v-for="prompt in pendingPrompts" :key="prompt.id" class="pr-card">
           <div class="card-header">
             <h3>{{ prompt.title }}</h3>
-            <span class="badge" data-state="pending">{{ t('review.status.pending') }}</span>
+            <div class="badges">
+              <span class="badge" :data-type="prompt.type">{{
+                prompt.type === 'pr' ? 'Pull Request' : 'Issue'
+              }}</span>
+              <span class="badge" data-state="pending">{{ t('review.status.pending') }}</span>
+            </div>
           </div>
           <div class="card-content">
-            <p class="prompt-text">{{ prompt.prompt }}</p>
+            <p class="prompt-text">{{ prompt.description }}</p>
             <div class="tags">
               <span v-for="tag in prompt.tags" :key="tag" class="tag">#{{ tag }}</span>
             </div>
+            <a
+              v-if="prompt.sourceLink"
+              :href="prompt.sourceLink"
+              target="_blank"
+              class="source-link"
+            >
+              View on GitHub ↗
+            </a>
           </div>
           <div class="card-actions">
-            <Button variant="outline" size="sm" @click="handleReject(prompt.id)">
-              {{ t('review.reject') }}
+            <Button
+              variant="outline"
+              size="sm"
+              :disabled="!!processingId"
+              @click="handleReject(prompt)"
+            >
+              {{ processingId === prompt.id ? 'Processing...' : t('review.reject') }}
             </Button>
-            <Button variant="primary" size="sm" @click="handleApprove(prompt.id)">
-              {{ t('review.approve') }}
+            <Button
+              variant="primary"
+              size="sm"
+              :disabled="!!processingId"
+              @click="handleApprove(prompt)"
+            >
+              {{ processingId === prompt.id ? 'Processing...' : t('review.approve') }}
             </Button>
           </div>
           <div class="card-meta">
+            <span v-if="prompt.author" class="author">by {{ prompt.author.username }} • </span>
             <span class="date">{{ formatDate(prompt.createdAt) }}</span>
           </div>
         </article>
@@ -38,75 +62,84 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { usePromptStore } from '@/stores/prompts'
 import { useAuth } from '@/composables/useAuth'
-import { updatePromptById } from '@/repositories/prompts'
+import {
+  getPendingSubmissions,
+  approveSubmission,
+  rejectSubmission,
+  type PendingSubmission,
+} from '@/repositories/prompts'
 import Button from '@/components/ui/Button.vue'
 import { useToast } from '@/composables/useToast'
 
 const { t } = useI18n()
-const promptStore = usePromptStore()
 const { token, hasRepoWriteAccess } = useAuth()
-const { prompts: allPrompts, isLoading: loading } = promptStore
 const toast = useToast()
 
+const pendingPrompts = ref<PendingSubmission[]>([])
+const loading = ref(false)
 const processingId = ref<string | null>(null)
 
-onMounted(() => {
-  promptStore.fetchPrompts()
-})
+async function fetchSubmissions() {
+  if (!token.value) return
+  loading.value = true
+  try {
+    pendingPrompts.value = await getPendingSubmissions(token.value)
+  } catch (e) {
+    console.error(e)
+    toast.error('Failed to load submissions')
+  } finally {
+    loading.value = false
+  }
+}
 
-const pendingPrompts = computed(() => allPrompts.value.filter((p) => p.status === 'draft'))
+onMounted(() => {
+  fetchSubmissions()
+})
 
 function formatDate(s: string) {
   const d = new Date(s)
   return isNaN(d.getTime()) ? '' : d.toLocaleString()
 }
 
-async function handleApprove(id: string) {
+async function handleApprove(submission: PendingSubmission) {
   if (!hasRepoWriteAccess.value) {
     toast.error(t('auth.writeAccessRequired'))
     return
   }
 
-  processingId.value = id
+  processingId.value = submission.id
   try {
-    const url = await updatePromptById(id, (p) => ({ ...p, status: 'published' }), token.value!)
-    toast.success(`Pull Request created for approval`)
-    console.log('PR URL:', url)
-    // Optimistically update local state
-    const prompt = allPrompts.value.find((p) => p.id === id)
-    if (prompt) prompt.status = 'published'
+    await approveSubmission(submission, token.value!)
+    toast.success('Submission approved and merged')
+    // Remove from list
+    pendingPrompts.value = pendingPrompts.value.filter((p) => p.id !== submission.id)
   } catch (e) {
+    console.error(e)
     toast.error(e instanceof Error ? e.message : 'Failed to approve')
   } finally {
     processingId.value = null
   }
 }
 
-async function handleReject(id: string) {
+async function handleReject(submission: PendingSubmission) {
   if (!hasRepoWriteAccess.value) {
     toast.error(t('auth.writeAccessRequired'))
     return
   }
 
-  if (!confirm('Are you sure you want to reject (archive) this prompt?')) return
+  if (!confirm('Are you sure you want to reject (close) this submission?')) return
 
-  processingId.value = id
+  processingId.value = submission.id
   try {
-    // Option 1: Delete it
-    // const url = await deletePromptById(id, token.value!)
-
-    // Option 2: Archive it (better for history)
-    const url = await updatePromptById(id, (p) => ({ ...p, status: 'archived' }), token.value!)
-
-    toast.success(`Pull Request created for rejection`)
-    console.log('PR URL:', url)
-    const prompt = allPrompts.value.find((p) => p.id === id)
-    if (prompt) prompt.status = 'archived'
+    await rejectSubmission(submission, token.value!)
+    toast.success('Submission rejected and closed')
+    // Remove from list
+    pendingPrompts.value = pendingPrompts.value.filter((p) => p.id !== submission.id)
   } catch (e) {
+    console.error(e)
     toast.error(e instanceof Error ? e.message : 'Failed to reject')
   } finally {
     processingId.value = null
@@ -191,15 +224,33 @@ async function handleReject(id: string) {
   border-radius: 100px;
 }
 
+.badges {
+  display: flex;
+  gap: 0.5rem;
+}
+
 .badge {
   font-size: var(--text-xs);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   padding: 0.25rem 0.55rem;
   border-radius: 9999px;
+  font-weight: 600;
+}
+
+.badge[data-state='pending'] {
   background-color: var(--color-yellow-100);
   color: var(--color-yellow-700);
-  font-weight: 600;
+}
+
+.badge[data-type='pr'] {
+  background-color: var(--color-blue-100);
+  color: var(--color-blue-700);
+}
+
+.badge[data-type='issue'] {
+  background-color: var(--color-green-100);
+  color: var(--color-green-700);
 }
 
 .card-actions {
@@ -212,6 +263,16 @@ async function handleReject(id: string) {
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
   text-align: right;
+}
+
+.source-link {
+  font-size: var(--text-xs);
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.source-link:hover {
+  text-decoration: underline;
 }
 
 .empty {

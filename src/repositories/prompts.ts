@@ -8,6 +8,9 @@ import {
   createPullRequest,
   createIssue,
   listIssues,
+  listPullRequests,
+  mergePullRequest,
+  closeIssue,
 } from '@/services/github'
 
 function repoInfo() {
@@ -293,4 +296,115 @@ export async function uploadImage(file: File, token: string): Promise<string> {
 
   // Return a URL that is accessible (raw from the branch)
   return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}`
+}
+
+export interface PendingSubmission extends Prompt {
+  type: 'pr' | 'issue'
+  number: number
+}
+
+export async function getPendingSubmissions(token: string): Promise<PendingSubmission[]> {
+  const { owner, repo } = repoInfo()
+  const [issues, prs] = await Promise.all([
+    listIssues(owner, repo, '', token),
+    listPullRequests(owner, repo, token),
+  ])
+
+  const submissions: PendingSubmission[] = []
+
+  // Process Issues
+  for (const issue of issues) {
+    if (issue.title.includes('[Submission]')) {
+      submissions.push({
+        id: `issue-${issue.number}`,
+        title: issue.title.replace('[Submission] ', ''),
+        category: 'Pending Review', // We'll parse this from body if needed, but for list view this is fine
+        description: 'User submission via Issue',
+        prompt: issue.body || '',
+        tags: [],
+        createdAt: issue.created_at,
+        status: 'draft',
+        author: {
+          username: issue.user?.login || 'Anonymous',
+          avatarUrl: issue.user?.avatar_url,
+        },
+        type: 'issue',
+        number: issue.number,
+        sourceLink: issue.html_url,
+      })
+    }
+  }
+
+  // Process PRs
+  for (const pr of prs) {
+    if (pr.title.startsWith('Add prompt:') || pr.title.startsWith('Update prompt:')) {
+      submissions.push({
+        id: `pr-${pr.number}`,
+        title: pr.title,
+        category: 'Pending Merge',
+        description: pr.body || 'Pull Request',
+        prompt: '', // PR content is in files, not body
+        tags: [],
+        createdAt: pr.created_at,
+        status: 'draft',
+        author: {
+          username: pr.user?.login || 'Anonymous',
+          avatarUrl: pr.user?.avatar_url,
+        },
+        type: 'pr',
+        number: pr.number,
+        sourceLink: pr.html_url,
+      })
+    }
+  }
+
+  return submissions
+}
+
+export async function approveSubmission(
+  submission: PendingSubmission,
+  token: string,
+): Promise<void> {
+  const { owner, repo } = repoInfo()
+
+  if (submission.type === 'pr') {
+    await mergePullRequest(owner, repo, submission.number, token)
+  } else {
+    // For Issues, we need to parse the body and add it to the file
+    // This is complex because we need to parse the markdown body back to a Prompt object
+    // For now, let's assume the body format we created in submitPromptIssue
+    const body = submission.prompt
+    const titleMatch = body.match(/\*\*Title:\*\* (.*)/)
+    const categoryMatch = body.match(/\*\*Category:\*\* (.*)/)
+    const descMatch = body.match(/\*\*Description:\*\*\s*\n([\s\S]*?)\n\n\*\*Prompt:\*\*/)
+    const promptMatch = body.match(/```\n([\s\S]*?)\n```/)
+    const tagsMatch = body.match(/\*\*Tags:\*\* (.*)/)
+
+    if (!titleMatch || !categoryMatch || !promptMatch) {
+      throw new Error('Failed to parse issue body. Please merge manually.')
+    }
+
+    const newItem: Prompt = {
+      id: `prompt-${Date.now()}`, // Generate a new ID
+      title: titleMatch[1].trim(),
+      category: categoryMatch[1].trim(),
+      description: descMatch ? descMatch[1].trim() : '',
+      prompt: promptMatch[1].trim(),
+      tags: tagsMatch ? tagsMatch[1].split(',').map((s) => s.trim()) : [],
+      createdAt: new Date().toISOString(),
+      status: 'published',
+      author: submission.author,
+    }
+
+    await addPrompt(newItem, token)
+    await closeIssue(owner, repo, submission.number, token)
+  }
+}
+
+export async function rejectSubmission(
+  submission: PendingSubmission,
+  token: string,
+): Promise<void> {
+  const { owner, repo } = repoInfo()
+  await closeIssue(owner, repo, submission.number, token) // Works for PRs too as they are issues
 }

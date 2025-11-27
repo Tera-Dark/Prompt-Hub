@@ -53,6 +53,38 @@ export class GitHubService {
     })
     return data.html_url
   }
+
+  async listPullRequests(state: 'open' | 'closed' | 'all' = 'open') {
+    if (!this.octokit) throw new Error('Not authenticated')
+    const { data } = await this.octokit.pulls.list({
+      owner: this.owner,
+      repo: this.repo,
+      state,
+    })
+    return data
+  }
+
+  async mergePullRequest(pullNumber: number) {
+    if (!this.octokit) throw new Error('Not authenticated')
+    const { data } = await this.octokit.pulls.merge({
+      owner: this.owner,
+      repo: this.repo,
+      pull_number: pullNumber,
+      merge_method: 'squash',
+    })
+    return data
+  }
+
+  async updateIssue(issueNumber: number, state: 'open' | 'closed') {
+    if (!this.octokit) throw new Error('Not authenticated')
+    const { data } = await this.octokit.issues.update({
+      owner: this.owner,
+      repo: this.repo,
+      issue_number: issueNumber,
+      state,
+    })
+    return data
+  }
 }
 
 export const githubService = new GitHubService()
@@ -176,6 +208,43 @@ export async function listIssues(owner: string, repo: string, creator: string, t
     repo,
     creator,
     state: 'open',
+  })
+  return data
+}
+
+export async function listPullRequests(owner: string, repo: string, token: string) {
+  const octokit = new Octokit({ auth: token })
+  const { data } = await octokit.pulls.list({
+    owner,
+    repo,
+    state: 'open',
+  })
+  return data
+}
+
+export async function mergePullRequest(
+  owner: string,
+  repo: string,
+  pullNumber: number,
+  token: string,
+) {
+  const octokit = new Octokit({ auth: token })
+  const { data } = await octokit.pulls.merge({
+    owner,
+    repo,
+    pull_number: pullNumber,
+    merge_method: 'squash',
+  })
+  return data
+}
+
+export async function closeIssue(owner: string, repo: string, issueNumber: number, token: string) {
+  const octokit = new Octokit({ auth: token })
+  const { data } = await octokit.issues.update({
+    owner,
+    repo,
+    issue_number: issueNumber,
+    state: 'closed',
   })
   return data
 }
