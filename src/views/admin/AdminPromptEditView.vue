@@ -120,7 +120,7 @@ async function handleSubmit() {
   ensureAuth()
   submitting.value = true
   try {
-    const t = token.value!
+    const authToken = token.value!
     const tags = tagsInput.value
       .split(',')
       .map((s) => s.trim())
@@ -137,7 +137,7 @@ async function handleSubmit() {
         updatedAt: now,
         status: status.value,
       }),
-      t,
+      authToken,
     )
     alert(`Pull Request created: \n${url}`)
   } catch (e) {

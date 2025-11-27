@@ -180,7 +180,7 @@ async function handleSubmit(_draft = false) {
   }
   submitting.value = true
   try {
-    const t = token.value!
+    const authToken = token.value!
     const tags = tagsInput.value
       .split(',')
       .map((s) => s.trim())
@@ -203,7 +203,7 @@ async function handleSubmit(_draft = false) {
           }
         : undefined,
     }
-    const url = await addPrompt(newItem, t, hasRepoWriteAccess.value)
+    const url = await addPrompt(newItem, authToken, hasRepoWriteAccess.value)
 
     if (hasRepoWriteAccess.value) {
       toast.success(t('prompts.create.actions.directCommitSuccess'))
