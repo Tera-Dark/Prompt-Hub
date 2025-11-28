@@ -5,7 +5,7 @@
         <h1>{{ t('dashboard.mySubmissions') }}</h1>
         <p>{{ t('dashboard.trackSubmissions') }}</p>
       </div>
-      <Button variant="primary" @click="$router.push('/admin/prompts/new')">
+      <Button variant="primary" @click="$router.push('/prompts/new')">
         {{ t('prompts.new') }}
       </Button>
     </header>
@@ -49,7 +49,7 @@
       <div class="empty-icon">📝</div>
       <h3>{{ t('dashboard.noSubmissions') }}</h3>
       <p>{{ t('dashboard.startContributing') }}</p>
-      <Button variant="primary" @click="$router.push('/admin/prompts/new')">
+      <Button variant="primary" @click="$router.push('/prompts/new')">
         {{ t('prompts.createFirst') }}
       </Button>
     </div>

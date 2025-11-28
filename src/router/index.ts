@@ -79,6 +79,14 @@ const routes: RouteRecordRaw[] = [
     ],
   },
   {
+    path: '/prompts/new',
+    name: 'PromptNew',
+    component: () => import('@/views/admin/AdminPromptCreateView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
     path: '/dashboard',
     name: 'UserDashboard',
     component: () => import('@/views/user/UserDashboardView.vue'),
@@ -110,17 +118,20 @@ router.beforeEach((to) => {
       return { name: 'Login' }
     }
 
-    if (!auth.hasRepoWriteAccess.value && to.name !== 'AdminDashboard') {
-      // Allow access to dashboard even without write access,
-      // but maybe show a restricted view or redirect to a specific "no access" page if needed.
-      // For now, let's keep it as is, but ensure AdminDashboard handles it.
-      return { name: 'AdminDashboard' }
+    // Check if trying to access admin routes without write access
+    if (to.path.startsWith('/admin') && !auth.hasRepoWriteAccess.value) {
+      // Regular users should be redirected to UserDashboard
+      return { name: 'UserDashboard' }
     }
   }
 
-  // Redirect to admin if already logged in and trying to access login
+  // Redirect logged in users from login page based on their role
   if (to.name === 'Login' && auth.isAuthed.value) {
-    return { name: 'AdminDashboard' }
+    if (auth.hasRepoWriteAccess.value) {
+      return { name: 'AdminDashboard' }
+    } else {
+      return { name: 'UserDashboard' }
+    }
   }
 
   return true
