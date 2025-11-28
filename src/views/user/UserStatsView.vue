@@ -214,12 +214,17 @@ function getStatusLabel(status?: string) {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  min-width: 0;
+  flex: 1;
 }
 
 .recent-title {
   font-weight: 500;
   color: var(--color-text-primary);
   font-size: var(--text-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .recent-date {

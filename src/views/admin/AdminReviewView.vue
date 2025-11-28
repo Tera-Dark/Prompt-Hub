@@ -197,6 +197,11 @@ async function handleReject(submission: PendingSubmission) {
   font-size: var(--text-lg);
   font-weight: 600;
   color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex: 1;
 }
 
 .card-content {

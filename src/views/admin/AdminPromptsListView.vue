@@ -260,7 +260,7 @@ function removeDraft(id: string) {
 
 .prompts-card__header {
   display: grid;
-  grid-template-columns: 2fr 160px 160px 220px;
+  grid-template-columns: minmax(0, 2fr) 160px 160px 220px;
   padding: 1rem 1.5rem;
   font-size: var(--text-sm);
   font-weight: 600;
@@ -275,7 +275,7 @@ function removeDraft(id: string) {
 
 .prompts-row {
   display: grid;
-  grid-template-columns: 2fr 160px 160px 220px;
+  grid-template-columns: minmax(0, 2fr) 160px 160px 220px;
   align-items: center;
   gap: 1rem;
   padding: 1.25rem 1.5rem;
@@ -290,12 +290,19 @@ function removeDraft(id: string) {
   font-size: var(--text-lg);
   font-weight: 600;
   color: var(--color-gray-900);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .prompt-info p {
   font-size: var(--text-sm);
   color: var(--color-gray-500);
   margin-top: 0.25rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .prompt-status {
