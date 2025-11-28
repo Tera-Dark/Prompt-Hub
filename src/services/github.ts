@@ -268,7 +268,7 @@ export async function getFile(
     throw new Error('Not a file')
   }
   return {
-    content: atob(data.content),
+    content: decodeURIComponent(escape(atob(data.content))),
     sha: data.sha,
   }
 }
