@@ -112,7 +112,23 @@ export async function addPrompt(
   // We can fetch index first.
 
   const indexFile = await getFile(owner, repo, 'public/data/prompts/index.json', base, token)
-  const index = JSON.parse(indexFile.content) as ShardIndex
+
+  // Safe parsing for index file with fallback
+  let index: ShardIndex
+  try {
+    index = JSON.parse(indexFile.content) as ShardIndex
+  } catch (e) {
+    console.warn('Index file corrupted or empty, initializing new index')
+    index = {
+      version: '2.0.0',
+      shardCount: 8,
+      totalPrompts: 0,
+      lastUpdated: new Date().toISOString(),
+      categories: {},
+      shardMap: {},
+    }
+  }
+
   const shardId = getShardId(item.id, index.shardCount)
 
   let branch = base
@@ -202,7 +218,22 @@ export async function updatePromptById(
 
   // Get Index to find shard
   const indexFile = await getFile(owner, repo, 'public/data/prompts/index.json', base, token)
-  const index = JSON.parse(indexFile.content) as ShardIndex
+
+  let index: ShardIndex
+  try {
+    index = JSON.parse(indexFile.content) as ShardIndex
+  } catch (e) {
+    console.warn('Index file corrupted or empty, initializing new index')
+    index = {
+      version: '2.0.0',
+      shardCount: 8,
+      totalPrompts: 0,
+      lastUpdated: new Date().toISOString(),
+      categories: {},
+      shardMap: {},
+    }
+  }
+
   const shardId = getShardId(id, index.shardCount)
 
   let branch = base
@@ -301,7 +332,22 @@ export async function deletePromptById(
   const base = await getDefaultBranch(owner, repo, token)
 
   const indexFile = await getFile(owner, repo, 'public/data/prompts/index.json', base, token)
-  const index = JSON.parse(indexFile.content) as ShardIndex
+
+  let index: ShardIndex
+  try {
+    index = JSON.parse(indexFile.content) as ShardIndex
+  } catch (e) {
+    console.warn('Index file corrupted or empty, initializing new index')
+    index = {
+      version: '2.0.0',
+      shardCount: 8,
+      totalPrompts: 0,
+      lastUpdated: new Date().toISOString(),
+      categories: {},
+      shardMap: {},
+    }
+  }
+
   const shardId = getShardId(id, index.shardCount)
 
   let branch = base
