@@ -22,7 +22,7 @@ function repoInfo() {
 
 import { PromptLoadError, type PromptsData } from '@/types/prompt'
 
-const CACHE_KEY = 'prompts_data'
+const CACHE_KEY = 'prompts_data_v2'
 const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
 
 export async function loadPrompts(): Promise<PromptsData> {
