@@ -330,7 +330,8 @@ async function copyToClipboard() {
   border-radius: var(--radius-md);
   overflow: hidden;
   box-shadow: var(--shadow-md);
-  aspect-ratio: 1/1; /* Keep images square-ish or flexible */
+  aspect-ratio: auto; /* Let the image define aspect ratio within limits */
+  max-height: 500px;
   background: #fff;
   display: flex;
   align-items: center;
@@ -340,7 +341,8 @@ async function copyToClipboard() {
 .main-image {
   width: 100%;
   height: 100%;
-  object-fit: contain; /* Show full image without cropping */
+  max-height: 500px;
+  object-fit: contain;
   display: block;
 }
 
@@ -562,16 +564,28 @@ async function copyToClipboard() {
   .image-gallery-section {
     border-right: none;
     border-bottom: 1px solid var(--color-border-light);
-    padding: 1rem;
+    padding: 0; /* Remove padding to let image span full width */
+    background: #000; /* Black background for image gallery on mobile */
+  }
+
+  .gallery-container {
+    gap: 0;
+  }
+
+  .main-image-wrapper {
+    border-radius: 0;
+    box-shadow: none;
+    max-height: 400px;
+    background: transparent;
+  }
+
+  .main-image {
+    max-height: 400px;
   }
 
   .content-section {
     padding: 1.5rem;
     max-height: none;
-  }
-
-  .main-image-wrapper {
-    aspect-ratio: 16/9;
   }
 }
 
