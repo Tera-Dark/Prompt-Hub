@@ -87,6 +87,13 @@
     <path v-if="name === 'download'" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
     <polyline v-if="name === 'download'" points="7 10 12 15 17 10" />
     <line v-if="name === 'download'" x1="12" x2="12" y1="15" y2="3" />
+
+    <line v-if="name === 'menu'" x1="4" x2="20" y1="12" y2="12" />
+    <line v-if="name === 'menu'" x1="4" x2="20" y1="6" y2="6" />
+    <line v-if="name === 'menu'" x1="4" x2="20" y1="18" y2="18" />
+
+    <path v-if="name === 'user'" d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+    <circle v-if="name === 'user'" cx="12" cy="7" r="4" />
   </svg>
 </template>
 

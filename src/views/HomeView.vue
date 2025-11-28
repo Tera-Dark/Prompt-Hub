@@ -152,6 +152,47 @@
       @close="showPlayground = false"
     />
 
+    <!-- Mobile Bottom Navigation -->
+    <nav class="mobile-bottom-nav">
+      <button
+        class="nav-btn"
+        :class="{ active: currentView === 'recommendations' }"
+        @click="switchView('recommendations')"
+      >
+        <Icon name="sparkles" :size="24" />
+        <span>{{ t('home.nav.featured') }}</span>
+      </button>
+
+      <button
+        class="nav-btn"
+        :class="{ active: currentView === 'explore' }"
+        @click="switchView('explore')"
+      >
+        <Icon name="compass-simple" :size="24" />
+        <span>{{ t('home.nav.explore') }}</span>
+      </button>
+
+      <button class="nav-btn center-btn" @click="handleSubmitPrompt">
+        <div class="plus-circle">
+          <Icon name="plus" :size="24" />
+        </div>
+      </button>
+
+      <button
+        class="nav-btn"
+        :class="{ active: currentView === 'favorites' }"
+        @click="switchView('favorites')"
+      >
+        <Icon name="bookmark" :size="24" />
+        <span>{{ t('home.nav.favorites') }}</span>
+      </button>
+
+      <button class="nav-btn" @click="handleUserAction">
+        <Icon name="user" :size="24" />
+        <span>{{ isAuthenticated ? t('nav.dashboard') : t('nav.login') }}</span>
+      </button>
+    </nav>
+
     <PromptDetailModal
       v-if="selectedPrompt"
       :is-open="!!selectedPrompt"
@@ -264,6 +305,14 @@ function toggleLanguage() {
 function handleSubmitPrompt() {
   if (isAuthenticated.value) {
     router.push('/admin/prompts/new')
+  } else {
+    router.push('/login')
+  }
+}
+
+function handleUserAction() {
+  if (isAuthenticated.value) {
+    router.push('/admin')
   } else {
     router.push('/login')
   }
@@ -586,5 +635,93 @@ function handleSubmitPrompt() {
   justify-content: center;
   margin-top: 2rem;
   padding-bottom: 2rem;
+}
+
+/* Mobile Bottom Navigation Styles */
+.mobile-bottom-nav {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    justify-content: space-around;
+    align-items: center;
+    z-index: 50;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .mobile-bottom-nav .nav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    padding: 0.5rem 0;
+    color: var(--color-text-tertiary);
+    font-size: 10px;
+    gap: 2px;
+    cursor: pointer;
+  }
+
+  .mobile-bottom-nav .nav-btn.active {
+    color: var(--color-primary);
+  }
+
+  .mobile-bottom-nav .center-btn {
+    position: relative;
+    top: -15px;
+  }
+
+  .mobile-bottom-nav .plus-circle {
+    width: 48px;
+    height: 48px;
+    background: var(--color-primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Hide original mobile menu toggle */
+  .mobile-menu-toggle {
+    display: none;
+  }
+
+  /* Adjust Content Padding for Bottom Nav */
+  .content-area {
+    padding-bottom: 80px;
+  }
+
+  /* Make Search visible on mobile header */
+  .header-main {
+    display: flex !important; /* Force display */
+    padding-top: 0;
+    border-top: none;
+    margin-top: 0;
+  }
+
+  .header-nav,
+  .header-actions {
+    display: none !important; /* Hide nav items and actions, used in bottom nav */
+  }
+
+  .header-center {
+    display: block;
+    width: 100%;
+    max-width: none;
+    padding: 0;
+  }
 }
 </style>
