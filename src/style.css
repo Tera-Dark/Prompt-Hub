@@ -39,13 +39,13 @@ body {
   --color-success-light: #f0f0f0;
   --color-success-dark: #000000;
 
-  --color-warning: #000000;
-  --color-warning-light: #f0f0f0;
-  --color-warning-dark: #000000;
+  --color-warning: #f59e0b;
+  --color-warning-light: #fef3c7;
+  --color-warning-dark: #b45309;
 
-  --color-danger: #000000;
-  --color-danger-light: #f0f0f0;
-  --color-danger-dark: #000000;
+  --color-danger: #ef4444;
+  --color-danger-light: #fee2e2;
+  --color-danger-dark: #b91c1c;
 
   --color-info: #000000;
   --color-info-light: #f0f0f0;

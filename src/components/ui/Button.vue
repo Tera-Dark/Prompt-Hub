@@ -125,14 +125,14 @@ withDefaults(defineProps<Props>(), {
 
 .ui-btn--danger {
   background-color: transparent;
-  color: var(--color-text-primary);
-  border-color: var(--color-text-primary);
+  color: var(--color-danger);
+  border-color: var(--color-danger);
 }
 
 .ui-btn--danger:not(:disabled):hover {
-  background-color: var(--color-black);
+  background-color: var(--color-danger);
   color: var(--color-white);
-  border-color: var(--color-black);
+  border-color: var(--color-danger);
 }
 
 .ui-btn--success {

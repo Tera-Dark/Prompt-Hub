@@ -64,7 +64,7 @@
               size="sm"
               @click="$router.push({ name: 'UserPromptEdit', params: { id: p.id } })"
             >
-              {{ t('common.actions.edit') || 'Edit' }}
+              {{ t('common.actions.edit') }}
             </Button>
             <Button
               v-if="p.status === 'published'"
@@ -73,7 +73,7 @@
               :disabled="deleting === p.id"
               @click="handleDelete(p)"
             >
-              {{ t('common.actions.delete') || 'Delete' }}
+              {{ t('common.actions.delete') }}
             </Button>
             <template v-else-if="p.sourceLink">
               <Button variant="outline" size="sm" @click="openSourceLink(p.sourceLink)">
@@ -431,7 +431,7 @@ function removeDraft(id: string) {
 
 .row-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.75rem;
   justify-content: flex-end;
 }
 

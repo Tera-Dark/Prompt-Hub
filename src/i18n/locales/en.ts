@@ -45,6 +45,8 @@ export default {
       pageInfo: '{current} / {total}',
     },
     actions: {
+      edit: 'Edit',
+      delete: 'Delete',
       copy: 'Copy',
       copied: 'Copied!',
       save: 'Save',

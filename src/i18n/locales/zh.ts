@@ -45,6 +45,8 @@ export default {
       pageInfo: '{current} / {total}',
     },
     actions: {
+      edit: '编辑',
+      delete: '删除',
       copy: '复制',
       copied: '已复制!',
       save: '收藏',
