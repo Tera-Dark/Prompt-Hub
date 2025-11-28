@@ -1,57 +1,60 @@
 <template>
-  <div class="user-dashboard">
-    <header class="dashboard-header">
-      <div class="header-content">
-        <h1>{{ t('dashboard.mySubmissions') }}</h1>
-        <p>{{ t('dashboard.trackSubmissions') }}</p>
+  <div class="page-wrapper">
+    <Navbar />
+    <div class="user-dashboard">
+      <header class="dashboard-header">
+        <div class="header-content">
+          <h1>{{ t('dashboard.mySubmissions') }}</h1>
+          <p>{{ t('dashboard.trackSubmissions') }}</p>
+        </div>
+        <Button variant="primary" @click="$router.push('/prompts/new')">
+          {{ t('prompts.new') }}
+        </Button>
+      </header>
+
+      <div v-if="loading" class="loading-state">
+        <div class="spinner"></div>
+        <span>{{ t('common.loading') }}</span>
       </div>
-      <Button variant="primary" @click="$router.push('/prompts/new')">
-        {{ t('prompts.new') }}
-      </Button>
-    </header>
 
-    <div v-if="loading" class="loading-state">
-      <div class="spinner"></div>
-      <span>{{ t('common.loading') }}</span>
-    </div>
-
-    <div v-else-if="userPrompts.length > 0" class="prompts-grid">
-      <article v-for="prompt in userPrompts" :key="prompt.id" class="prompt-card">
-        <div class="card-header">
-          <div class="header-top">
-            <span class="category-tag">{{ prompt.category }}</span>
-            <span class="status-badge" :class="prompt.status || 'published'">
-              {{ getStatusLabel(prompt.status) }}
-            </span>
+      <div v-else-if="userPrompts.length > 0" class="prompts-grid">
+        <article v-for="prompt in userPrompts" :key="prompt.id" class="prompt-card">
+          <div class="card-header">
+            <div class="header-top">
+              <span class="category-tag">{{ prompt.category }}</span>
+              <span class="status-badge" :class="prompt.status || 'published'">
+                {{ getStatusLabel(prompt.status) }}
+              </span>
+            </div>
+            <h3>{{ prompt.title }}</h3>
           </div>
-          <h3>{{ prompt.title }}</h3>
-        </div>
 
-        <p class="description">{{ prompt.description }}</p>
+          <p class="description">{{ prompt.description }}</p>
 
-        <div class="card-footer">
-          <span class="date">{{ formatDate(prompt.createdAt) }}</span>
-          <div class="actions">
-            <Button
-              v-if="prompt.status === 'published'"
-              variant="outline"
-              size="sm"
-              @click="$router.push(`/prompt/${prompt.id}`)"
-            >
-              {{ t('common.view') }}
-            </Button>
+          <div class="card-footer">
+            <span class="date">{{ formatDate(prompt.createdAt) }}</span>
+            <div class="actions">
+              <Button
+                v-if="prompt.status === 'published'"
+                variant="outline"
+                size="sm"
+                @click="$router.push(`/prompt/${prompt.id}`)"
+              >
+                {{ t('common.view') }}
+              </Button>
+            </div>
           </div>
-        </div>
-      </article>
-    </div>
+        </article>
+      </div>
 
-    <div v-else class="empty-state">
-      <div class="empty-icon">📝</div>
-      <h3>{{ t('dashboard.noSubmissions') }}</h3>
-      <p>{{ t('dashboard.startContributing') }}</p>
-      <Button variant="primary" @click="$router.push('/prompts/new')">
-        {{ t('prompts.createFirst') }}
-      </Button>
+      <div v-else class="empty-state">
+        <div class="empty-icon">📝</div>
+        <h3>{{ t('dashboard.noSubmissions') }}</h3>
+        <p>{{ t('dashboard.startContributing') }}</p>
+        <Button variant="primary" @click="$router.push('/prompts/new')">
+          {{ t('prompts.createFirst') }}
+        </Button>
+      </div>
     </div>
   </div>
 </template>
@@ -62,6 +65,7 @@ import { useI18n } from 'vue-i18n'
 import { usePromptStore } from '@/stores/prompts'
 import { useAuth } from '@/composables/useAuth'
 import Button from '@/components/ui/Button.vue'
+import Navbar from '@/components/layout/Navbar.vue'
 import { getUserSubmissions } from '@/repositories/prompts'
 import type { Prompt } from '@/types/prompt'
 
@@ -108,6 +112,11 @@ function getStatusLabel(status?: string) {
 </script>
 
 <style scoped>
+.page-wrapper {
+  min-height: 100vh;
+  background-color: var(--color-background);
+}
+
 .user-dashboard {
   max-width: 1200px;
   margin: 0 auto;

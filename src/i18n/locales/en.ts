@@ -63,6 +63,7 @@ export default {
     noPromptsDesc: "Try adjusting your search or filters to find what you're looking for.",
     submit: 'Submit Prompt',
     new: 'New Prompt',
+    createFirst: 'Create your first prompt',
     list: {
       title: 'Prompts',
       subtitle: 'Manage prompts from dataset. Supports edit and delete via PR.',
@@ -170,6 +171,10 @@ export default {
   dashboard: {
     title: 'Dashboard',
     subtitle: 'Monitor high-level activity across prompts and moderation.',
+    mySubmissions: 'My Submissions',
+    trackSubmissions: 'Track the status of your prompt submissions',
+    noSubmissions: 'No submissions yet',
+    startContributing: 'Start contributing by creating your first prompt!',
     stats: {
       published: 'Published prompts',
       pending: 'Pending review',

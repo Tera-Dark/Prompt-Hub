@@ -91,8 +91,10 @@ export function useAuth(): AuthComposable {
     }
 
     const state = createOAuthState()
-    const target = redirectPath ?? attemptedRoute.value ?? '/admin/dashboard'
-    attemptedRoute.value = target
+    const target = redirectPath ?? attemptedRoute.value
+    if (target) {
+      attemptedRoute.value = target
+    }
 
     const url = getAuthUrl(state)
     window.location.assign(url)
@@ -108,7 +110,8 @@ export function useAuth(): AuthComposable {
       user.value = session.user
       hasRepoWriteAccess.value = session.hasRepoWriteAccess
 
-      const destination = attemptedRoute.value ?? '/admin/dashboard'
+      const destination =
+        attemptedRoute.value ?? (session.hasRepoWriteAccess ? '/admin/dashboard' : '/dashboard')
       attemptedRoute.value = null
 
       return destination

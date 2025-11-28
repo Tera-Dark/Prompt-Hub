@@ -58,7 +58,7 @@ onMounted(async () => {
 })
 
 function retryLogin() {
-  const target = auth.attemptedRoute.value ?? '/admin/dashboard'
+  const target = auth.attemptedRoute.value ?? undefined
   auth.login(target)
 }
 </script>

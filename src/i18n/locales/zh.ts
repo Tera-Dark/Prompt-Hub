@@ -63,6 +63,7 @@ export default {
     noPromptsDesc: '请尝试调整搜索或筛选条件。',
     submit: '提交提示词',
     new: '新建提示词',
+    createFirst: '创建您的第一个提示词',
     list: {
       title: '提示词列表',
       subtitle: '管理数据集中的提示词。支持通过 PR 进行编辑和删除。',
@@ -170,6 +171,10 @@ export default {
   dashboard: {
     title: '仪表盘',
     subtitle: '监控提示词和审核的高级活动。',
+    mySubmissions: '我的提交',
+    trackSubmissions: '查看您的提示词提交状态',
+    noSubmissions: '暂无提交',
+    startContributing: '开始贡献您的第一个提示词！',
     stats: {
       published: '已发布提示词',
       pending: '待审核',
