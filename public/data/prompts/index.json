@@ -1,22 +1,34 @@
 {
   "version": "2.0.0",
   "shardCount": 8,
-  "totalPrompts": 1,
-  "lastUpdated": "2025-11-28T12:07:19.495Z",
+  "totalPrompts": 2,
+  "lastUpdated": "2025-11-28T12:09:07.678Z",
   "categories": {
-    "测试": {
+    "æµè¯": {
       "count": 1,
       "shards": [
         7
       ],
       "promptIds": [
-        "测试--202511281207"
+        "æµè¯--202511281207"
+      ]
+    },
+    "试试": {
+      "count": 1,
+      "shards": [
+        3
+      ],
+      "promptIds": [
+        "prompt-1764331746398"
       ]
     }
   },
   "shardMap": {
+    "3": [
+      "prompt-1764331746398"
+    ],
     "7": [
-      "测试--202511281207"
+      "æµè¯--202511281207"
     ]
   }
 }
