@@ -113,7 +113,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { usePrompts } from '@/composables/usePrompts'
 import { useAuth } from '@/composables/useAuth'
 import { type Prompt } from '@/types/prompt'
-import { addPrompt } from '@/repositories/prompts'
+import { addPrompt, submitPromptIssue } from '@/repositories/prompts'
 import { useToast } from '@/composables/useToast'
 import { useLocalDrafts } from '@/composables/useLocalDrafts'
 
@@ -244,13 +244,29 @@ async function handleSubmit(_draft = false) {
           }
         : undefined,
     }
-    const url = await addPrompt(newItem, authToken, hasRepoWriteAccess.value)
-
+    let url: string
     if (hasRepoWriteAccess.value) {
-      toast.success(t('prompts.create.actions.directCommitSuccess') || 'Published successfully')
+      try {
+        url = await addPrompt(newItem, authToken, true)
+        toast.success(t('prompts.create.actions.directCommitSuccess') || 'Published successfully')
+      } catch (e) {
+        console.warn('Direct commit failed, trying issue submission:', e)
+        const msg = e instanceof Error ? e.message : String(e)
+        // If it's a 404/403 on git/refs, it means we don't have write access
+        if (msg.includes('Not Found') || msg.includes('403') || msg.includes('404')) {
+          url = await submitPromptIssue(newItem, authToken)
+          toast.success(
+            t('prompts.create.actions.issueCreated') || 'Submission received for review',
+          )
+        } else {
+          throw e
+        }
+      }
     } else {
-      toast.success(t('prompts.create.actions.prCreated') || 'PR Created')
-      console.log('PR URL:', url)
+      // Regular users submit an issue
+      url = await submitPromptIssue(newItem, authToken)
+      toast.success(t('prompts.create.actions.issueCreated') || 'Submission received for review')
+      console.log('Issue URL:', url)
     }
 
     // Clear form and draft
