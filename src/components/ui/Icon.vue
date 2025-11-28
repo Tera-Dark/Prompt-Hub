@@ -76,6 +76,17 @@
     <line v-if="name === 'external-link'" x1="10" x2="21" y1="14" y2="3" />
 
     <path v-if="name === 'bookmark'" d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
+
+    <path v-if="name === 'chevron-left'" d="m15 18-6-6 6-6" />
+    <path v-if="name === 'chevron-right'" d="m9 18 6-6-6-6" />
+
+    <rect v-if="name === 'image'" width="18" height="18" x="3" y="3" rx="2" ry="2" />
+    <circle v-if="name === 'image'" cx="9" cy="9" r="2" />
+    <path v-if="name === 'image'" d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+
+    <path v-if="name === 'download'" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline v-if="name === 'download'" points="7 10 12 15 17 10" />
+    <line v-if="name === 'download'" x1="12" x2="12" y1="15" y2="3" />
   </svg>
 </template>
 

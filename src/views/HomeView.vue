@@ -528,6 +528,39 @@ function handleSubmitPrompt() {
   z-index: 40;
 }
 
+@media (max-width: 768px) {
+  .playground-trigger {
+    left: auto;
+    right: 1.5rem;
+    top: auto;
+    bottom: 1.5rem;
+    transform: none;
+    border: 1px solid var(--color-border);
+    border-radius: 50%;
+    width: 56px;
+    height: 56px;
+    padding: 0;
+    justify-content: center;
+    background: var(--color-primary);
+    color: white;
+    box-shadow: var(--shadow-lg);
+  }
+
+  .playground-trigger .label {
+    display: none;
+  }
+
+  .playground-trigger .icon {
+    font-size: 1.75rem;
+  }
+
+  .playground-trigger:hover {
+    transform: scale(1.05);
+    background: var(--color-primary-dark);
+    padding: 0;
+  }
+}
+
 .playground-trigger:hover {
   background: var(--color-surface-hover);
   padding-right: 1rem;

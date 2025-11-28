@@ -95,6 +95,17 @@ export class GitHubService {
     return data
   }
 
+  async createBlob(content: string, encoding: 'utf-8' | 'base64') {
+    if (!this.octokit) throw new Error('Not authenticated')
+    const { data } = await this.octokit.git.createBlob({
+      owner: this.owner,
+      repo: this.repo,
+      content,
+      encoding,
+    })
+    return data
+  }
+
   async createTree(
     baseTreeSha: string | undefined,
     tree: {
@@ -138,7 +149,11 @@ export class GitHubService {
     return data
   }
 
-  async updateFiles(branch: string, files: { path: string; content: string }[], message: string) {
+  async updateFiles(
+    branch: string,
+    files: { path: string; content?: string; sha?: string }[],
+    message: string,
+  ) {
     if (!this.octokit) throw new Error('Not authenticated')
 
     // 1. Get the current commit of the branch
@@ -159,6 +174,7 @@ export class GitHubService {
       mode: '100644' as const,
       type: 'blob' as const,
       content: file.content,
+      sha: file.sha,
     }))
 
     const newTree = await this.createTree(currentTreeSha, tree)

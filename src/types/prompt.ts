@@ -11,6 +11,7 @@ export interface Prompt {
   views?: number
   likes?: number
   imageUrl?: string
+  images?: string[]
   status?: 'draft' | 'published' | 'archived'
   author?: {
     username: string

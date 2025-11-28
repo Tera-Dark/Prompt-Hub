@@ -88,6 +88,12 @@ function handleDevLogin() {
   text-align: center;
 }
 
+@media (max-width: 480px) {
+  .login-card {
+    padding: 2rem 1.5rem;
+  }
+}
+
 .login-header {
   margin-bottom: 3rem;
 }

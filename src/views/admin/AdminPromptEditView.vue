@@ -52,6 +52,11 @@
               class="form-input"
             />
           </div>
+
+          <div class="form-group">
+            <label class="form-label">Images (Max 9)</label>
+            <ImageUploader v-model="form.images" :limit="9" :token="token || ''" />
+          </div>
         </aside>
 
         <!-- Right Column: Content -->
@@ -98,11 +103,13 @@ import {
   type Prompt,
 } from '@/repositories/prompts'
 
+import ImageUploader from '@/components/ui/ImageUploader.vue'
+
 const props = defineProps<{ id: string }>()
 const { t } = useI18n()
 const { token, hasRepoWriteAccess, user } = useAuth()
 
-const form = ref({ title: '', description: '', prompt: '' })
+const form = ref({ title: '', description: '', prompt: '', images: [] as string[] })
 const status = ref<'draft' | 'published' | 'archived'>('published')
 const tagsInput = ref('')
 const submitting = ref(false)
@@ -128,6 +135,7 @@ onMounted(async () => {
       form.value.title = p.title
       form.value.description = p.description
       form.value.prompt = p.prompt
+      form.value.images = p.images || (p.imageUrl ? [p.imageUrl] : [])
       status.value = p.status || 'draft'
       tagsInput.value = (p.tags || []).join(', ')
     } else {
@@ -163,6 +171,8 @@ async function handleSubmit() {
           tags,
           updatedAt: now,
           status: status.value,
+          images: form.value.images,
+          imageUrl: form.value.images[0], // Backward compatibility
         }),
         authToken,
       )
@@ -178,6 +188,8 @@ async function handleSubmit() {
         tags,
         updatedAt: now,
         status: status.value,
+        images: form.value.images,
+        imageUrl: form.value.images[0],
       }
       const url = await submitPromptUpdate(props.id, updatedItem, authToken)
       alert(t('common.messages.updateRequestCreated', { url }))

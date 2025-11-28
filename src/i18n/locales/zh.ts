@@ -187,6 +187,11 @@ export default {
     approving: '正在通过...',
     rejecting: '正在拒绝...',
   },
+  imageUploader: {
+    dropText: '拖拽图片到此处或点击上传',
+    limitReached: '已达到最大图片数量限制',
+    fileTooLarge: '文件 {name} 太大 (最大 10MB)',
+  },
   dataTools: {
     title: '数据工具',
     subtitle: '管理导出、备份和目录健康状况的工具。',

@@ -430,6 +430,12 @@ onMounted(() => {
   color: var(--color-gray-600);
 }
 
+@media (max-width: 1024px) {
+  .reviews-card__header {
+    display: none;
+  }
+}
+
 .reviews-list {
   display: flex;
   flex-direction: column;
@@ -442,6 +448,32 @@ onMounted(() => {
   gap: 1rem;
   padding: 1.25rem 1.5rem;
   border-top: 1px solid var(--color-gray-100);
+}
+
+@media (max-width: 1024px) {
+  .reviews-row {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.5rem;
+  }
+
+  .reviews-row > * {
+    width: 100%;
+  }
+
+  .status-col {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .actions-col {
+    justify-content: flex-start;
+    margin-top: 0.5rem;
+    width: 100%;
+  }
 }
 
 .reviews-row:first-of-type {

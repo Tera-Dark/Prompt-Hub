@@ -13,8 +13,11 @@
 
       <!-- Middle Column (List View) / Body (Grid View) -->
       <div class="card-section-main">
-        <div v-if="prompt.imageUrl" class="card-image-wrapper">
-          <img :src="prompt.imageUrl" :alt="prompt.title" class="card-image" />
+        <div
+          v-if="prompt.imageUrl || (prompt.images && prompt.images.length > 0)"
+          class="card-image-wrapper"
+        >
+          <img :src="prompt.imageUrl || prompt.images![0]" :alt="prompt.title" class="card-image" />
         </div>
         <p class="card-description">{{ prompt.description }}</p>
         <div class="prompt-preview">

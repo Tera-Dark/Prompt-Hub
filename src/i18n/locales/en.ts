@@ -187,6 +187,11 @@ export default {
     approving: 'Approving...',
     rejecting: 'Rejecting...',
   },
+  imageUploader: {
+    dropText: 'Drop images here or click to upload',
+    limitReached: 'Maximum number of images reached',
+    fileTooLarge: 'File {name} is too large (max 10MB)',
+  },
   dataTools: {
     title: 'Data Tools',
     subtitle: 'Utilities for managing exports, backups, and catalog health.',

@@ -207,12 +207,19 @@ async function runPrompt() {
   left: 0; /* Left side drawer */
   bottom: 0;
   width: 400px;
+  max-width: 100%;
   background: var(--color-surface);
   box-shadow: var(--shadow-lg);
   display: flex;
   flex-direction: column;
   transform: translateX(-100%);
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (max-width: 480px) {
+  .drawer-panel {
+    width: 100%;
+  }
 }
 
 .drawer-backdrop.is-open .drawer-panel {

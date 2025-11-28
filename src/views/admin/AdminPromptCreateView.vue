@@ -68,6 +68,11 @@
               class="form-input"
             />
           </div>
+
+          <div class="form-group">
+            <label class="form-label">Images (Max 9)</label>
+            <ImageUploader v-model="form.images" :limit="9" :token="token || ''" />
+          </div>
         </aside>
 
         <!-- Right Column: Content -->
@@ -117,6 +122,8 @@ import { addPrompt, submitPromptIssue } from '@/repositories/prompts'
 import { useToast } from '@/composables/useToast'
 import { useLocalDrafts } from '@/composables/useLocalDrafts'
 
+import ImageUploader from '@/components/ui/ImageUploader.vue'
+
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
@@ -134,7 +141,7 @@ const form = ref({
   description: '',
   prompt: '',
   status: 'draft' as 'draft' | 'published' | 'archived',
-  imageUrl: '',
+  images: [] as string[],
 })
 const tagsInput = ref('')
 const submitting = ref(false)
@@ -152,7 +159,7 @@ onMounted(() => {
         description: draft.description,
         prompt: draft.prompt,
         status: draft.status as any,
-        imageUrl: draft.imageUrl,
+        images: draft.images || (draft.imageUrl ? [draft.imageUrl] : []),
       }
       tagsInput.value = draft.tags
       toast.info('Draft loaded')
@@ -193,7 +200,7 @@ async function saveDraft() {
     prompt: form.value.prompt,
     tags: tagsInput.value,
     status: form.value.status,
-    imageUrl: form.value.imageUrl,
+    images: form.value.images,
   })
 
   if (id) {
@@ -236,7 +243,8 @@ async function handleSubmit(_draft = false) {
       tags,
       createdAt: now,
       status: form.value.status,
-      imageUrl: form.value.imageUrl,
+      images: form.value.images,
+      imageUrl: form.value.images[0], // Backward compatibility
       author: user.value
         ? {
             username: user.value.login,
@@ -281,7 +289,7 @@ async function handleSubmit(_draft = false) {
       description: '',
       prompt: '',
       status: 'draft',
-      imageUrl: '',
+      images: [],
     }
     tagsInput.value = ''
     router.push('/admin/prompts')
@@ -361,6 +369,10 @@ async function handleSubmit(_draft = false) {
 @media (max-width: 768px) {
   .form-layout {
     grid-template-columns: 1fr;
+  }
+
+  .editor-form {
+    padding: 1.5rem;
   }
 }
 
