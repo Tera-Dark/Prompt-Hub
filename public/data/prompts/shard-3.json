@@ -1,21 +1,4 @@
 {
   "shardId": 3,
-  "prompts": [
-    {
-      "id": "prompt-1764331746398",
-      "title": "试试",
-      "category": "试试",
-      "description": "试试111",
-      "prompt": "试试222",
-      "tags": [
-        "试试"
-      ],
-      "createdAt": "2025-11-28T12:09:06.398Z",
-      "status": "published",
-      "author": {
-        "username": "EEESERT",
-        "avatarUrl": "https://avatars.githubusercontent.com/u/196584526?v=4"
-      }
-    }
-  ]
+  "prompts": []
 }
