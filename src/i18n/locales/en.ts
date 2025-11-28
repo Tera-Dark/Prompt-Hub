@@ -194,6 +194,7 @@ export default {
         moderation: 'Requires moderation',
         days: 'Last 7 days',
         followUp: 'Needs follow-up',
+        total: 'Total',
       },
     },
     panels: {

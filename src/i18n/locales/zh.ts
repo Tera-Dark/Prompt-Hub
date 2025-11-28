@@ -194,6 +194,7 @@ export default {
         moderation: '需要审核',
         days: '过去 7 天',
         followUp: '需要跟进',
+        total: '总计',
       },
     },
     panels: {

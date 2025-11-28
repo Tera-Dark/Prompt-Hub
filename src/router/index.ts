@@ -96,7 +96,17 @@ const routes: RouteRecordRaw[] = [
       {
         path: '',
         name: 'UserDashboard',
+        component: () => import('@/views/user/UserStatsView.vue'),
+      },
+      {
+        path: 'prompts',
+        name: 'UserPrompts',
         component: () => import('@/views/user/UserDashboardView.vue'),
+      },
+      {
+        path: 'ai-settings',
+        name: 'UserAISettings',
+        component: () => import('@/views/user/UserAISettingsView.vue'),
       },
     ],
   },

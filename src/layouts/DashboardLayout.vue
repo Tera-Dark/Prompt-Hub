@@ -137,7 +137,11 @@ const navigation = computed<NavigationItem[]>(() => {
       },
     ]
   } else {
-    return [{ key: 'myPrompts', to: { name: 'UserDashboard' }, match: /^\/dashboard$/ }]
+    return [
+      { key: 'dashboard', to: { name: 'UserDashboard' }, match: /^\/dashboard$/ },
+      { key: 'myPrompts', to: { name: 'UserPrompts' }, match: /^\/dashboard\/prompts$/ },
+      { key: 'aiSettings', to: { name: 'UserAISettings' }, match: /^\/dashboard\/ai-settings$/ },
+    ]
   }
 })
 
