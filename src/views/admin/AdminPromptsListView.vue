@@ -2,18 +2,25 @@
   <section class="prompts">
     <header class="prompts-header">
       <div>
-        <h2>Prompts</h2>
-        <p>Manage prompts from dataset. Supports edit and delete via PR.</p>
+        <h2>{{ t('prompts.list.title') }}</h2>
+        <p>{{ t('prompts.list.subtitle') }}</p>
       </div>
-      <RouterLink to="/admin/prompts/new" class="new-button">New prompt</RouterLink>
+      <div class="header-actions">
+        <button class="drafts-button" @click="showDrafts = true">
+          {{ t('prompts.list.actions.drafts') }}
+        </button>
+        <RouterLink to="/admin/prompts/new" class="new-button">
+          {{ t('prompts.new') }}
+        </RouterLink>
+      </div>
     </header>
 
     <div v-if="items.length" class="prompts-card">
       <header class="prompts-card__header">
-        <span>Title</span>
-        <span>Category</span>
-        <span>Updated</span>
-        <span>Actions</span>
+        <span>{{ t('prompts.list.columns.title') }}</span>
+        <span>{{ t('prompts.list.columns.category') }}</span>
+        <span>{{ t('prompts.list.columns.updated') }}</span>
+        <span>{{ t('prompts.list.columns.actions') }}</span>
       </header>
       <ul class="prompts-list">
         <li v-for="p in items" :key="p.id" class="prompts-row">
@@ -26,9 +33,11 @@
             formatUpdated(p)
           }}</RouterLink>
           <div class="row-actions">
-            <RouterLink :to="`/admin/prompts/${p.id}/edit`" class="action">Edit</RouterLink>
+            <RouterLink :to="`/admin/prompts/${p.id}/edit`" class="action">
+              {{ t('prompts.list.actions.edit') }}
+            </RouterLink>
             <button class="action danger" :disabled="submitting" @click="onDelete(p.id)">
-              Delete
+              {{ t('prompts.list.actions.delete') }}
             </button>
           </div>
         </li>
@@ -36,22 +45,61 @@
     </div>
 
     <div v-else class="empty">
-      <h3>No prompts</h3>
-      <p>Please add new prompt or check dataset.</p>
+      <h3>{{ t('prompts.list.empty.title') }}</h3>
+      <p>{{ t('prompts.list.empty.desc') }}</p>
+    </div>
+
+    <!-- Drafts Modal -->
+    <div v-if="showDrafts" class="modal-overlay" @click="showDrafts = false">
+      <div class="modal-content" @click.stop>
+        <header class="modal-header">
+          <h3>{{ t('prompts.drafts.title') }}</h3>
+          <button class="close-btn" @click="showDrafts = false">×</button>
+        </header>
+
+        <div v-if="drafts.length" class="drafts-list">
+          <div v-for="draft in drafts" :key="draft.id" class="draft-item">
+            <div class="draft-info">
+              <h4>{{ draft.title || 'Untitled' }}</h4>
+              <span class="draft-meta">
+                {{ t('prompts.drafts.lastSaved') }}: {{ new Date(draft.savedAt).toLocaleString() }}
+              </span>
+            </div>
+            <div class="draft-actions">
+              <button class="action primary" @click="continueDraft(draft.id)">
+                {{ t('prompts.drafts.actions.continue') }}
+              </button>
+              <button class="action danger" @click="removeDraft(draft.id)">
+                {{ t('prompts.drafts.actions.delete') }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div v-else class="empty-drafts">
+          <p>{{ t('prompts.drafts.empty') }}</p>
+        </div>
+      </div>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import { onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAuth } from '@/composables/useAuth'
 import { type Prompt } from '@/types/prompt'
 import { deletePromptById, loadPrompts } from '@/repositories/prompts'
+import { useLocalDrafts } from '@/composables/useLocalDrafts'
 
+const { t } = useI18n()
+const router = useRouter()
 const items = ref<Prompt[]>([])
 const submitting = ref(false)
+const showDrafts = ref(false)
 const { token, hasRepoWriteAccess } = useAuth()
+const { drafts, loadDrafts, deleteDraft } = useLocalDrafts()
 
 // repo info handled in repository layer
 
@@ -59,6 +107,7 @@ onMounted(async () => {
   try {
     const data = await loadPrompts()
     items.value = data.prompts
+    loadDrafts()
   } catch {
     // Silently fail if prompts data cannot be loaded
   }
@@ -71,27 +120,37 @@ function formatUpdated(p: Prompt) {
 }
 
 function ensureAuth() {
-  if (!token.value || !hasRepoWriteAccess.value) throw new Error('需要登录并具备仓库写权限')
+  if (!token.value || !hasRepoWriteAccess.value) throw new Error(t('auth.writeAccessRequired'))
 }
 
 async function onDelete(id: string) {
   ensureAuth()
-  if (!confirm(`确认删除该提示词？\nID: ${id}`)) return
+  if (!confirm(`Confirm delete?\nID: ${id}`)) return
   submitting.value = true
   try {
-    const t = token.value!
-    const url = await deletePromptById(id, t, hasRepoWriteAccess.value)
+    const tVal = token.value!
+    const url = await deletePromptById(id, tVal, hasRepoWriteAccess.value)
     if (hasRepoWriteAccess.value) {
-      alert('提示词已删除')
+      alert('Deleted successfully')
     } else {
-      alert(`Pull Request 已创建：\n${url}`)
+      alert(`Pull Request created:\n${url}`)
     }
     items.value = items.value.filter((x) => x.id !== id)
   } catch (e) {
-    const msg = e instanceof Error ? e.message : '删除失败'
+    const msg = e instanceof Error ? e.message : 'Delete failed'
     alert(msg)
   } finally {
     submitting.value = false
+  }
+}
+
+function continueDraft(id: string) {
+  router.push({ path: '/admin/prompts/new', query: { draftId: id } })
+}
+
+function removeDraft(id: string) {
+  if (confirm('Delete this draft?')) {
+    deleteDraft(id)
   }
 }
 </script>
@@ -122,6 +181,11 @@ async function onDelete(id: string) {
   margin-top: 0.5rem;
 }
 
+.header-actions {
+  display: flex;
+  gap: 1rem;
+}
+
 .new-button {
   padding: 0.65rem 1.1rem;
   border-radius: var(--radius-md);
@@ -135,6 +199,22 @@ async function onDelete(id: string) {
 .new-button:hover,
 .new-button:focus-visible {
   background-color: var(--color-gray-900);
+}
+
+.drafts-button {
+  padding: 0.65rem 1.1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-gray-300);
+  background-color: var(--color-white);
+  color: var(--color-gray-700);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.drafts-button:hover {
+  border-color: var(--color-gray-400);
+  background-color: var(--color-gray-50);
 }
 
 .prompts-card {
@@ -209,6 +289,12 @@ async function onDelete(id: string) {
   border: 1px solid var(--color-gray-900);
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.action.primary {
+  background-color: var(--color-black);
+  color: var(--color-white);
 }
 
 .danger {
@@ -220,6 +306,91 @@ async function onDelete(id: string) {
 .prompt-edit:hover,
 .prompt-edit:focus-visible {
   border-color: var(--color-gray-800);
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: var(--color-white);
+  border-radius: var(--radius-lg);
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-lg);
+}
+
+.modal-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--color-gray-200);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  margin: 0;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--color-gray-500);
+}
+
+.drafts-list {
+  padding: 1rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.draft-item {
+  padding: 1rem;
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-md);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.draft-info h4 {
+  font-weight: 600;
+  margin: 0 0 0.25rem 0;
+}
+
+.draft-meta {
+  font-size: var(--text-xs);
+  color: var(--color-gray-500);
+}
+
+.draft-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.empty-drafts {
+  padding: 3rem;
+  text-align: center;
+  color: var(--color-gray-500);
 }
 
 @media (max-width: 960px) {

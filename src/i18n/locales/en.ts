@@ -63,6 +63,34 @@ export default {
     noPromptsDesc: "Try adjusting your search or filters to find what you're looking for.",
     submit: 'Submit Prompt',
     new: 'New Prompt',
+    list: {
+      title: 'Prompts',
+      subtitle: 'Manage prompts from dataset. Supports edit and delete via PR.',
+      columns: {
+        title: 'Title',
+        category: 'Category',
+        updated: 'Updated',
+        actions: 'Actions',
+      },
+      actions: {
+        edit: 'Edit',
+        delete: 'Delete',
+        drafts: 'Draft Box',
+      },
+      empty: {
+        title: 'No prompts',
+        desc: 'Please add new prompt or check dataset.',
+      },
+    },
+    drafts: {
+      title: 'Local Drafts',
+      empty: 'No drafts found',
+      lastSaved: 'Last saved',
+      actions: {
+        continue: 'Continue',
+        delete: 'Delete',
+      },
+    },
     create: {
       title: 'New Prompt',
       subtitle: 'Draft a new prompt template. Use <variable> syntax for dynamic content.',

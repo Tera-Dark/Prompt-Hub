@@ -63,6 +63,34 @@ export default {
     noPromptsDesc: '请尝试调整搜索或筛选条件。',
     submit: '提交提示词',
     new: '新建提示词',
+    list: {
+      title: '提示词列表',
+      subtitle: '管理数据集中的提示词。支持通过 PR 进行编辑和删除。',
+      columns: {
+        title: '标题',
+        category: '分类',
+        updated: '更新时间',
+        actions: '操作',
+      },
+      actions: {
+        edit: '编辑',
+        delete: '删除',
+        drafts: '草稿箱',
+      },
+      empty: {
+        title: '暂无提示词',
+        desc: '请添加新提示词或检查数据集。',
+      },
+    },
+    drafts: {
+      title: '本地草稿箱',
+      empty: '暂无草稿',
+      lastSaved: '上次保存',
+      actions: {
+        continue: '继续编辑',
+        delete: '删除',
+      },
+    },
     create: {
       title: '新建提示词',
       subtitle: '创建新的提示词模版。使用 <variable> 语法添加动态内容。',

@@ -107,18 +107,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute, useRouter } from 'vue-router'
 import { usePrompts } from '@/composables/usePrompts'
 import { useAuth } from '@/composables/useAuth'
 import { type Prompt } from '@/types/prompt'
 import { addPrompt } from '@/repositories/prompts'
 import { useToast } from '@/composables/useToast'
+import { useLocalDrafts } from '@/composables/useLocalDrafts'
 
 const { t } = useI18n()
+const route = useRoute()
+const router = useRouter()
 const { categories, fetchPrompts, loading, error } = usePrompts()
 const { token, hasRepoWriteAccess, user } = useAuth()
 const toast = useToast()
+const { saveDraft: saveLocalDraft, getDraft, deleteDraft } = useLocalDrafts()
 
 // Ensure categories are loaded
 fetchPrompts()
@@ -133,9 +138,30 @@ const form = ref({
 })
 const tagsInput = ref('')
 const submitting = ref(false)
+const currentDraftId = ref<string | null>(null)
+
+onMounted(() => {
+  const draftId = route.query.draftId as string
+  if (draftId) {
+    const draft = getDraft(draftId)
+    if (draft) {
+      currentDraftId.value = draftId
+      form.value = {
+        title: draft.title,
+        category: draft.category,
+        description: draft.description,
+        prompt: draft.prompt,
+        status: draft.status as any,
+        imageUrl: draft.imageUrl,
+      }
+      tagsInput.value = draft.tags
+      toast.info('Draft loaded')
+    }
+  }
+})
 
 function ensureAuth() {
-  if (!token.value) throw new Error('需要登录')
+  if (!token.value) throw new Error(t('auth.signIn'))
 }
 
 function genId(title: string, category: string) {
@@ -159,7 +185,22 @@ function validate(): string | null {
 }
 
 async function saveDraft() {
-  await handleSubmit(true)
+  const id = saveLocalDraft({
+    id: currentDraftId.value || undefined,
+    title: form.value.title,
+    category: form.value.category,
+    description: form.value.description,
+    prompt: form.value.prompt,
+    tags: tagsInput.value,
+    status: form.value.status,
+    imageUrl: form.value.imageUrl,
+  })
+
+  if (id) {
+    currentDraftId.value = id
+    // Update URL without reload
+    router.replace({ query: { ...route.query, draftId: id } })
+  }
 }
 
 function onSubmit(_e: SubmitEvent) {
@@ -206,41 +247,34 @@ async function handleSubmit(_draft = false) {
     const url = await addPrompt(newItem, authToken, hasRepoWriteAccess.value)
 
     if (hasRepoWriteAccess.value) {
-      toast.success(t('prompts.create.actions.directCommitSuccess'))
-      // Clear form
-      form.value = {
-        title: '',
-        category: '',
-        description: '',
-        prompt: '',
-        status: 'draft',
-        imageUrl: '',
-      }
-      tagsInput.value = ''
-      // Assuming router is available and imported, if not, this will cause an error.
-      // For now, I'll comment it out as it's not in the provided context.
-      // router.push('/admin/prompts')
+      toast.success(t('prompts.create.actions.directCommitSuccess') || 'Published successfully')
     } else {
-      toast.success(t('prompts.create.actions.prCreated'))
+      toast.success(t('prompts.create.actions.prCreated') || 'PR Created')
       console.log('PR URL:', url)
-      form.value = {
-        title: '',
-        category: '',
-        description: '',
-        prompt: '',
-        status: 'draft',
-        imageUrl: '',
-      }
-      tagsInput.value = ''
-      // router.push('/admin/prompts')
     }
+
+    // Clear form and draft
+    if (currentDraftId.value) {
+      deleteDraft(currentDraftId.value)
+      currentDraftId.value = null
+    }
+
+    form.value = {
+      title: '',
+      category: '',
+      description: '',
+      prompt: '',
+      status: 'draft',
+      imageUrl: '',
+    }
+    tagsInput.value = ''
+    router.push('/admin/prompts')
   } catch (e) {
     console.error('Submission error:', e)
     let msg = e instanceof Error ? e.message : 'Submission failed'
 
     if (msg.includes('Bad credentials') || msg.includes('401')) {
       msg = 'Authentication expired or invalid. Please sign out and sign in again.'
-      // Optional: trigger logout automatically or show a button
     }
 
     toast.error(msg)
