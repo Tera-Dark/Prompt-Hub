@@ -357,13 +357,16 @@ export async function getPendingSubmissions(token: string): Promise<PendingSubmi
 
   const submissions: PendingSubmission[] = []
 
-  // Process Issues
+  // Process Issues - only open ones
   for (const issue of issues) {
+    // Double-check state is open
+    if (issue.state !== 'open') continue
+
     if (issue.title.includes('[Submission]')) {
       submissions.push({
         id: `issue-${issue.number}`,
         title: issue.title.replace('[Submission] ', ''),
-        category: 'Pending Review', // We'll parse this from body if needed, but for list view this is fine
+        category: 'Pending Review',
         description: 'User submission via Issue',
         prompt: issue.body || '',
         tags: [],
@@ -380,15 +383,18 @@ export async function getPendingSubmissions(token: string): Promise<PendingSubmi
     }
   }
 
-  // Process PRs
+  // Process PRs - only open ones
   for (const pr of prs) {
+    // Double-check state is open
+    if (pr.state !== 'open') continue
+
     if (pr.title.startsWith('Add prompt:') || pr.title.startsWith('Update prompt:')) {
       submissions.push({
         id: `pr-${pr.number}`,
         title: pr.title,
         category: 'Pending Merge',
         description: pr.body || 'Pull Request',
-        prompt: '', // PR content is in files, not body
+        prompt: '',
         tags: [],
         createdAt: pr.created_at,
         status: 'draft',

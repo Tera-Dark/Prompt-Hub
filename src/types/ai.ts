@@ -33,6 +33,8 @@ export const DEFAULT_PROVIDERS: AIProvider[] = [
       apiKey: '',
       baseUrl: 'https://api.openai.com/v1',
       models: [
+        { id: 'gpt-4o', name: 'GPT-4o' },
+        { id: 'gpt-4o-mini', name: 'GPT-4o Mini' },
         { id: 'gpt-4-turbo', name: 'GPT-4 Turbo' },
         { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo' },
       ],
@@ -50,8 +52,9 @@ export const DEFAULT_PROVIDERS: AIProvider[] = [
       apiKey: '',
       baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
       models: [
-        { id: 'gemini-pro', name: 'Gemini Pro' },
+        { id: 'gemini-2.0-flash-exp', name: 'Gemini 2.0 Flash (Exp)' },
         { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro' },
+        { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash' },
       ],
       temperature: 0.7,
       maxTokens: 2000,
@@ -67,8 +70,9 @@ export const DEFAULT_PROVIDERS: AIProvider[] = [
       apiKey: '',
       baseUrl: 'https://api.anthropic.com/v1',
       models: [
+        { id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet' },
+        { id: 'claude-3-5-haiku-20241022', name: 'Claude 3.5 Haiku' },
         { id: 'claude-3-opus-20240229', name: 'Claude 3 Opus' },
-        { id: 'claude-3-sonnet-20240229', name: 'Claude 3 Sonnet' },
       ],
       temperature: 0.7,
       maxTokens: 2000,
@@ -78,7 +82,7 @@ export const DEFAULT_PROVIDERS: AIProvider[] = [
   {
     id: 'custom',
     name: 'Custom',
-    icon: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Google_%22G%22_Logo.svg/120px-Google_%22G%22_Logo.svg.png', // Generic icon or placeholder
+    icon: 'https://cdn-icons-png.flaticon.com/512/2103/2103633.png', // Generic settings/slider icon
     enabled: false,
     config: {
       apiKey: '',
