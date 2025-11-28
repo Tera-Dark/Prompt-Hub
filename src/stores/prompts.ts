@@ -9,13 +9,13 @@ const error = ref<string | null>(null)
 const isLoaded = ref(false)
 
 export function usePromptStore() {
-  async function fetchPrompts() {
-    if (isLoaded.value && prompts.value.length > 0) return
+  async function fetchPrompts(force = false) {
+    if (!force && isLoaded.value && prompts.value.length > 0) return
 
     isLoading.value = true
     error.value = null
     try {
-      const data = await loadPrompts()
+      const data = await loadPrompts(force)
       prompts.value = data.prompts
       isLoaded.value = true
     } catch (e) {

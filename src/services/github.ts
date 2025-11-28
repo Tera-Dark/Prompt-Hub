@@ -288,14 +288,22 @@ export async function createIssue(
   return data.html_url
 }
 
-export async function listIssues(owner: string, repo: string, creator: string, token: string) {
+export async function listIssues(
+  owner: string,
+  repo: string,
+  creator: string | undefined,
+  token: string,
+) {
   const octokit = new Octokit({ auth: token })
-  const { data } = await octokit.issues.listForRepo({
+  const params: any = {
     owner,
     repo,
-    creator,
     state: 'open',
-  })
+  }
+  if (creator) {
+    params.creator = creator
+  }
+  const { data } = await octokit.issues.listForRepo(params)
   return data
 }
 

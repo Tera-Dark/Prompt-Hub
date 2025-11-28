@@ -31,21 +31,23 @@ function repoInfo() {
 import { PromptLoadError, type PromptsData } from '@/types/prompt'
 
 const CACHE_KEY = 'prompts_data_v3' // Bump version for sharding
-const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+const CACHE_TTL = 60 * 1000 // 1 minute
 
-export async function loadPrompts(): Promise<PromptsData> {
+export async function loadPrompts(force = false): Promise<PromptsData> {
   try {
     // Try to get from cache
-    const cached = localStorage.getItem(CACHE_KEY)
-    if (cached) {
-      try {
-        const { data, timestamp } = JSON.parse(cached)
-        if (Date.now() - timestamp < CACHE_TTL) {
-          return data as PromptsData
+    if (!force) {
+      const cached = localStorage.getItem(CACHE_KEY)
+      if (cached) {
+        try {
+          const { data, timestamp } = JSON.parse(cached)
+          if (Date.now() - timestamp < CACHE_TTL) {
+            return data as PromptsData
+          }
+        } catch (e) {
+          console.warn('Failed to parse cached prompts', e)
+          localStorage.removeItem(CACHE_KEY)
         }
-      } catch (e) {
-        console.warn('Failed to parse cached prompts', e)
-        localStorage.removeItem(CACHE_KEY)
       }
     }
 
@@ -429,6 +431,14 @@ export async function getUserSubmissions(username: string, token: string): Promi
     },
     sourceLink: issue.html_url,
   }))
+}
+
+export async function getAllPendingSubmissions(token: string): Promise<number> {
+  const { owner, repo } = repoInfo()
+  const issues = await listIssues(owner, repo, undefined, token)
+  // Filter for actual submissions if needed, e.g. check title or labels
+  // For now assume all open issues are submissions or relevant
+  return issues.filter((i) => i.title.includes('[Submission]')).length
 }
 
 // Helper to convert File to Base64 string

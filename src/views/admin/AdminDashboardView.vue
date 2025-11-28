@@ -56,22 +56,49 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePromptStore } from '@/stores/prompts'
+import { useAuth } from '@/composables/useAuth'
+import { getAllPendingSubmissions } from '@/repositories/prompts'
+
 const { t } = useI18n()
 const promptStore = usePromptStore()
 const { prompts: allPrompts } = promptStore
+const { token } = useAuth()
+
+let refreshInterval: number | null = null
+const realPendingCount = ref(0)
+
+const fetchData = async () => {
+  promptStore.fetchPrompts(true)
+  if (token.value) {
+    try {
+      realPendingCount.value = await getAllPendingSubmissions(token.value)
+    } catch (e) {
+      console.error('Failed to fetch pending count', e)
+    }
+  }
+}
 
 onMounted(() => {
-  promptStore.fetchPrompts()
+  fetchData()
+
+  // Refresh every 30 seconds to keep stats up to date
+  refreshInterval = window.setInterval(fetchData, 30000)
+})
+
+onUnmounted(() => {
+  if (refreshInterval) {
+    clearInterval(refreshInterval)
+  }
 })
 
 const publishedCount = computed(
   () => allPrompts.value.filter((p) => p.status === 'published' || !p.status).length,
 )
 
-const pendingCount = computed(() => allPrompts.value.filter((p) => p.status === 'draft').length)
+const pendingCount = computed(() => realPendingCount.value)
 
 const flaggedCount = computed(() => allPrompts.value.filter((p) => p.status === 'archived').length)
 
