@@ -91,14 +91,17 @@ const getFieldDiff = (submission: PendingSubmission, field: keyof Prompt) => {
   return getDiff(oldVal, newVal)
 }
 
-const handleApprove = async () => {
-  if (!auth.token.value || !selectedSubmission.value) return
-  const submission = selectedSubmission.value
-  processingId.value = submission.id
+const handleApprove = async (submission?: PendingSubmission) => {
+  const target = submission || selectedSubmission.value
+  if (!auth.token.value || !target) return
+
+  processingId.value = target.id
   try {
-    await approveSubmission(submission, auth.token.value)
-    pendingPrompts.value = pendingPrompts.value.filter((p) => p.id !== submission.id)
-    closeReview()
+    await approveSubmission(target, auth.token.value)
+    pendingPrompts.value = pendingPrompts.value.filter((p) => p.id !== target.id)
+    if (selectedSubmission.value?.id === target.id) {
+      closeReview()
+    }
   } catch (e) {
     console.error(e)
     alert('Failed to approve submission')
@@ -107,14 +110,17 @@ const handleApprove = async () => {
   }
 }
 
-const handleReject = async () => {
-  if (!auth.token.value || !selectedSubmission.value) return
-  const submission = selectedSubmission.value
-  processingId.value = submission.id
+const handleReject = async (submission?: PendingSubmission) => {
+  const target = submission || selectedSubmission.value
+  if (!auth.token.value || !target) return
+
+  processingId.value = target.id
   try {
-    await rejectSubmission(submission, auth.token.value)
-    pendingPrompts.value = pendingPrompts.value.filter((p) => p.id !== submission.id)
-    closeReview()
+    await rejectSubmission(target, auth.token.value)
+    pendingPrompts.value = pendingPrompts.value.filter((p) => p.id !== target.id)
+    if (selectedSubmission.value?.id === target.id) {
+      closeReview()
+    }
   } catch (e) {
     console.error(e)
     alert('Failed to reject submission')
@@ -183,7 +189,7 @@ onMounted(() => {
         <span>{{ t('common.status.title') }}</span>
         <span>{{ t('review.fields.title') }}</span>
         <span>{{ t('review.submittedBy') }}</span>
-        <span>{{ t('prompts.list.columns.actions') }}</span>
+        <span class="text-right">{{ t('prompts.list.columns.actions') }}</span>
       </header>
       <ul class="reviews-list">
         <li v-for="submission in pendingPrompts" :key="submission.id" class="reviews-row">
@@ -233,6 +239,22 @@ onMounted(() => {
           <div class="actions-col">
             <Button size="sm" @click="openReview(submission)">
               {{ t('common.actions.view') }}
+            </Button>
+            <Button
+              variant="success"
+              size="sm"
+              :disabled="!!processingId"
+              @click="handleApprove(submission)"
+            >
+              {{ t('review.approve') }}
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              :disabled="!!processingId"
+              @click="handleReject(submission)"
+            >
+              {{ t('review.reject') }}
             </Button>
           </div>
         </li>
@@ -335,10 +357,10 @@ onMounted(() => {
 
       <template #footer>
         <Button variant="ghost" @click="closeReview"> Cancel </Button>
-        <Button variant="danger" :disabled="!!processingId" @click="handleReject">
+        <Button variant="danger" :disabled="!!processingId" @click="() => handleReject()">
           {{ processingId === selectedSubmission?.id ? t('review.rejecting') : t('review.reject') }}
         </Button>
-        <Button variant="success" :disabled="!!processingId" @click="handleApprove">
+        <Button variant="success" :disabled="!!processingId" @click="() => handleApprove()">
           {{
             processingId === selectedSubmission?.id ? t('review.approving') : t('review.approve')
           }}
@@ -400,7 +422,7 @@ onMounted(() => {
 
 .reviews-card__header {
   display: grid;
-  grid-template-columns: 180px minmax(0, 2fr) 200px 120px;
+  grid-template-columns: 180px minmax(0, 2fr) 200px 240px;
   padding: 1rem 1.5rem;
   font-size: var(--text-sm);
   font-weight: 600;
@@ -415,7 +437,7 @@ onMounted(() => {
 
 .reviews-row {
   display: grid;
-  grid-template-columns: 180px minmax(0, 2fr) 200px 120px;
+  grid-template-columns: 180px minmax(0, 2fr) 200px 240px;
   align-items: center;
   gap: 1rem;
   padding: 1.25rem 1.5rem;
@@ -492,6 +514,7 @@ onMounted(() => {
 .actions-col {
   display: flex;
   justify-content: flex-end;
+  gap: 0.5rem;
 }
 
 /* Detail View Styles */

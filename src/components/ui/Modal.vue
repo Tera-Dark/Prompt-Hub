@@ -16,50 +16,43 @@ const handleKeydown = (e: KeyboardEvent) => {
 }
 
 onMounted(() => {
-  document.addEventListener('keydown', handleKeydown)
-  document.body.style.overflow = 'hidden'
+  if (typeof document !== 'undefined') {
+    document.addEventListener('keydown', handleKeydown)
+  }
 })
 
 onUnmounted(() => {
-  document.removeEventListener('keydown', handleKeydown)
-  document.body.style.overflow = ''
+  if (typeof document !== 'undefined') {
+    document.removeEventListener('keydown', handleKeydown)
+  }
 })
 </script>
 
 <template>
   <Teleport to="body">
-    <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+    <div v-if="isOpen" class="modal-overlay">
       <!-- Backdrop -->
-      <div
-        class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
-        @click="emit('close')"
-      ></div>
+      <div class="modal-backdrop" @click="emit('close')"></div>
 
       <!-- Modal Panel -->
       <div
-        class="relative bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-h-[90vh] flex flex-col overflow-hidden transition-all transform"
+        class="modal-panel"
         :class="{
-          'max-w-md': size === 'sm',
-          'max-w-lg': size === 'md' || !size,
-          'max-w-2xl': size === 'lg',
-          'max-w-5xl': size === 'xl',
-          'max-w-full h-full': size === 'full',
+          'modal-sm': size === 'sm',
+          'modal-md': size === 'md' || !size,
+          'modal-lg': size === 'lg',
+          'modal-xl': size === 'xl',
+          'modal-full': size === 'full',
         }"
       >
         <!-- Header -->
-        <div
-          class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800"
-        >
-          <h3 v-if="title" class="text-lg font-semibold text-gray-900 dark:text-white">
+        <div class="modal-header">
+          <h3 v-if="title" class="modal-title">
             {{ title }}
           </h3>
           <slot v-else name="header"></slot>
 
-          <button
-            class="p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
-            @click="emit('close')"
-          >
-            <!-- Simple X Icon -->
+          <button class="close-btn" @click="emit('close')">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="20"
@@ -78,18 +71,128 @@ onUnmounted(() => {
         </div>
 
         <!-- Content -->
-        <div class="flex-1 overflow-y-auto p-6">
+        <div class="modal-content">
           <slot></slot>
         </div>
 
         <!-- Footer -->
-        <div
-          v-if="$slots.footer"
-          class="px-6 py-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 flex justify-end gap-3"
-        >
+        <div v-if="$slots.footer" class="modal-footer">
           <slot name="footer"></slot>
         </div>
       </div>
     </div>
   </Teleport>
 </template>
+
+<style scoped>
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.modal-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  transition: opacity 0.3s ease;
+}
+
+.modal-panel {
+  position: relative;
+  background-color: var(--color-white);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: transform 0.3s ease;
+  z-index: 51;
+}
+
+/* Dark mode override if needed, assuming CSS variables handle it */
+@media (prefers-color-scheme: dark) {
+  .modal-panel {
+    background-color: var(--color-gray-900);
+  }
+}
+
+/* Sizes */
+.modal-sm {
+  max-width: 28rem;
+}
+.modal-md {
+  max-width: 32rem;
+}
+.modal-lg {
+  max-width: 42rem;
+}
+.modal-xl {
+  max-width: 64rem;
+}
+.modal-full {
+  max-width: 100%;
+  height: 100%;
+  border-radius: 0;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--color-gray-100);
+}
+
+.modal-title {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--color-gray-900);
+}
+
+.close-btn {
+  padding: 0.5rem;
+  color: var(--color-gray-400);
+  border-radius: 9999px;
+  transition: all 0.2s;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-btn:hover {
+  color: var(--color-gray-500);
+  background-color: var(--color-gray-100);
+}
+
+.modal-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+.modal-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--color-gray-100);
+  background-color: var(--color-gray-50);
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+</style>
