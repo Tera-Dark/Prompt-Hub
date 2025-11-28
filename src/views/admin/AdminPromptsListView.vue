@@ -23,7 +23,7 @@
       </div>
     </header>
 
-    <div v-if="filteredItems.length" class="prompts-card">
+    <div v-if="paginatedItems.length" class="prompts-card">
       <header class="prompts-card__header">
         <span>{{ t('prompts.list.columns.title') }}</span>
         <span>{{ t('prompts.list.columns.category') }}</span>
@@ -31,7 +31,7 @@
         <span>{{ t('prompts.list.columns.actions') }}</span>
       </header>
       <ul class="prompts-list">
-        <li v-for="p in filteredItems" :key="p.id" class="prompts-row">
+        <li v-for="p in paginatedItems" :key="p.id" class="prompts-row">
           <div class="prompt-info">
             <h3>{{ p.title }}</h3>
             <p>{{ p.description }}</p>
@@ -50,6 +50,15 @@
           </div>
         </li>
       </ul>
+
+      <!-- Pagination Controls -->
+      <div v-if="totalPages > 1" class="pagination-controls">
+        <button class="page-btn" :disabled="currentPage === 1" @click="currentPage--">&lt;</button>
+        <span class="page-info">{{ currentPage }} / {{ totalPages }}</span>
+        <button class="page-btn" :disabled="currentPage === totalPages" @click="currentPage++">
+          &gt;
+        </button>
+      </div>
     </div>
 
     <div v-else class="empty">
@@ -111,6 +120,18 @@ const { token, hasRepoWriteAccess } = useAuth()
 const { drafts, loadDrafts, deleteDraft } = useLocalDrafts()
 
 // repo info handled in repository layer
+
+const currentPage = ref(1)
+const pageSize = 20
+
+const paginatedItems = computed(() => {
+  const start = (currentPage.value - 1) * pageSize
+  return filteredItems.value.slice(start, start + pageSize)
+})
+
+const totalPages = computed(() => {
+  return Math.ceil(filteredItems.value.length / pageSize)
+})
 
 onMounted(async () => {
   try {
@@ -452,5 +473,38 @@ function removeDraft(id: string) {
   .prompt-edit {
     justify-self: flex-start;
   }
+}
+
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border-top: 1px solid var(--color-gray-200);
+}
+
+.page-btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page-btn:not(:disabled):hover {
+  background: var(--color-gray-50);
+  border-color: var(--color-gray-400);
+}
+
+.page-info {
+  font-size: var(--text-sm);
+  color: var(--color-gray-600);
 }
 </style>

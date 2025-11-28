@@ -153,39 +153,69 @@ export class GitHubService {
     branch: string,
     files: { path: string; content?: string; sha?: string }[],
     message: string,
+    retries = 3,
   ) {
     if (!this.octokit) throw new Error('Not authenticated')
 
-    // 1. Get the current commit of the branch
-    const ref = await this.getRef(`heads/${branch}`)
-    const currentCommitSha = ref.object.sha
+    let lastError: any
 
-    // 2. Get the tree of the current commit
-    const { data: currentCommit } = await this.octokit.git.getCommit({
-      owner: this.owner,
-      repo: this.repo,
-      commit_sha: currentCommitSha,
-    })
-    const currentTreeSha = currentCommit.tree.sha
+    for (let i = 0; i < retries; i++) {
+      try {
+        // 1. Get the current commit of the branch
+        // Force fetch the latest ref to minimize race window
+        const { data: ref } = await this.octokit.git.getRef({
+          owner: this.owner,
+          repo: this.repo,
+          ref: `heads/${branch}`,
+        })
+        const currentCommitSha = ref.object.sha
 
-    // 3. Create a new tree with the updated files
-    const tree = files.map((file) => ({
-      path: file.path,
-      mode: '100644' as const,
-      type: 'blob' as const,
-      content: file.content,
-      sha: file.sha,
-    }))
+        // 2. Get the tree of the current commit
+        const { data: currentCommit } = await this.octokit.git.getCommit({
+          owner: this.owner,
+          repo: this.repo,
+          commit_sha: currentCommitSha,
+        })
+        const currentTreeSha = currentCommit.tree.sha
 
-    const newTree = await this.createTree(currentTreeSha, tree)
+        // 3. Create a new tree with the updated files
+        const tree = files.map((file) => ({
+          path: file.path,
+          mode: '100644' as const,
+          type: 'blob' as const,
+          content: file.content,
+          sha: file.sha,
+        }))
 
-    // 4. Create a new commit
-    const newCommit = await this.createCommit(message, newTree.sha, [currentCommitSha])
+        const newTree = await this.createTree(currentTreeSha, tree)
 
-    // 5. Update the branch reference
-    await this.updateRef(`heads/${branch}`, newCommit.sha)
+        // 4. Create a new commit
+        const newCommit = await this.createCommit(message, newTree.sha, [currentCommitSha])
 
-    return newCommit
+        // 5. Update the branch reference
+        await this.updateRef(`heads/${branch}`, newCommit.sha)
+
+        return newCommit
+      } catch (error: any) {
+        lastError = error
+        // If it's not a fast-forward error (409 or 422 usually), throw immediately
+        // The specific error message "Update is not a fast forward" suggests we should check for that
+        const isFastForwardError =
+          error.status === 409 || // Conflict
+          error.status === 422 || // Unprocessable Entity (sometimes used for git errors)
+          (error.message && error.message.toLowerCase().includes('fast forward'))
+
+        if (!isFastForwardError) {
+          throw error
+        }
+
+        // Wait a bit before retrying to let other updates settle
+        await new Promise((resolve) => setTimeout(resolve, 500 + Math.random() * 500))
+        console.warn(`Retrying updateFiles due to fast-forward error (attempt ${i + 1}/${retries})`)
+      }
+    }
+
+    throw lastError
   }
 }
 
