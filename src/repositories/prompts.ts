@@ -559,7 +559,7 @@ export interface PendingSubmission extends Prompt {
   originalId?: string
 }
 
-export async function getPendingSubmissions(token: string): Promise<PendingSubmission[]> {
+export async function fetchPendingSubmissions(token: string): Promise<PendingSubmission[]> {
   const { owner, repo } = repoInfo()
   const [issues, prs] = await Promise.all([
     listIssues(owner, repo, '', token),
@@ -679,12 +679,16 @@ export async function getPendingSubmissions(token: string): Promise<PendingSubmi
         number: pr.number,
         sourceLink: pr.html_url,
         action: 'delete',
+        originalId: pr.title.replace('Delete prompt: ', '').trim(), // Add this line to fix missing originalId for PRs
       })
     }
   }
 
   return submissions
 }
+
+// Alias for backward compatibility if needed internally, but export is renamed
+export const getPendingSubmissions = fetchPendingSubmissions
 
 export async function approveSubmission(
   submission: PendingSubmission,
@@ -730,7 +734,7 @@ export async function approveSubmission(
           prompt: promptMatch[1].trim(),
           tags: tagsMatch ? tagsMatch[1].split(',').map((s) => s.trim()) : [],
           updatedAt: new Date().toISOString(),
-          status: (statusMatch ? statusMatch[1].trim() : 'published') as any,
+          status: (statusMatch ? statusMatch[1].trim() : 'published') as Prompt['status'],
         }),
         token,
         true,
