@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
-import AdminLayout from '@/layouts/AdminLayout.vue'
+import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import { useAuth } from '@/composables/useAuth'
 
 const routes: RouteRecordRaw[] = [
@@ -21,7 +21,7 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/admin',
-    component: AdminLayout,
+    component: DashboardLayout,
     meta: {
       requiresAuth: true,
     },
@@ -88,11 +88,17 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/dashboard',
-    name: 'UserDashboard',
-    component: () => import('@/views/user/UserDashboardView.vue'),
+    component: DashboardLayout,
     meta: {
       requiresAuth: true,
     },
+    children: [
+      {
+        path: '',
+        name: 'UserDashboard',
+        component: () => import('@/views/user/UserDashboardView.vue'),
+      },
+    ],
   },
   {
     path: '/:pathMatch(.*)*',

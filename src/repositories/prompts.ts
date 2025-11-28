@@ -405,6 +405,11 @@ ${newItem.author?.avatarUrl ? `**Avatar:** ${newItem.author.avatarUrl}` : ''}
   return await createIssue(owner, repo, title, body, token)
 }
 
+export async function withdrawSubmission(issueNumber: number, token: string): Promise<void> {
+  const { owner, repo } = repoInfo()
+  await closeIssue(owner, repo, issueNumber, token)
+}
+
 export async function getUserSubmissions(username: string, token: string): Promise<Prompt[]> {
   const { owner, repo } = repoInfo()
   const issues = await listIssues(owner, repo, username, token)
