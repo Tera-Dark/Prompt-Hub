@@ -28,17 +28,22 @@ const fetchSubmissions = async () => {
     pendingPrompts.value = await fetchPendingSubmissions(auth.token.value)
 
     // Fetch original prompts for updates/deletes
-    const promptList = await loadPrompts()
-    const promptMap = promptList.reduce(
-      (acc, p) => {
-        acc[p.id] = p
-        return acc
-      },
-      {} as Record<string, Prompt>,
-    )
-    originalPrompts.value = promptMap
+    try {
+      const promptList = await loadPrompts()
+      const promptMap = promptList.reduce(
+        (acc, p) => {
+          acc[p.id] = p
+          return acc
+        },
+        {} as Record<string, Prompt>,
+      )
+      originalPrompts.value = promptMap
+    } catch (loadError) {
+      console.warn('Failed to load original prompts for diff view:', loadError)
+      // Non-fatal error, we can still review but diffs might be incomplete
+    }
   } catch (e) {
-    error.value = 'Failed to load submissions'
+    error.value = e instanceof Error ? e.message : 'Failed to load submissions'
     console.error(e)
   } finally {
     loading.value = false
