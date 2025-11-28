@@ -104,6 +104,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/user/UserDashboardView.vue'),
       },
       {
+        path: 'prompts/:id/edit',
+        name: 'UserPromptEdit',
+        component: () => import('@/views/admin/AdminPromptEditView.vue'),
+        props: true,
+      },
+      {
         path: 'ai-settings',
         name: 'UserAISettings',
         component: () => import('@/views/user/UserAISettingsView.vue'),

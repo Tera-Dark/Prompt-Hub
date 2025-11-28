@@ -407,6 +407,58 @@ ${newItem.author?.avatarUrl ? `**Avatar:** ${newItem.author.avatarUrl}` : ''}
   return await createIssue(owner, repo, title, body, token)
 }
 
+export async function submitPromptUpdate(
+  originalId: string,
+  updatedItem: Prompt,
+  token: string,
+): Promise<string> {
+  if (token === 'mock-token') {
+    throw new Error('Mock login cannot submit to real GitHub')
+  }
+  const { owner, repo } = repoInfo()
+  const title = `[Update] ${originalId}`
+  const body = `
+### Update Prompt Request
+
+**Original ID:** ${originalId}
+**Title:** ${updatedItem.title}
+**Category:** ${updatedItem.category}
+**Description:**
+${updatedItem.description}
+
+**Prompt:**
+\`\`\`
+${updatedItem.prompt}
+\`\`\`
+
+**Tags:** ${updatedItem.tags.join(', ')}
+**Status:** ${updatedItem.status}
+
+**Author:** ${updatedItem.author?.username || 'Anonymous'}
+
+---
+*Submitted via Prompt-Hub*
+`
+  return await createIssue(owner, repo, title, body, token)
+}
+
+export async function submitPromptDelete(id: string, token: string): Promise<string> {
+  if (token === 'mock-token') {
+    throw new Error('Mock login cannot submit to real GitHub')
+  }
+  const { owner, repo } = repoInfo()
+  const title = `[Delete] ${id}`
+  const body = `
+### Delete Prompt Request
+
+**ID:** ${id}
+
+---
+*Submitted via Prompt-Hub*
+`
+  return await createIssue(owner, repo, title, body, token)
+}
+
 export async function withdrawSubmission(issueNumber: number, token: string): Promise<void> {
   const { owner, repo } = repoInfo()
   await closeIssue(owner, repo, issueNumber, token)
@@ -501,6 +553,8 @@ export async function uploadImage(
 export interface PendingSubmission extends Prompt {
   type: 'pr' | 'issue'
   number: number
+  action?: 'create' | 'update' | 'delete'
+  originalId?: string
 }
 
 export async function getPendingSubmissions(token: string): Promise<PendingSubmission[]> {
@@ -534,6 +588,49 @@ export async function getPendingSubmissions(token: string): Promise<PendingSubmi
         type: 'issue',
         number: issue.number,
         sourceLink: issue.html_url,
+        action: 'create',
+      })
+    } else if (issue.title.includes('[Update]')) {
+      const originalId = issue.title.replace('[Update] ', '').trim()
+      submissions.push({
+        id: `issue-${issue.number}`,
+        title: `Update: ${originalId}`,
+        category: 'Pending Update',
+        description: 'User update request via Issue',
+        prompt: issue.body || '',
+        tags: [],
+        createdAt: issue.created_at,
+        status: 'draft',
+        author: {
+          username: issue.user?.login || 'Anonymous',
+          avatarUrl: issue.user?.avatar_url,
+        },
+        type: 'issue',
+        number: issue.number,
+        sourceLink: issue.html_url,
+        action: 'update',
+        originalId,
+      })
+    } else if (issue.title.includes('[Delete]')) {
+      const originalId = issue.title.replace('[Delete] ', '').trim()
+      submissions.push({
+        id: `issue-${issue.number}`,
+        title: `Delete: ${originalId}`,
+        category: 'Pending Delete',
+        description: 'User delete request via Issue',
+        prompt: '',
+        tags: [],
+        createdAt: issue.created_at,
+        status: 'draft',
+        author: {
+          username: issue.user?.login || 'Anonymous',
+          avatarUrl: issue.user?.avatar_url,
+        },
+        type: 'issue',
+        number: issue.number,
+        sourceLink: issue.html_url,
+        action: 'delete',
+        originalId,
       })
     }
   }
@@ -560,6 +657,26 @@ export async function getPendingSubmissions(token: string): Promise<PendingSubmi
         type: 'pr',
         number: pr.number,
         sourceLink: pr.html_url,
+        action: pr.title.startsWith('Update prompt:') ? 'update' : 'create',
+      })
+    } else if (pr.title.startsWith('Delete prompt:')) {
+      submissions.push({
+        id: `pr-${pr.number}`,
+        title: pr.title,
+        category: 'Pending Delete',
+        description: pr.body || 'Pull Request',
+        prompt: '',
+        tags: [],
+        createdAt: pr.created_at,
+        status: 'draft',
+        author: {
+          username: pr.user?.login || 'Anonymous',
+          avatarUrl: pr.user?.avatar_url,
+        },
+        type: 'pr',
+        number: pr.number,
+        sourceLink: pr.html_url,
+        action: 'delete',
       })
     }
   }
@@ -577,10 +694,51 @@ export async function approveSubmission(
     await mergePullRequest(owner, repo, submission.number, token)
     clearPromptsCache() // Clear cache after merge
   } else {
-    // For Issues, we need to parse the body and add it to the file
-    // This is complex because we need to parse the markdown body back to a Prompt object
-    // For now, let's assume the body format we created in submitPromptIssue
+    // For Issues, we need to parse the body and add/update/delete
+    if (submission.action === 'delete') {
+      if (!submission.originalId) throw new Error('Missing original ID for delete')
+      await deletePromptById(submission.originalId, token, true) // Direct commit as admin
+      await closeIssue(owner, repo, submission.number, token)
+      return
+    }
+
     const body = submission.prompt
+
+    if (submission.action === 'update') {
+      if (!submission.originalId) throw new Error('Missing original ID for update')
+
+      const titleMatch = body.match(/\*\*Title:\*\* (.*)/)
+      const categoryMatch = body.match(/\*\*Category:\*\* (.*)/)
+      const descMatch = body.match(/\*\*Description:\*\*\s*\n([\s\S]*?)\n\n\*\*Prompt:\*\*/)
+      const promptMatch = body.match(/```\n([\s\S]*?)\n```/)
+      const tagsMatch = body.match(/\*\*Tags:\*\* (.*)/)
+      const statusMatch = body.match(/\*\*Status:\*\* (.*)/)
+
+      if (!titleMatch || !categoryMatch || !promptMatch) {
+        throw new Error('Failed to parse issue body. Please merge manually.')
+      }
+
+      await updatePromptById(
+        submission.originalId,
+        (orig) => ({
+          ...orig,
+          title: titleMatch[1].trim(),
+          category: categoryMatch[1].trim(),
+          description: descMatch ? descMatch[1].trim() : '',
+          prompt: promptMatch[1].trim(),
+          tags: tagsMatch ? tagsMatch[1].split(',').map((s) => s.trim()) : [],
+          updatedAt: new Date().toISOString(),
+          status: (statusMatch ? statusMatch[1].trim() : 'published') as any,
+        }),
+        token,
+        true,
+      ) // Direct commit as admin
+
+      await closeIssue(owner, repo, submission.number, token)
+      return
+    }
+
+    // Create (existing logic)
     const titleMatch = body.match(/\*\*Title:\*\* (.*)/)
     const categoryMatch = body.match(/\*\*Category:\*\* (.*)/)
     const descMatch = body.match(/\*\*Description:\*\*\s*\n([\s\S]*?)\n\n\*\*Prompt:\*\*/)

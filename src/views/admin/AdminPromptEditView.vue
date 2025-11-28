@@ -8,7 +8,7 @@
         </p>
       </div>
       <div class="header-actions">
-        <RouterLink to="/admin/prompts" class="back-link">
+        <RouterLink :to="hasRepoWriteAccess ? '/admin/prompts' : '/dashboard'" class="back-link">
           {{ t('prompts.create.actions.back') }}
         </RouterLink>
       </div>
@@ -89,11 +89,16 @@
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '@/composables/useAuth'
-import { updatePromptById, loadPrompts } from '@/repositories/prompts'
+import {
+  updatePromptById,
+  loadPrompts,
+  submitPromptUpdate,
+  type Prompt,
+} from '@/repositories/prompts'
 
 const props = defineProps<{ id: string }>()
 const { t } = useI18n()
-const { token, hasRepoWriteAccess } = useAuth()
+const { token, hasRepoWriteAccess, user } = useAuth()
 
 const form = ref({ title: '', description: '', prompt: '' })
 const status = ref<'draft' | 'published' | 'archived'>('published')
@@ -101,9 +106,15 @@ const tagsInput = ref('')
 const submitting = ref(false)
 const loading = ref(true)
 const error = ref<string | null>(null)
+const originalPrompt = ref<Prompt | null>(null)
 
 function ensureAuth() {
-  if (!token.value || !hasRepoWriteAccess.value) throw new Error('需要登录并具备仓库写权限')
+  if (!token.value) throw new Error('Please log in')
+  if (hasRepoWriteAccess.value) return
+  // Allow author to edit
+  if (originalPrompt.value?.author?.username === user.value?.login) return
+
+  throw new Error('Unauthorized: You can only edit your own prompts')
 }
 
 onMounted(async () => {
@@ -111,6 +122,7 @@ onMounted(async () => {
     const data = await loadPrompts()
     const p = data.prompts.find((x) => x.id === props.id)
     if (p) {
+      originalPrompt.value = p
       form.value.title = p.title
       form.value.description = p.description
       form.value.prompt = p.prompt
@@ -128,29 +140,46 @@ onMounted(async () => {
 })
 
 async function handleSubmit() {
-  ensureAuth()
-  submitting.value = true
   try {
+    ensureAuth()
+    submitting.value = true
     const authToken = token.value!
     const tags = tagsInput.value
       .split(',')
       .map((s) => s.trim())
       .filter(Boolean)
     const now = new Date().toISOString()
-    const url = await updatePromptById(
-      props.id,
-      (orig) => ({
-        ...orig,
+
+    if (hasRepoWriteAccess.value) {
+      const url = await updatePromptById(
+        props.id,
+        (orig) => ({
+          ...orig,
+          title: form.value.title.trim(),
+          description: form.value.description.trim(),
+          prompt: form.value.prompt.trim(),
+          tags,
+          updatedAt: now,
+          status: status.value,
+        }),
+        authToken,
+      )
+      alert(`Pull Request created: \n${url}`)
+    } else {
+      if (!originalPrompt.value) throw new Error('Original prompt not found')
+      // Create Issue for update
+      const updatedItem: Prompt = {
+        ...originalPrompt.value,
         title: form.value.title.trim(),
         description: form.value.description.trim(),
         prompt: form.value.prompt.trim(),
         tags,
         updatedAt: now,
         status: status.value,
-      }),
-      authToken,
-    )
-    alert(`Pull Request created: \n${url}`)
+      }
+      const url = await submitPromptUpdate(props.id, updatedItem, authToken)
+      alert(`Update Request Issue created: \n${url}`)
+    }
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Submission failed'
     alert(msg)

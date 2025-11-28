@@ -6,6 +6,14 @@
         <p>{{ t('dashboard.trackSubmissions') }}</p>
       </div>
       <div class="header-actions">
+        <div class="search-box">
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Search prompts..."
+            class="search-input"
+          />
+        </div>
         <button class="drafts-button" @click="showDrafts = true">
           {{ t('prompts.list.actions.drafts') }}
         </button>
@@ -49,6 +57,23 @@
               @click="$router.push(`/prompt/${p.id}`)"
             >
               {{ t('common.actions.view') }}
+            </Button>
+            <Button
+              v-if="p.status === 'published'"
+              variant="outline"
+              size="sm"
+              @click="$router.push(`/prompts/${p.id}/edit`)"
+            >
+              Edit
+            </Button>
+            <Button
+              v-if="p.status === 'published'"
+              variant="danger"
+              size="sm"
+              :disabled="deleting === p.id"
+              @click="handleDelete(p)"
+            >
+              Delete
             </Button>
             <template v-else-if="p.sourceLink">
               <Button variant="outline" size="sm" @click="openSourceLink(p.sourceLink)">
@@ -119,14 +144,19 @@ import { useI18n } from 'vue-i18n'
 import { usePromptStore } from '@/stores/prompts'
 import { useAuth } from '@/composables/useAuth'
 import Button from '@/components/ui/Button.vue'
-import { getUserSubmissions, withdrawSubmission } from '@/repositories/prompts'
+import {
+  getUserSubmissions,
+  withdrawSubmission,
+  deletePromptById,
+  submitPromptDelete,
+} from '@/repositories/prompts'
 import { useLocalDrafts } from '@/composables/useLocalDrafts'
 import type { Prompt } from '@/types/prompt'
 
 const { t } = useI18n()
 const router = useRouter()
 const promptStore = usePromptStore()
-const { user, token } = useAuth()
+const { user, token, hasRepoWriteAccess } = useAuth()
 const { drafts, loadDrafts, deleteDraft } = useLocalDrafts()
 const { prompts: allPrompts, isLoading: loadingPrompts } = promptStore
 
@@ -134,6 +164,8 @@ const pendingSubmissions = ref<Prompt[]>([])
 const loadingSubmissions = ref(false)
 const showDrafts = ref(false)
 const withdrawing = ref<string | null>(null)
+const searchQuery = ref('')
+const deleting = ref<string | null>(null)
 
 onMounted(async () => {
   promptStore.fetchPrompts()
@@ -155,7 +187,16 @@ const loading = computed(() => loadingPrompts.value || loadingSubmissions.value)
 const userPrompts = computed(() => {
   if (!user.value?.login) return []
   const published = allPrompts.value.filter((p) => p.author?.username === user.value?.login)
-  return [...pendingSubmissions.value, ...published]
+  const all = [...pendingSubmissions.value, ...published]
+
+  if (!searchQuery.value) return all
+  const q = searchQuery.value.toLowerCase()
+  return all.filter(
+    (p) =>
+      p.title.toLowerCase().includes(q) ||
+      p.description.toLowerCase().includes(q) ||
+      p.category.toLowerCase().includes(q),
+  )
 })
 
 function getStatusLabel(status?: string) {
@@ -167,6 +208,26 @@ function getStatusLabel(status?: string) {
 
 function openSourceLink(url: string) {
   window.open(url, '_blank')
+}
+
+async function handleDelete(prompt: Prompt) {
+  if (!confirm('Are you sure you want to delete this prompt?')) return
+
+  deleting.value = prompt.id
+  try {
+    if (hasRepoWriteAccess.value) {
+      const url = await deletePromptById(prompt.id, token.value!)
+      alert(`Pull Request created: \n${url}`)
+    } else {
+      const url = await submitPromptDelete(prompt.id, token.value!)
+      alert(`Delete Request Issue created: \n${url}`)
+    }
+  } catch (e) {
+    console.error(e)
+    alert('Failed to delete prompt')
+  } finally {
+    deleting.value = null
+  }
 }
 
 async function handleWithdraw(id: string) {
@@ -202,154 +263,47 @@ function removeDraft(id: string) {
 
 <style scoped>
 .prompts {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .prompts-header {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-}
-
-.prompts-header h2 {
-  font-size: var(--text-2xl);
-  font-weight: 600;
-  color: var(--color-gray-900);
-}
-
-.prompts-header p {
-  color: var(--color-gray-500);
-  margin-top: 0.5rem;
+  margin-bottom: 2rem;
 }
 
 .header-actions {
   display: flex;
   gap: 1rem;
+  align-items: center;
+}
+
+.search-box {
+  margin-right: 0.5rem;
+}
+
+.search-input {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  min-width: 250px;
 }
 
 .drafts-button {
-  padding: 0.65rem 1.1rem;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-gray-300);
-  background-color: var(--color-white);
-  color: var(--color-gray-700);
-  font-size: var(--text-sm);
+  color: var(--color-gray-600);
+  font-size: 0.875rem;
+  background: none;
+  border: none;
   cursor: pointer;
-  transition: all var(--transition-base);
+  padding: 0.5rem;
 }
 
 .drafts-button:hover {
-  border-color: var(--color-gray-400);
-  background-color: var(--color-gray-50);
-}
-
-.prompts-card {
-  background-color: var(--color-white);
-  border: 1px solid var(--color-gray-200);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
-}
-
-.prompts-card__header {
-  display: grid;
-  grid-template-columns: 2fr 160px 160px 220px;
-  padding: 1rem 1.5rem;
-  font-size: var(--text-sm);
-  font-weight: 600;
-  background-color: var(--color-gray-50);
-  color: var(--color-gray-600);
-}
-
-.prompts-list {
-  display: flex;
-  flex-direction: column;
-}
-
-.prompts-row {
-  display: grid;
-  grid-template-columns: 2fr 160px 160px 220px;
-  align-items: center;
-  gap: 1rem;
-  padding: 1.25rem 1.5rem;
-  border-top: 1px solid var(--color-gray-100);
-}
-
-.prompts-row:first-of-type {
-  border-top: none;
-}
-
-.prompt-info h3 {
-  font-size: var(--text-lg);
-  font-weight: 600;
-  color: var(--color-gray-900);
-}
-
-.prompt-info p {
-  font-size: var(--text-sm);
-  color: var(--color-gray-500);
-  margin-top: 0.25rem;
-}
-
-.prompt-category {
-  font-size: var(--text-sm);
-  color: var(--color-gray-600);
-}
-
-.status-badge {
-  font-size: var(--text-xs);
-  padding: 0.25rem 0.5rem;
-  border-radius: 100px;
-  font-weight: 500;
-}
-
-.status-badge.published {
-  background: var(--color-green-100);
-  color: var(--color-green-700);
-}
-
-.status-badge.draft {
-  background: var(--color-yellow-100);
-  color: var(--color-yellow-700);
-}
-
-.status-badge.archived {
-  background: var(--color-gray-100);
-  color: var(--color-gray-700);
-}
-
-.row-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.empty {
-  text-align: center;
-  padding: 4rem 2rem;
-  background: var(--color-surface);
-  border-radius: var(--radius-lg);
-  border: 2px dashed var(--color-border);
-}
-
-.empty h3 {
-  font-size: var(--text-xl);
-  font-weight: 600;
-  color: var(--color-text-primary);
-  margin-bottom: 0.5rem;
-}
-
-.empty p {
-  color: var(--color-text-secondary);
-  margin-bottom: 1.5rem;
-}
-
-.mt-4 {
-  margin-top: 1rem;
+  color: var(--color-primary-600);
+  text-decoration: underline;
 }
 
 .loading-state {
@@ -358,17 +312,17 @@ function removeDraft(id: string) {
   align-items: center;
   justify-content: center;
   padding: 4rem;
+  color: var(--color-gray-500);
   gap: 1rem;
-  color: var(--color-text-secondary);
 }
 
 .spinner {
-  width: 24px;
-  height: 24px;
-  border: 2px solid var(--color-border);
-  border-top-color: var(--color-primary);
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid var(--color-gray-200);
+  border-top-color: var(--color-primary-600);
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
@@ -377,77 +331,180 @@ function removeDraft(id: string) {
   }
 }
 
-/* Modal Styles */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 50;
-  backdrop-filter: blur(2px);
-}
-
-.modal-content {
-  background: var(--color-white);
+.prompts-card {
+  background: white;
   border-radius: var(--radius-lg);
-  width: 90%;
-  max-width: 600px;
-  max-height: 80vh;
-  display: flex;
-  flex-direction: column;
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
 }
 
-.modal-header {
+.prompts-card__header {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1.5fr;
   padding: 1rem 1.5rem;
-  border-bottom: 1px solid var(--color-gray-200);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  background: var(--color-gray-50);
+  border-bottom: 1px solid var(--color-gray-100);
+  font-weight: 500;
+  color: var(--color-gray-600);
+  font-size: 0.875rem;
 }
 
-.modal-header h3 {
-  font-size: var(--text-lg);
+.prompts-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.prompts-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1.5fr;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--color-gray-100);
+  align-items: center;
+  transition: background-color 0.2s;
+}
+
+.prompts-row:last-child {
+  border-bottom: none;
+}
+
+.prompts-row:hover {
+  background-color: var(--color-gray-50);
+}
+
+.prompt-info h3 {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--color-gray-900);
 }
 
-.close-btn {
-  font-size: 1.5rem;
+.prompt-info p {
+  margin: 0;
+  font-size: 0.875rem;
   color: var(--color-gray-500);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.prompt-category {
+  color: var(--color-gray-600);
+  font-size: 0.875rem;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.status-badge.published {
+  background: var(--color-green-50);
+  color: var(--color-green-700);
+}
+
+.status-badge.draft {
+  background: var(--color-yellow-50);
+  color: var(--color-yellow-700);
+}
+
+.status-badge.archived {
+  background: var(--color-gray-100);
+  color: var(--color-gray-600);
+}
+
+.row-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.empty {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: white;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.empty h3 {
+  margin: 0 0 0.5rem;
+  color: var(--color-gray-900);
+}
+
+.empty p {
+  color: var(--color-gray-500);
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal-content {
+  background: white;
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 500px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--color-gray-100);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+.close-btn {
   background: none;
   border: none;
+  font-size: 1.5rem;
   cursor: pointer;
-  line-height: 1;
+  color: var(--color-gray-400);
 }
 
 .drafts-list {
   padding: 1rem;
   overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
 }
 
 .draft-item {
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
   padding: 1rem;
-  border: 1px solid var(--color-gray-200);
-  border-radius: var(--radius-md);
-  background: var(--color-gray-50);
+  border-bottom: 1px solid var(--color-gray-100);
 }
 
-.draft-info h4 {
-  font-weight: 500;
-  color: var(--color-gray-900);
+.draft-item:last-child {
+  border-bottom: none;
 }
 
 .draft-meta {
-  font-size: var(--text-xs);
+  font-size: 0.75rem;
   color: var(--color-gray-500);
 }
 
@@ -457,47 +514,26 @@ function removeDraft(id: string) {
 }
 
 .action {
-  padding: 0.45rem 0.9rem;
-  border: 1px solid var(--color-gray-900);
-  border-radius: var(--radius-md);
-  font-size: var(--text-sm);
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
   cursor: pointer;
+  border: 1px solid transparent;
 }
 
 .action.primary {
-  background-color: var(--color-black);
-  color: var(--color-white);
+  background: var(--color-primary-50);
+  color: var(--color-primary-700);
 }
 
 .action.danger {
-  border-color: var(--color-red-600);
-  color: var(--color-red-600);
-  background: transparent;
-}
-
-.action.danger:hover {
   background: var(--color-red-50);
+  color: var(--color-red-700);
 }
 
 .empty-drafts {
   padding: 3rem;
   text-align: center;
   color: var(--color-gray-500);
-}
-
-@media (max-width: 960px) {
-  .prompts-card__header,
-  .prompts-row {
-    grid-template-columns: 1fr;
-    align-items: flex-start;
-  }
-
-  .prompts-card__header {
-    display: none;
-  }
-
-  .prompts-row {
-    gap: 0.75rem;
-  }
 }
 </style>

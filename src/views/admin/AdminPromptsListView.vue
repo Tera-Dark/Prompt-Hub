@@ -6,6 +6,14 @@
         <p>{{ t('prompts.list.subtitle') }}</p>
       </div>
       <div class="header-actions">
+        <div class="search-box">
+          <input
+            v-model="searchQuery"
+            type="text"
+            :placeholder="t('common.search')"
+            class="search-input"
+          />
+        </div>
         <button class="drafts-button" @click="showDrafts = true">
           {{ t('prompts.list.actions.drafts') }}
         </button>
@@ -15,7 +23,7 @@
       </div>
     </header>
 
-    <div v-if="items.length" class="prompts-card">
+    <div v-if="filteredItems.length" class="prompts-card">
       <header class="prompts-card__header">
         <span>{{ t('prompts.list.columns.title') }}</span>
         <span>{{ t('prompts.list.columns.category') }}</span>
@@ -23,7 +31,7 @@
         <span>{{ t('prompts.list.columns.actions') }}</span>
       </header>
       <ul class="prompts-list">
-        <li v-for="p in items" :key="p.id" class="prompts-row">
+        <li v-for="p in filteredItems" :key="p.id" class="prompts-row">
           <div class="prompt-info">
             <h3>{{ p.title }}</h3>
             <p>{{ p.description }}</p>
@@ -86,7 +94,7 @@
 
 <script setup lang="ts">
 import { RouterLink, useRouter } from 'vue-router'
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '@/composables/useAuth'
 import { type Prompt } from '@/types/prompt'
@@ -98,6 +106,7 @@ const router = useRouter()
 const items = ref<Prompt[]>([])
 const submitting = ref(false)
 const showDrafts = ref(false)
+const searchQuery = ref('')
 const { token, hasRepoWriteAccess } = useAuth()
 const { drafts, loadDrafts, deleteDraft } = useLocalDrafts()
 
@@ -111,6 +120,17 @@ onMounted(async () => {
   } catch {
     // Silently fail if prompts data cannot be loaded
   }
+})
+
+const filteredItems = computed(() => {
+  if (!searchQuery.value) return items.value
+  const q = searchQuery.value.toLowerCase()
+  return items.value.filter(
+    (p) =>
+      p.title.toLowerCase().includes(q) ||
+      p.description.toLowerCase().includes(q) ||
+      p.category.toLowerCase().includes(q),
+  )
 })
 
 function formatUpdated(p: Prompt) {
@@ -184,6 +204,19 @@ function removeDraft(id: string) {
 .header-actions {
   display: flex;
   gap: 1rem;
+  align-items: center;
+}
+
+.search-box {
+  margin-right: 0.5rem;
+}
+
+.search-input {
+  padding: 0.65rem 1.1rem;
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  min-width: 250px;
 }
 
 .new-button {
