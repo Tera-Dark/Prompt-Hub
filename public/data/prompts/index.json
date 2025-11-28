@@ -2,15 +2,21 @@
   "version": "2.0.0",
   "shardCount": 8,
   "totalPrompts": 1,
-  "lastUpdated": "2025-11-28T15:15:39.167Z",
+  "lastUpdated": "2025-11-28T15:59:43.978Z",
   "categories": {
     "测试": {
       "count": 1,
-      "shards": [7],
-      "promptIds": ["测试--202511281515"]
+      "shards": [
+        7
+      ],
+      "promptIds": [
+        "测试--202511281515"
+      ]
     }
   },
   "shardMap": {
-    "7": ["测试--202511281515"]
+    "7": [
+      "测试--202511281515"
+    ]
   }
 }
