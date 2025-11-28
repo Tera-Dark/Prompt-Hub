@@ -7,44 +7,8 @@
       "category": "随便",
       "description": "随便111",
       "prompt": "随便222",
-      "tags": [
-        "随便"
-      ],
+      "tags": ["随便"],
       "createdAt": "2025-11-27T11:21:18.460Z",
-      "status": "published",
-      "imageUrl": "",
-      "author": {
-        "username": "Tera-Dark",
-        "avatarUrl": "https://avatars.githubusercontent.com/u/142307294?v=4"
-      }
-    },
-    {
-      "id": "éä¾¿--202511271114",
-      "title": "éä¾¿",
-      "category": "éä¾¿",
-      "description": "éä¾¿111",
-      "prompt": "éä¾¿222",
-      "tags": [
-        "éä¾¿"
-      ],
-      "createdAt": "2025-11-27T11:14:29.560Z",
-      "status": "draft",
-      "imageUrl": "",
-      "author": {
-        "username": "Tera-Dark",
-        "avatarUrl": "https://avatars.githubusercontent.com/u/142307294?v=4"
-      }
-    },
-    {
-      "id": "Ã¦ÂµÂÃ¨Â¯Â-111-202511270758",
-      "title": "Ã¦ÂµÂÃ¨Â¯Â111",
-      "category": "Ã¦ÂµÂÃ¨Â¯Â",
-      "description": "Ã¦ÂÂÃ¨Â¿Â°123",
-      "prompt": "Ã¦ÂÂÃ¦ÂÂ¬123123",
-      "tags": [
-        "Ã¦ÂµÂÃ¨Â¯Â"
-      ],
-      "createdAt": "2025-11-27T07:58:33.318Z",
       "status": "published",
       "imageUrl": "",
       "author": {

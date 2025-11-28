@@ -42,6 +42,9 @@ export async function loadPrompts(): Promise<PromptsData> {
     }
 
     // Try new shard-based loading first
+    /* 
+    // TEMPORARY: Disable shard loading until write path updates shards or CI workflow is established.
+    // Currently addPrompt only updates prompts.json, so shards are stale.
     try {
       const { loadShardIndex, loadShards } = await import('@/utils/shard')
       const index = await loadShardIndex()
@@ -68,38 +71,52 @@ export async function loadPrompts(): Promise<PromptsData> {
     } catch (shardError) {
       // Fallback to old single-file loading if shard loading fails
       console.warn('Shard loading failed, falling back to single file:', shardError)
+    */
+    const response = await fetch(`${import.meta.env.BASE_URL}data/prompts.json`)
 
-      const response = await fetch(`${import.meta.env.BASE_URL}data/prompts.json`)
-
-      if (!response.ok) {
-        throw new PromptLoadError(
-          `Failed to fetch prompts: ${response.status} ${response.statusText}`,
-        )
-      }
-
-      const data: PromptsData = await response.json()
-
-      if (!data || !data.prompts || !Array.isArray(data.prompts)) {
-        throw new PromptLoadError('Invalid prompts data structure')
-      }
-
-      // Cache the result
-      localStorage.setItem(
-        CACHE_KEY,
-        JSON.stringify({
-          data,
-          timestamp: Date.now(),
-        }),
+    if (!response.ok) {
+      throw new PromptLoadError(
+        `Failed to fetch prompts: ${response.status} ${response.statusText}`,
       )
-
-      return data
     }
+
+    const data: PromptsData = await response.json()
+
+    if (!data || !data.prompts || !Array.isArray(data.prompts)) {
+      throw new PromptLoadError('Invalid prompts data structure')
+    }
+
+    // Cache the result
+    localStorage.setItem(
+      CACHE_KEY,
+      JSON.stringify({
+        data,
+        timestamp: Date.now(),
+      }),
+    )
+
+    return data
+    // }
   } catch (error) {
     console.error('Error loading prompts:', error)
     throw error instanceof PromptLoadError
       ? error
       : new PromptLoadError(error instanceof Error ? error.message : 'Unknown error')
   }
+}
+
+export function clearPromptsCache() {
+  localStorage.removeItem(CACHE_KEY)
+}
+
+export function setPromptsCache(data: PromptsData) {
+  localStorage.setItem(
+    CACHE_KEY,
+    JSON.stringify({
+      data,
+      timestamp: Date.now(),
+    }),
+  )
 }
 
 export async function addPrompt(
@@ -134,6 +151,9 @@ export async function addPrompt(
     file.sha,
     token,
   )
+
+  // Optimistically update cache so user sees change immediately
+  setPromptsCache(next)
 
   if (directCommit) {
     return commit.html_url!
@@ -182,6 +202,9 @@ export async function updatePromptById(
     token,
   )
 
+  // Optimistically update cache so user sees change immediately
+  setPromptsCache(next)
+
   if (directCommit) {
     return commit.html_url!
   }
@@ -223,6 +246,9 @@ export async function deletePromptById(
     file.sha,
     token,
   )
+
+  // Optimistically update cache so user sees change immediately
+  setPromptsCache(next)
 
   if (directCommit) {
     return commit.html_url!
@@ -420,6 +446,7 @@ export async function approveSubmission(
 
   if (submission.type === 'pr') {
     await mergePullRequest(owner, repo, submission.number, token)
+    clearPromptsCache() // Clear cache after merge
   } else {
     // For Issues, we need to parse the body and add it to the file
     // This is complex because we need to parse the markdown body back to a Prompt object
