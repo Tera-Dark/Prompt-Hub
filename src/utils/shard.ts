@@ -48,7 +48,7 @@ export function getShardId(promptId: string, shardCount: number): number {
  * 加载索引
  */
 export async function loadShardIndex(): Promise<ShardIndex> {
-  const response = await fetch('/data/prompts/index.json')
+  const response = await fetch(`${import.meta.env.BASE_URL}data/prompts/index.json`)
   if (!response.ok) {
     throw new Error('Failed to load shard index')
   }
@@ -59,7 +59,7 @@ export async function loadShardIndex(): Promise<ShardIndex> {
  * 加载指定分片
  */
 export async function loadShard(shardId: number): Promise<ShardData> {
-  const response = await fetch(`/data/prompts/shard-${shardId}.json`)
+  const response = await fetch(`${import.meta.env.BASE_URL}data/prompts/shard-${shardId}.json`)
   if (!response.ok) {
     throw new Error(`Failed to load shard ${shardId}`)
   }

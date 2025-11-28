@@ -238,12 +238,16 @@ export async function updateFile(
   token: string,
 ) {
   const octokit = new Octokit({ auth: token })
+
+  // Ensure content is properly Base64 encoded for UTF-8
+  const base64Content = btoa(unescape(encodeURIComponent(content)))
+
   const { data } = await octokit.repos.createOrUpdateFileContents({
     owner,
     repo,
     path,
     message,
-    content: content, // Content should already be base64 encoded if it's an image, or we handle encoding before calling
+    content: base64Content,
     branch,
     sha,
   })

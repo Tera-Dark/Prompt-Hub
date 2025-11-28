@@ -14,7 +14,11 @@
       </div>
     </header>
 
-    <form class="editor-form" @submit.prevent="handleSubmit">
+    <div v-if="loading" class="loading-state">Loading prompt data...</div>
+    <div v-else-if="error" class="error-state">
+      {{ error }}
+    </div>
+    <form v-else class="editor-form" @submit.prevent="handleSubmit">
       <div class="form-layout">
         <!-- Left Column: Metadata -->
         <aside class="form-sidebar">
@@ -59,7 +63,7 @@
               rows="3"
               :placeholder="t('prompts.create.form.descriptionPlaceholder')"
               class="form-textarea"
-            ></textarea>
+            />
           </div>
 
           <div class="form-group form-group--flex">
@@ -69,7 +73,7 @@
               rows="15"
               :placeholder="t('prompts.create.form.bodyPlaceholder')"
               class="form-textarea prompt-body"
-            ></textarea>
+            />
           </div>
         </div>
       </div>
@@ -95,6 +99,8 @@ const form = ref({ title: '', description: '', prompt: '' })
 const status = ref<'draft' | 'published' | 'archived'>('published')
 const tagsInput = ref('')
 const submitting = ref(false)
+const loading = ref(true)
+const error = ref<string | null>(null)
 
 function ensureAuth() {
   if (!token.value || !hasRepoWriteAccess.value) throw new Error('需要登录并具备仓库写权限')
@@ -110,9 +116,14 @@ onMounted(async () => {
       form.value.prompt = p.prompt
       status.value = p.status || 'draft'
       tagsInput.value = (p.tags || []).join(', ')
+    } else {
+      error.value = `Prompt #${props.id} not found`
     }
-  } catch {
-    // Silently fail if prompt data cannot be loaded
+  } catch (e) {
+    console.error('Failed to load prompt', e)
+    error.value = 'Failed to load prompt data. Please try again.'
+  } finally {
+    loading.value = false
   }
 })
 
@@ -156,6 +167,21 @@ async function handleSubmit() {
   gap: 2rem;
   max-width: 1200px;
   margin: 0 auto;
+}
+
+.loading-state,
+.error-state {
+  text-align: center;
+  padding: 3rem;
+  font-size: var(--text-lg);
+  color: var(--color-gray-500);
+  background: var(--color-gray-50);
+  border-radius: var(--radius-lg);
+}
+
+.error-state {
+  color: var(--color-red-600);
+  background: var(--color-red-50);
 }
 
 .editor-header {
