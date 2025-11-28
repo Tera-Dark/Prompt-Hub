@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useUserStore } from '../../stores/user'
+import { useAuth } from '../../composables/useAuth'
 import {
   fetchPendingSubmissions,
   approveSubmission,
@@ -14,7 +14,7 @@ import Card from '../../components/ui/Card.vue'
 import Badge from '../../components/ui/Badge.vue'
 import * as Diff from 'diff'
 
-const userStore = useUserStore()
+const auth = useAuth()
 const pendingPrompts = ref<PendingSubmission[]>([])
 const loading = ref(true)
 const error = ref('')
@@ -24,8 +24,8 @@ const originalPrompts = ref<Record<string, Prompt>>({})
 const fetchSubmissions = async () => {
   loading.value = true
   try {
-    if (!userStore.token) return
-    pendingPrompts.value = await fetchPendingSubmissions(userStore.token)
+    if (!auth.token.value) return
+    pendingPrompts.value = await fetchPendingSubmissions(auth.token.value)
 
     // Fetch original prompts for updates/deletes
     const promptList = await loadPrompts()
@@ -77,10 +77,10 @@ const getFieldDiff = (submission: PendingSubmission, field: keyof Prompt) => {
 }
 
 const handleApprove = async (submission: PendingSubmission) => {
-  if (!userStore.token) return
+  if (!auth.token.value) return
   processingId.value = submission.id
   try {
-    await approveSubmission(submission, userStore.token)
+    await approveSubmission(submission, auth.token.value)
     // Remove from list immediately for UX
     pendingPrompts.value = pendingPrompts.value.filter((p) => p.id !== submission.id)
   } catch (e) {
@@ -92,10 +92,10 @@ const handleApprove = async (submission: PendingSubmission) => {
 }
 
 const handleReject = async (submission: PendingSubmission) => {
-  if (!userStore.token) return
+  if (!auth.token.value) return
   processingId.value = submission.id
   try {
-    await rejectSubmission(submission, userStore.token)
+    await rejectSubmission(submission, auth.token.value)
     // Remove from list immediately for UX
     pendingPrompts.value = pendingPrompts.value.filter((p) => p.id !== submission.id)
   } catch (e) {
