@@ -2,13 +2,29 @@
   "shardId": 2,
   "prompts": [
     {
-      "id": "测试--202511280533",
-      "title": "测试内容",
+      "id": "prompt-1764321014426",
+      "title": "测试内容2",
       "category": "测试",
-      "description": "测试111",
-      "prompt": "测试222",
+      "description": "测试222",
+      "prompt": "测试22222",
       "tags": [
         "测试"
+      ],
+      "createdAt": "2025-11-28T09:10:14.426Z",
+      "status": "published",
+      "author": {
+        "username": "EEESERT",
+        "avatarUrl": "https://avatars.githubusercontent.com/u/196584526?v=4"
+      }
+    },
+    {
+      "id": "æµè¯--202511280533",
+      "title": "æµè¯åå®¹",
+      "category": "æµè¯",
+      "description": "æµè¯111",
+      "prompt": "æµè¯222",
+      "tags": [
+        "æµè¯"
       ],
       "createdAt": "2025-11-28T05:33:58.024Z",
       "status": "published",
