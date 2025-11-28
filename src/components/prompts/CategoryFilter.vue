@@ -120,7 +120,7 @@ function getCategoryIcon(category: string): string {
   background-color: var(--color-white);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  color: var(--color-text-primary);
+  color: var(--color-black);
 }
 
 .category-pill:hover .category-icon {

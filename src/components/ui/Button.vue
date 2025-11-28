@@ -88,8 +88,8 @@ withDefaults(defineProps<Props>(), {
 }
 
 .ui-btn--primary:not(:disabled):hover {
-  background-color: #333;
-  border-color: #333;
+  background-color: var(--color-gray-800);
+  border-color: var(--color-gray-800);
 }
 
 .ui-btn--secondary {
@@ -99,7 +99,7 @@ withDefaults(defineProps<Props>(), {
 }
 
 .ui-btn--secondary:not(:disabled):hover {
-  background-color: #e5e5e5;
+  background-color: var(--color-gray-200);
 }
 
 .ui-btn--outline {
@@ -110,6 +110,7 @@ withDefaults(defineProps<Props>(), {
 
 .ui-btn--outline:not(:disabled):hover {
   border-color: var(--color-text-primary);
+  background-color: var(--color-surface-hover);
 }
 
 .ui-btn--ghost {
@@ -129,9 +130,9 @@ withDefaults(defineProps<Props>(), {
 }
 
 .ui-btn--danger:not(:disabled):hover {
-  background-color: #000;
-  color: #fff;
-  border-color: #000;
+  background-color: var(--color-black);
+  color: var(--color-white);
+  border-color: var(--color-black);
 }
 
 .ui-btn--success {
@@ -141,9 +142,9 @@ withDefaults(defineProps<Props>(), {
 }
 
 .ui-btn--success:not(:disabled):hover {
-  background-color: #000;
-  color: #fff;
-  border-color: #000;
+  background-color: var(--color-black);
+  color: var(--color-white);
+  border-color: var(--color-black);
 }
 
 /* Loading */

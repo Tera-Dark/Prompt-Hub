@@ -321,23 +321,25 @@ export async function deletePromptById(
   const shard = JSON.parse(shardFile.content) as ShardData
 
   const idx = shard.prompts.findIndex((x: Prompt) => x.id === id)
-  if (idx >= 0) {
-    const item = shard.prompts[idx]
-    shard.prompts.splice(idx, 1)
-
-    // Update Index
-    const cat = index.categories[item.category]
-    if (cat) {
-      cat.count--
-      cat.promptIds = cat.promptIds.filter((pid) => pid !== id)
-    }
-
-    const shardMapEntry = index.shardMap[shardId]
-    if (shardMapEntry) {
-      index.shardMap[shardId] = shardMapEntry.filter((pid) => pid !== id)
-    }
-    index.totalPrompts--
+  if (idx < 0) {
+    throw new Error('未找到待删除的提示词，可能已被删除或位于其他分片')
   }
+
+  const item = shard.prompts[idx]
+  shard.prompts.splice(idx, 1)
+
+  // Update Index
+  const cat = index.categories[item.category]
+  if (cat) {
+    cat.count--
+    cat.promptIds = cat.promptIds.filter((pid) => pid !== id)
+  }
+
+  const shardMapEntry = index.shardMap[shardId]
+  if (shardMapEntry) {
+    index.shardMap[shardId] = shardMapEntry.filter((pid) => pid !== id)
+  }
+  index.totalPrompts--
 
   index.lastUpdated = new Date().toISOString()
 

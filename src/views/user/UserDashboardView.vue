@@ -224,8 +224,8 @@ async function handleDelete(prompt: Prompt) {
   deleting.value = prompt.id
   try {
     if (hasRepoWriteAccess.value) {
-      const url = await deletePromptById(prompt.id, token.value!)
-      alert(t('common.messages.prCreated', { url }))
+      await deletePromptById(prompt.id, token.value!, true)
+      alert(t('common.messages.deleteSuccess'))
     } else {
       const url = await submitPromptDelete(prompt.id, token.value!)
       alert(t('common.messages.issueCreated', { url }))

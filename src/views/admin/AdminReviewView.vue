@@ -116,8 +116,6 @@ async function handleApprove(submission: PendingSubmission) {
     toast.success('Submission approved and merged')
     // Remove from list immediately for UX
     pendingPrompts.value = pendingPrompts.value.filter((p) => p.id !== submission.id)
-    // Reload to ensure sync with GitHub
-    setTimeout(() => fetchSubmissions(), 1000)
   } catch (e) {
     console.error(e)
     toast.error(e instanceof Error ? e.message : 'Failed to approve')
@@ -140,8 +138,6 @@ async function handleReject(submission: PendingSubmission) {
     toast.success('Submission rejected and closed')
     // Remove from list immediately for UX
     pendingPrompts.value = pendingPrompts.value.filter((p) => p.id !== submission.id)
-    // Reload to ensure sync with GitHub
-    setTimeout(() => fetchSubmissions(), 1000)
   } catch (e) {
     console.error(e)
     toast.error(e instanceof Error ? e.message : 'Failed to reject')
