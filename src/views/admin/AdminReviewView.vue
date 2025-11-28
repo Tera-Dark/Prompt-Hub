@@ -1,289 +1,225 @@
-<template>
-  <section class="review">
-    <header class="review-header">
-      <h2>{{ t('review.title') }}</h2>
-      <p>{{ t('review.subtitle') }}</p>
-    </header>
-
-    <div v-if="loading" class="loading">Loading...</div>
-    <div v-else>
-      <div class="pr-list">
-        <article v-for="prompt in pendingPrompts" :key="prompt.id" class="pr-card">
-          <div class="card-header">
-            <h3>{{ prompt.title }}</h3>
-            <div class="badges">
-              <span class="badge" :data-type="prompt.type">{{
-                prompt.type === 'pr' ? 'Pull Request' : 'Issue'
-              }}</span>
-              <span class="badge" data-state="pending">{{ t('review.status.pending') }}</span>
-            </div>
-          </div>
-          <div class="card-content">
-            <p class="prompt-text">{{ prompt.description }}</p>
-            <div class="tags">
-              <span v-for="tag in prompt.tags" :key="tag" class="tag">#{{ tag }}</span>
-            </div>
-            <a
-              v-if="prompt.sourceLink"
-              :href="prompt.sourceLink"
-              target="_blank"
-              class="source-link"
-            >
-              View on GitHub ↗
-            </a>
-          </div>
-          <div class="card-actions">
-            <Button
-              variant="outline"
-              size="sm"
-              :disabled="!!processingId"
-              @click="handleReject(prompt)"
-            >
-              {{ processingId === prompt.id ? 'Processing...' : t('review.reject') }}
-            </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              :disabled="!!processingId"
-              @click="handleApprove(prompt)"
-            >
-              {{ processingId === prompt.id ? 'Processing...' : t('review.approve') }}
-            </Button>
-          </div>
-          <div class="card-meta">
-            <span v-if="prompt.author" class="author">by {{ prompt.author.username }} • </span>
-            <span class="date">{{ formatDate(prompt.createdAt) }}</span>
-          </div>
-        </article>
-        <div v-if="!pendingPrompts.length" class="empty">{{ t('review.empty') }}</div>
-      </div>
-    </div>
-  </section>
-</template>
-
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { useAuth } from '@/composables/useAuth'
+import { ref, onMounted } from 'vue'
+import { useUserStore } from '../../stores/user'
 import {
-  getPendingSubmissions,
+  fetchPendingSubmissions,
   approveSubmission,
   rejectSubmission,
+  loadPrompts,
   type PendingSubmission,
-} from '@/repositories/prompts'
-import Button from '@/components/ui/Button.vue'
-import { useToast } from '@/composables/useToast'
+  type Prompt,
+} from '../../repositories/prompts'
+import Button from '../../components/ui/Button.vue'
+import Card from '../../components/ui/Card.vue'
+import Badge from '../../components/ui/Badge.vue'
+import * as Diff from 'diff'
 
-const { t } = useI18n()
-const { token, hasRepoWriteAccess } = useAuth()
-const toast = useToast()
-
+const userStore = useUserStore()
 const pendingPrompts = ref<PendingSubmission[]>([])
-const loading = ref(false)
+const loading = ref(true)
+const error = ref('')
 const processingId = ref<string | null>(null)
+const originalPrompts = ref<Record<string, Prompt>>({})
 
-async function fetchSubmissions() {
-  if (!token.value) return
+const fetchSubmissions = async () => {
   loading.value = true
   try {
-    pendingPrompts.value = await getPendingSubmissions(token.value)
+    if (!userStore.token) return
+    pendingPrompts.value = await fetchPendingSubmissions(userStore.token)
+
+    // Fetch original prompts for updates/deletes
+    const promptList = await loadPrompts()
+    const promptMap = promptList.reduce(
+      (acc, p) => {
+        acc[p.id] = p
+        return acc
+      },
+      {} as Record<string, Prompt>,
+    )
+    originalPrompts.value = promptMap
   } catch (e) {
+    error.value = 'Failed to load submissions'
     console.error(e)
-    toast.error('Failed to load submissions')
   } finally {
     loading.value = false
+  }
+}
+
+const parsePromptFromIssueBody = (body: string): Partial<Prompt> => {
+  const titleMatch = body.match(/\*\*Title:\*\* (.*)/)
+  const categoryMatch = body.match(/\*\*Category:\*\* (.*)/)
+  const descMatch = body.match(/\*\*Description:\*\*\s*\n([\s\S]*?)\n\n\*\*Prompt:\*\*/)
+  const promptMatch = body.match(/```\n([\s\S]*?)\n```/)
+  const tagsMatch = body.match(/\*\*Tags:\*\* (.*)/)
+
+  return {
+    title: titleMatch ? titleMatch[1].trim() : undefined,
+    category: categoryMatch ? categoryMatch[1].trim() : undefined,
+    description: descMatch ? descMatch[1].trim() : undefined,
+    prompt: promptMatch ? promptMatch[1].trim() : undefined,
+    tags: tagsMatch ? tagsMatch[1].split(',').map((s) => s.trim()) : undefined,
+  }
+}
+
+const getDiff = (oldText: string, newText: string) => {
+  const diff = Diff.diffWords(oldText || '', newText || '')
+  return diff
+}
+
+const getFieldDiff = (submission: PendingSubmission, field: keyof Prompt) => {
+  const original = submission.originalId ? originalPrompts.value[submission.originalId] : null
+  const newValues = parsePromptFromIssueBody(submission.prompt)
+
+  const oldVal = original ? String(original[field] || '') : ''
+  const newVal = newValues[field] !== undefined ? String(newValues[field]) : oldVal
+
+  return getDiff(oldVal, newVal)
+}
+
+const handleApprove = async (submission: PendingSubmission) => {
+  if (!userStore.token) return
+  processingId.value = submission.id
+  try {
+    await approveSubmission(submission, userStore.token)
+    // Remove from list immediately for UX
+    pendingPrompts.value = pendingPrompts.value.filter((p) => p.id !== submission.id)
+  } catch (e) {
+    console.error(e)
+    alert('Failed to approve submission')
+  } finally {
+    processingId.value = null
+  }
+}
+
+const handleReject = async (submission: PendingSubmission) => {
+  if (!userStore.token) return
+  processingId.value = submission.id
+  try {
+    await rejectSubmission(submission, userStore.token)
+    // Remove from list immediately for UX
+    pendingPrompts.value = pendingPrompts.value.filter((p) => p.id !== submission.id)
+  } catch (e) {
+    console.error(e)
+    alert('Failed to reject submission')
+  } finally {
+    processingId.value = null
   }
 }
 
 onMounted(() => {
   fetchSubmissions()
 })
-
-function formatDate(s: string) {
-  const d = new Date(s)
-  return isNaN(d.getTime()) ? '' : d.toLocaleString()
-}
-
-async function handleApprove(submission: PendingSubmission) {
-  if (!hasRepoWriteAccess.value) {
-    toast.error(t('auth.writeAccessRequired'))
-    return
-  }
-
-  processingId.value = submission.id
-  try {
-    await approveSubmission(submission, token.value!)
-    toast.success('Submission approved and merged')
-    // Remove from list immediately for UX
-    pendingPrompts.value = pendingPrompts.value.filter((p) => p.id !== submission.id)
-  } catch (e) {
-    console.error(e)
-    toast.error(e instanceof Error ? e.message : 'Failed to approve')
-  } finally {
-    processingId.value = null
-  }
-}
-
-async function handleReject(submission: PendingSubmission) {
-  if (!hasRepoWriteAccess.value) {
-    toast.error(t('auth.writeAccessRequired'))
-    return
-  }
-
-  if (!confirm('Are you sure you want to reject (close) this submission?')) return
-
-  processingId.value = submission.id
-  try {
-    await rejectSubmission(submission, token.value!)
-    toast.success('Submission rejected and closed')
-    // Remove from list immediately for UX
-    pendingPrompts.value = pendingPrompts.value.filter((p) => p.id !== submission.id)
-  } catch (e) {
-    console.error(e)
-    toast.error(e instanceof Error ? e.message : 'Failed to reject')
-  } finally {
-    processingId.value = null
-  }
-}
 </script>
 
-<style scoped>
-.review {
-  display: flex;
-  flex-direction: column;
-  gap: 1.75rem;
-}
+<template>
+  <div class="space-y-6">
+    <div class="flex justify-between items-center">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Pending Reviews</h1>
+        <p class="text-gray-500 dark:text-gray-400">Review community submissions</p>
+      </div>
+      <Button variant="outline" @click="fetchSubmissions">Refresh</Button>
+    </div>
 
-.review-header h2 {
-  font-size: var(--text-2xl);
-  font-weight: 600;
-  color: var(--color-gray-900);
-}
+    <div v-if="loading" class="text-center py-12">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+    </div>
 
-.review-header p {
-  color: var(--color-gray-500);
-  margin-top: 0.5rem;
-}
+    <div v-else-if="error" class="text-center py-12 text-red-500">
+      {{ error }}
+    </div>
 
-.pr-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem;
-}
+    <div v-else-if="pendingPrompts.length === 0" class="text-center py-12 text-gray-500">
+      No pending submissions
+    </div>
 
-.pr-card {
-  background-color: var(--color-white);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  box-shadow: var(--shadow-sm);
-}
+    <div v-else class="grid gap-6">
+      <Card v-for="submission in pendingPrompts" :key="submission.id">
+        <div class="flex justify-between items-start mb-4">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <h3 class="text-lg font-bold">
+                <span v-if="submission.action === 'create'">New Prompt</span>
+                <span v-else-if="submission.action === 'update'"
+                  >Update: {{ submission.originalId }}</span
+                >
+                <span v-else-if="submission.action === 'delete'"
+                  >Delete: {{ submission.originalId }}</span
+                >
+              </h3>
+              <Badge :variant="submission.type === 'pr' ? 'info' : 'warning'">
+                {{ submission.type === 'pr' ? 'Pull Request' : 'Issue' }} #{{ submission.number }}
+              </Badge>
+            </div>
+            <p class="text-sm text-gray-500">Submitted by {{ submission.author }}</p>
+          </div>
+          <div class="flex gap-2">
+            <Button
+              variant="success"
+              size="sm"
+              :disabled="!!processingId"
+              @click="handleApprove(submission)"
+            >
+              {{ processingId === submission.id ? 'Approving...' : 'Approve' }}
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              :disabled="!!processingId"
+              @click="handleReject(submission)"
+            >
+              {{ processingId === submission.id ? 'Rejecting...' : 'Reject' }}
+            </Button>
+          </div>
+        </div>
 
-.card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-}
+        <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 overflow-x-auto">
+          <!-- Create Mode -->
+          <div v-if="submission.action === 'create'">
+            <pre class="whitespace-pre-wrap font-mono text-sm">{{ submission.prompt }}</pre>
+          </div>
 
-.card-header h3 {
-  font-size: var(--text-lg);
-  font-weight: 600;
-  color: var(--color-text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  min-width: 0;
-  flex: 1;
-}
+          <!-- Update Mode -->
+          <div v-else-if="submission.action === 'update'" class="space-y-4">
+            <div
+              v-for="field in ['title', 'description', 'prompt', 'category', 'tags']"
+              :key="field"
+            >
+              <h4 class="text-sm font-semibold capitalize mb-1">{{ field }}</h4>
+              <div
+                class="text-sm font-mono bg-white dark:bg-gray-900 p-2 rounded border border-gray-200 dark:border-gray-700"
+              >
+                <span
+                  v-for="(part, index) in getFieldDiff(submission, field as keyof Prompt)"
+                  :key="index"
+                  :class="{
+                    'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100': part.added,
+                    'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-100 line-through':
+                      part.removed,
+                    'text-gray-800 dark:text-gray-200': !part.added && !part.removed,
+                  }"
+                  >{{ part.value }}</span
+                >
+              </div>
+            </div>
+          </div>
 
-.card-content {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.prompt-text {
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.tag {
-  font-size: var(--text-xs);
-  color: var(--color-primary);
-  background-color: var(--color-surface-hover);
-  padding: 0.25rem 0.5rem;
-  border-radius: 100px;
-}
-
-.badges {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.badge {
-  font-size: var(--text-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  padding: 0.25rem 0.55rem;
-  border-radius: 9999px;
-  font-weight: 600;
-}
-
-.badge[data-state='pending'] {
-  background-color: var(--color-yellow-100);
-  color: var(--color-yellow-700);
-}
-
-.badge[data-type='pr'] {
-  background-color: var(--color-blue-100);
-  color: var(--color-blue-700);
-}
-
-.badge[data-type='issue'] {
-  background-color: var(--color-green-100);
-  color: var(--color-green-700);
-}
-
-.card-actions {
-  display: flex;
-  gap: 0.75rem;
-  margin-top: auto;
-}
-
-.card-meta {
-  font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
-  text-align: right;
-}
-
-.source-link {
-  font-size: var(--text-xs);
-  color: var(--color-primary);
-  text-decoration: none;
-}
-
-.source-link:hover {
-  text-decoration: underline;
-}
-
-.empty {
-  text-align: center;
-  color: var(--color-text-tertiary);
-  padding: 2rem;
-  font-style: italic;
-}
-</style>
+          <!-- Delete Mode -->
+          <div v-else-if="submission.action === 'delete'">
+            <div class="text-red-600 font-bold mb-2">Request to delete prompt:</div>
+            <div v-if="originalPrompts[submission.originalId!]" class="opacity-75">
+              <h4 class="font-bold">{{ originalPrompts[submission.originalId!].title }}</h4>
+              <p class="text-sm">{{ originalPrompts[submission.originalId!].description }}</p>
+              <pre class="mt-2 text-xs bg-gray-100 dark:bg-gray-900 p-2 rounded">{{
+                originalPrompts[submission.originalId!].prompt
+              }}</pre>
+            </div>
+            <div v-else class="text-gray-500 italic">
+              Original prompt not found (already deleted?)
+            </div>
+          </div>
+        </div>
+      </Card>
+    </div>
+  </div>
+</template>
