@@ -145,19 +145,19 @@ function ensureAuth() {
 
 async function onDelete(id: string) {
   ensureAuth()
-  if (!confirm(`Confirm delete?\nID: ${id}`)) return
+  if (!confirm(t('common.messages.deleteConfirm'))) return
   submitting.value = true
   try {
     const tVal = token.value!
     const url = await deletePromptById(id, tVal, hasRepoWriteAccess.value)
     if (hasRepoWriteAccess.value) {
-      alert('Deleted successfully')
+      alert(t('common.messages.deleteSuccess'))
     } else {
-      alert(`Pull Request created:\n${url}`)
+      alert(t('common.messages.prCreated', { url }))
     }
     items.value = items.value.filter((x) => x.id !== id)
   } catch (e) {
-    const msg = e instanceof Error ? e.message : 'Delete failed'
+    const msg = e instanceof Error ? e.message : t('common.messages.deleteFailed')
     alert(msg)
   } finally {
     submitting.value = false
@@ -169,7 +169,7 @@ function continueDraft(id: string) {
 }
 
 function removeDraft(id: string) {
-  if (confirm('Delete this draft?')) {
+  if (confirm(t('common.actions.confirmDeleteDraft'))) {
     deleteDraft(id)
   }
 }

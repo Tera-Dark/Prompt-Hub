@@ -10,7 +10,7 @@
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="Search prompts..."
+            :placeholder="t('home.searchPlaceholder')"
             class="search-input"
           />
         </div>
@@ -62,9 +62,9 @@
               v-if="p.status === 'published'"
               variant="outline"
               size="sm"
-              @click="$router.push(`/prompts/${p.id}/edit`)"
+              @click="$router.push({ name: 'UserPromptEdit', params: { id: p.id } })"
             >
-              Edit
+              {{ t('common.actions.edit') || 'Edit' }}
             </Button>
             <Button
               v-if="p.status === 'published'"
@@ -73,7 +73,7 @@
               :disabled="deleting === p.id"
               @click="handleDelete(p)"
             >
-              Delete
+              {{ t('common.actions.delete') || 'Delete' }}
             </Button>
             <template v-else-if="p.sourceLink">
               <Button variant="outline" size="sm" @click="openSourceLink(p.sourceLink)">
@@ -186,7 +186,15 @@ const loading = computed(() => loadingPrompts.value || loadingSubmissions.value)
 
 const userPrompts = computed(() => {
   if (!user.value?.login) return []
-  const published = allPrompts.value.filter((p) => p.author?.username === user.value?.login)
+
+  // Filter out published prompts that have a pending delete request
+  const pendingDeleteIds = pendingSubmissions.value
+    .filter((s) => s.action === 'delete' && s.originalId)
+    .map((s) => s.originalId)
+
+  const published = allPrompts.value.filter(
+    (p) => p.author?.username === user.value?.login && !pendingDeleteIds.includes(p.id),
+  )
   const all = [...pendingSubmissions.value, ...published]
 
   if (!searchQuery.value) return all
@@ -211,20 +219,20 @@ function openSourceLink(url: string) {
 }
 
 async function handleDelete(prompt: Prompt) {
-  if (!confirm('Are you sure you want to delete this prompt?')) return
+  if (!confirm(t('common.messages.deleteConfirm'))) return
 
   deleting.value = prompt.id
   try {
     if (hasRepoWriteAccess.value) {
       const url = await deletePromptById(prompt.id, token.value!)
-      alert(`Pull Request created: \n${url}`)
+      alert(t('common.messages.prCreated', { url }))
     } else {
       const url = await submitPromptDelete(prompt.id, token.value!)
-      alert(`Delete Request Issue created: \n${url}`)
+      alert(t('common.messages.issueCreated', { url }))
     }
   } catch (e) {
     console.error(e)
-    alert('Failed to delete prompt')
+    alert(t('common.messages.deleteFailed'))
   } finally {
     deleting.value = null
   }
@@ -244,7 +252,7 @@ async function handleWithdraw(id: string) {
     pendingSubmissions.value = pendingSubmissions.value.filter((p) => p.id !== id)
   } catch (e) {
     console.error('Failed to withdraw submission', e)
-    alert('Failed to withdraw submission')
+    alert(t('common.messages.withdrawFailed'))
   } finally {
     withdrawing.value = null
   }

@@ -163,7 +163,7 @@ export async function addPrompt(
     },
   ]
 
-  const message = `feat: add prompt ${item.title}`
+  const message = `feat: add prompt ${item.id}`
 
   if (directCommit) {
     const commit = await githubService.updateFiles(branch, files, message)
@@ -265,7 +265,7 @@ export async function updatePromptById(
     },
   ]
 
-  const message = `feat: update prompt ${id}`
+  const message = `feat: update prompt`
 
   if (directCommit) {
     const commit = await githubService.updateFiles(branch, files, message)
@@ -352,7 +352,7 @@ export async function deletePromptById(
     },
   ]
 
-  const message = `feat: delete prompt ${id}`
+  const message = `feat: delete prompt`
 
   if (directCommit) {
     const commit = await githubService.updateFiles(branch, files, message)
@@ -525,7 +525,7 @@ export async function uploadImage(
 
   const path = `public/images/${Date.now()}-${file.name}`
   const content = await fileToBase64(file)
-  const message = `chore: upload image ${file.name}`
+  const message = `chore: upload image`
 
   await updateFile(
     owner,

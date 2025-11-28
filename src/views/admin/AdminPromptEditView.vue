@@ -2,9 +2,9 @@
   <section class="prompt-editor">
     <header class="editor-header">
       <div>
-        <h2>Edit prompt</h2>
+        <h2>{{ t('prompts.edit.title') }}</h2>
         <p>
-          Currently editing prompt <span class="prompt-id">#{{ id }}</span>
+          {{ t('prompts.edit.subtitle', { id }) }}
         </p>
       </div>
       <div class="header-actions">
@@ -14,7 +14,7 @@
       </div>
     </header>
 
-    <div v-if="loading" class="loading-state">Loading prompt data...</div>
+    <div v-if="loading" class="loading-state">{{ t('common.messages.loadingData') }}</div>
     <div v-else-if="error" class="error-state">
       {{ error }}
     </div>
@@ -39,7 +39,7 @@
               <option value="published">
                 {{ t('prompts.create.form.statusOptions.published') }}
               </option>
-              <option value="archived">Archived</option>
+              <option value="archived">{{ t('common.status.archived') }}</option>
             </select>
           </div>
 
@@ -79,7 +79,9 @@
       </div>
 
       <div class="form-footer">
-        <button type="submit" class="btn btn-primary" :disabled="submitting">Update prompt</button>
+        <button type="submit" class="btn btn-primary" :disabled="submitting">
+          {{ t('prompts.edit.actions.update') }}
+        </button>
       </div>
     </form>
   </section>
@@ -109,12 +111,12 @@ const error = ref<string | null>(null)
 const originalPrompt = ref<Prompt | null>(null)
 
 function ensureAuth() {
-  if (!token.value) throw new Error('Please log in')
+  if (!token.value) throw new Error(t('auth.loginRequired'))
   if (hasRepoWriteAccess.value) return
   // Allow author to edit
   if (originalPrompt.value?.author?.username === user.value?.login) return
 
-  throw new Error('Unauthorized: You can only edit your own prompts')
+  throw new Error(t('common.messages.unauthorized'))
 }
 
 onMounted(async () => {
@@ -129,11 +131,11 @@ onMounted(async () => {
       status.value = p.status || 'draft'
       tagsInput.value = (p.tags || []).join(', ')
     } else {
-      error.value = `Prompt #${props.id} not found`
+      error.value = t('common.messages.notFound', { id: props.id })
     }
   } catch (e) {
     console.error('Failed to load prompt', e)
-    error.value = 'Failed to load prompt data. Please try again.'
+    error.value = t('common.messages.loadFailed')
   } finally {
     loading.value = false
   }
@@ -164,9 +166,9 @@ async function handleSubmit() {
         }),
         authToken,
       )
-      alert(`Pull Request created: \n${url}`)
+      alert(t('common.messages.prCreated', { url }))
     } else {
-      if (!originalPrompt.value) throw new Error('Original prompt not found')
+      if (!originalPrompt.value) throw new Error(t('common.messages.originalNotFound'))
       // Create Issue for update
       const updatedItem: Prompt = {
         ...originalPrompt.value,
@@ -178,10 +180,10 @@ async function handleSubmit() {
         status: status.value,
       }
       const url = await submitPromptUpdate(props.id, updatedItem, authToken)
-      alert(`Update Request Issue created: \n${url}`)
+      alert(t('common.messages.updateRequestCreated', { url }))
     }
   } catch (e) {
-    const msg = e instanceof Error ? e.message : 'Submission failed'
+    const msg = e instanceof Error ? e.message : t('common.messages.submissionFailed')
     alert(msg)
   } finally {
     submitting.value = false

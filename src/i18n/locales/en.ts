@@ -65,8 +65,30 @@ export default {
       draft: 'Pending Review',
       archived: 'Archived',
     },
+    messages: {
+      deleteConfirm: 'Are you sure you want to delete this prompt?',
+      deleteSuccess: 'Deleted successfully',
+      deleteFailed: 'Failed to delete prompt',
+      prCreated: 'Pull Request created:\n{url}',
+      issueCreated: 'Issue created:\n{url}',
+      withdrawFailed: 'Failed to withdraw submission',
+      loadingData: 'Loading prompt data...',
+      unauthorized: 'Unauthorized: You can only edit your own prompts',
+      loadFailed: 'Failed to load prompt data. Please try again.',
+      notFound: 'Prompt #{id} not found',
+      originalNotFound: 'Original prompt not found',
+      updateRequestCreated: 'Update Request Issue created:\n{url}',
+      submissionFailed: 'Submission failed',
+    },
   },
   prompts: {
+    edit: {
+      title: 'Edit prompt',
+      subtitle: 'Currently editing prompt #{id}',
+      actions: {
+        update: 'Update prompt',
+      },
+    },
     allPrompts: 'All Prompts',
     noPrompts: 'No prompts found',
     noPromptsDesc: "Try adjusting your search or filters to find what you're looking for.",
@@ -231,5 +253,6 @@ export default {
     switchAccount: 'Switch account',
     returnToPublic: 'Return to public site',
     viewOnGitHub: 'View on GitHub',
+    loginRequired: 'Please log in',
   },
 }
