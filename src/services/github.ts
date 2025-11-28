@@ -85,6 +85,92 @@ export class GitHubService {
     })
     return data
   }
+  async getRef(ref: string) {
+    if (!this.octokit) throw new Error('Not authenticated')
+    const { data } = await this.octokit.git.getRef({
+      owner: this.owner,
+      repo: this.repo,
+      ref,
+    })
+    return data
+  }
+
+  async createTree(
+    baseTreeSha: string | undefined,
+    tree: {
+      path: string
+      mode: '100644' | '100755' | '040000' | '160000' | '120000'
+      type: 'blob' | 'tree' | 'commit'
+      content?: string
+      sha?: string
+    }[],
+  ) {
+    if (!this.octokit) throw new Error('Not authenticated')
+    const { data } = await this.octokit.git.createTree({
+      owner: this.owner,
+      repo: this.repo,
+      base_tree: baseTreeSha,
+      tree,
+    })
+    return data
+  }
+
+  async createCommit(message: string, treeSha: string, parents: string[]) {
+    if (!this.octokit) throw new Error('Not authenticated')
+    const { data } = await this.octokit.git.createCommit({
+      owner: this.owner,
+      repo: this.repo,
+      message,
+      tree: treeSha,
+      parents,
+    })
+    return data
+  }
+
+  async updateRef(ref: string, sha: string) {
+    if (!this.octokit) throw new Error('Not authenticated')
+    const { data } = await this.octokit.git.updateRef({
+      owner: this.owner,
+      repo: this.repo,
+      ref,
+      sha,
+    })
+    return data
+  }
+
+  async updateFiles(branch: string, files: { path: string; content: string }[], message: string) {
+    if (!this.octokit) throw new Error('Not authenticated')
+
+    // 1. Get the current commit of the branch
+    const ref = await this.getRef(`heads/${branch}`)
+    const currentCommitSha = ref.object.sha
+
+    // 2. Get the tree of the current commit
+    const { data: currentCommit } = await this.octokit.git.getCommit({
+      owner: this.owner,
+      repo: this.repo,
+      commit_sha: currentCommitSha,
+    })
+    const currentTreeSha = currentCommit.tree.sha
+
+    // 3. Create a new tree with the updated files
+    const tree = files.map((file) => ({
+      path: file.path,
+      mode: '100644' as const,
+      type: 'blob' as const,
+      content: file.content,
+    }))
+
+    const newTree = await this.createTree(currentTreeSha, tree)
+
+    // 4. Create a new commit
+    const newCommit = await this.createCommit(message, newTree.sha, [currentCommitSha])
+
+    // 5. Update the branch reference
+    await this.updateRef(`heads/${branch}`, newCommit.sha)
+
+    return newCommit
+  }
 }
 
 export const githubService = new GitHubService()

@@ -1,0 +1,16 @@
+{
+  "version": "2.0.0",
+  "shardCount": 8,
+  "totalPrompts": 1,
+  "lastUpdated": "2025-11-28T05:21:59.992Z",
+  "categories": {
+    "随便": {
+      "count": 1,
+      "shards": [5],
+      "promptIds": ["随便--202511271121"]
+    }
+  },
+  "shardMap": {
+    "5": ["随便--202511271121"]
+  }
+}

@@ -11,7 +11,15 @@ import {
   listPullRequests,
   mergePullRequest,
   closeIssue,
+  githubService,
 } from '@/services/github'
+import {
+  getShardId,
+  loadShardIndex,
+  loadShards,
+  type ShardIndex,
+  type ShardData,
+} from '@/utils/shard'
 
 function repoInfo() {
   const owner = import.meta.env.VITE_GITHUB_REPO_OWNER
@@ -22,7 +30,7 @@ function repoInfo() {
 
 import { PromptLoadError, type PromptsData } from '@/types/prompt'
 
-const CACHE_KEY = 'prompts_data_v2'
+const CACHE_KEY = 'prompts_data_v3' // Bump version for sharding
 const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
 
 export async function loadPrompts(): Promise<PromptsData> {
@@ -41,15 +49,9 @@ export async function loadPrompts(): Promise<PromptsData> {
       }
     }
 
-    // Try new shard-based loading first
-    /* 
-    // TEMPORARY: Disable shard loading until write path updates shards or CI workflow is established.
-    // Currently addPrompt only updates prompts.json, so shards are stale.
+    // Load from shards
     try {
-      const { loadShardIndex, loadShards } = await import('@/utils/shard')
       const index = await loadShardIndex()
-
-      // Load all shards
       const allShardIds = Array.from({ length: index.shardCount }, (_, i) => i)
       const prompts = await loadShards(allShardIds)
 
@@ -59,44 +61,16 @@ export async function loadPrompts(): Promise<PromptsData> {
       }
 
       // Cache the result
-      localStorage.setItem(
-        CACHE_KEY,
-        JSON.stringify({
-          data,
-          timestamp: Date.now(),
-        }),
-      )
+      setPromptsCache(data)
 
       return data
-    } catch (shardError) {
-      // Fallback to old single-file loading if shard loading fails
-      console.warn('Shard loading failed, falling back to single file:', shardError)
-    */
-    const response = await fetch(`${import.meta.env.BASE_URL}data/prompts.json`)
-
-    if (!response.ok) {
-      throw new PromptLoadError(
-        `Failed to fetch prompts: ${response.status} ${response.statusText}`,
-      )
+    } catch (error) {
+      // Fallback to prompts.json if shards fail (during migration or error)
+      console.warn('Shard loading failed, trying prompts.json', error)
+      const response = await fetch(`${import.meta.env.BASE_URL}data/prompts.json`)
+      if (!response.ok) throw error
+      return await response.json()
     }
-
-    const data: PromptsData = await response.json()
-
-    if (!data || !data.prompts || !Array.isArray(data.prompts)) {
-      throw new PromptLoadError('Invalid prompts data structure')
-    }
-
-    // Cache the result
-    localStorage.setItem(
-      CACHE_KEY,
-      JSON.stringify({
-        data,
-        timestamp: Date.now(),
-      }),
-    )
-
-    return data
-    // }
   } catch (error) {
     console.error('Error loading prompts:', error)
     throw error instanceof PromptLoadError
@@ -125,39 +99,89 @@ export async function addPrompt(
   directCommit = false,
 ): Promise<string> {
   const { owner, repo } = repoInfo()
+  githubService.setAccessToken(token)
+
   const base = await getDefaultBranch(owner, repo, token)
-  const baseSha = await getBranchSha(owner, repo, base, token)
+
+  // Calculate Shard ID
+  // We need to know shardCount. We can fetch index.json first.
+  // For simplicity, we assume we can fetch it.
+  // But wait, getFreshShardData needs shardId.
+  // We can fetch index first.
+
+  const indexFile = await getFile(owner, repo, 'public/data/prompts/index.json', base, token)
+  const index = JSON.parse(indexFile.content) as ShardIndex
+  const shardId = getShardId(item.id, index.shardCount)
 
   let branch = base
   if (!directCommit) {
     branch = `prompt-add-${item.id}-${Date.now()}`
+    const baseSha = await getBranchSha(owner, repo, base, token)
     await createBranch(owner, repo, branch, baseSha, token)
   }
 
-  const file = await getFile(owner, repo, 'public/data/prompts.json', base, token)
-  const data = JSON.parse(file.content) as { version: string; prompts: Prompt[] }
-  const next = { version: data.version, prompts: [item, ...data.prompts] }
-  // Fix: GitHub API requires content to be Base64 encoded
-  const content = btoa(unescape(encodeURIComponent(JSON.stringify(next, null, 2))))
-  const message = `feat: add prompt ${item.title}`
-
-  const commit = await updateFile(
+  // Fetch fresh data from the target branch
+  const shardFile = await getFile(
     owner,
     repo,
-    'public/data/prompts.json',
-    content,
-    message,
+    `public/data/prompts/shard-${shardId}.json`,
     branch,
-    file.sha,
     token,
   )
+  const shard = JSON.parse(shardFile.content) as ShardData
 
-  // Optimistically update cache so user sees change immediately
-  setPromptsCache(next)
+  // Update Shard
+  shard.prompts.unshift(item)
+
+  // Update Index
+  const category = item.category
+  if (!index.categories[category]) {
+    index.categories[category] = { count: 0, shards: [], promptIds: [] }
+  }
+  index.categories[category].count++
+  index.categories[category].promptIds.push(item.id)
+  if (!index.categories[category].shards.includes(shardId)) {
+    index.categories[category].shards.push(shardId)
+  }
+
+  if (!index.shardMap[shardId]) index.shardMap[shardId] = []
+  index.shardMap[shardId].push(item.id)
+  index.totalPrompts++
+  index.lastUpdated = new Date().toISOString()
+
+  // Prepare files for atomic commit
+  const files = [
+    {
+      path: 'public/data/prompts/index.json',
+      content: JSON.stringify(index, null, 2),
+    },
+    {
+      path: `public/data/prompts/shard-${shardId}.json`,
+      content: JSON.stringify(shard, null, 2),
+    },
+  ]
+
+  const message = `feat: add prompt ${item.title}`
 
   if (directCommit) {
-    return commit.html_url!
+    const commit = await githubService.updateFiles(branch, files, message)
+
+    // Optimistic Cache Update
+    // We need to reconstruct the full list to update cache
+    // This is expensive if we don't have it.
+    // But loadPrompts caches it.
+    const cached = localStorage.getItem(CACHE_KEY)
+    if (cached) {
+      const { data } = JSON.parse(cached)
+      data.prompts.unshift(item)
+      setPromptsCache(data)
+    }
+
+    return commit.html_url
   }
+
+  // For PR, we update the branch using updateFiles (which does commit + push)
+  await githubService.updateFiles(branch, files, message)
 
   const prTitle = `Add prompt: ${item.title}`
   const prBody = `Add prompt ${item.id}`
@@ -171,43 +195,94 @@ export async function updatePromptById(
   directCommit = false,
 ): Promise<string> {
   const { owner, repo } = repoInfo()
+  githubService.setAccessToken(token)
   const base = await getDefaultBranch(owner, repo, token)
-  const baseSha = await getBranchSha(owner, repo, base, token)
+
+  // Get Index to find shard
+  const indexFile = await getFile(owner, repo, 'public/data/prompts/index.json', base, token)
+  const index = JSON.parse(indexFile.content) as ShardIndex
+  const shardId = getShardId(id, index.shardCount)
 
   let branch = base
   if (!directCommit) {
     branch = `prompt-edit-${id}-${Date.now()}`
+    const baseSha = await getBranchSha(owner, repo, base, token)
     await createBranch(owner, repo, branch, baseSha, token)
   }
 
-  const file = await getFile(owner, repo, 'public/data/prompts.json', base, token)
-  const data = JSON.parse(file.content) as { version: string; prompts: Prompt[] }
-  const idx = data.prompts.findIndex((x) => x.id === id)
-  if (idx < 0) throw new Error('未找到待编辑的提示词')
-  const updated = updater(data.prompts[idx])
-  const next = { version: data.version, prompts: [...data.prompts] }
-  next.prompts[idx] = updated
-  const message = `feat: update prompt ${id}`
-  // Fix: GitHub API requires content to be Base64 encoded
-  const content = btoa(unescape(encodeURIComponent(JSON.stringify(next, null, 2))))
-
-  const commit = await updateFile(
+  // Fetch Shard
+  const shardFile = await getFile(
     owner,
     repo,
-    'public/data/prompts.json',
-    content,
-    message,
+    `public/data/prompts/shard-${shardId}.json`,
     branch,
-    file.sha,
     token,
   )
+  const shard = JSON.parse(shardFile.content) as ShardData
 
-  // Optimistically update cache so user sees change immediately
-  setPromptsCache(next)
+  const idx = shard.prompts.findIndex((x: Prompt) => x.id === id)
+  if (idx < 0) throw new Error('未找到待编辑的提示词')
+
+  const oldItem = shard.prompts[idx]
+  const updated = updater(oldItem)
+  shard.prompts[idx] = updated
+
+  // Update Index if category changed
+  if (oldItem.category !== updated.category) {
+    // Remove from old category
+    const oldCat = index.categories[oldItem.category]
+    if (oldCat) {
+      oldCat.count--
+      oldCat.promptIds = oldCat.promptIds.filter((pid) => pid !== id)
+      // We don't remove shard from shards list easily as other prompts might be there
+    }
+
+    // Add to new category
+    const newCatName = updated.category
+    if (!index.categories[newCatName]) {
+      index.categories[newCatName] = { count: 0, shards: [], promptIds: [] }
+    }
+    const newCat = index.categories[newCatName]
+    newCat.count++
+    newCat.promptIds.push(id)
+    if (!newCat.shards.includes(shardId)) {
+      newCat.shards.push(shardId)
+    }
+  }
+
+  index.lastUpdated = new Date().toISOString()
+
+  const files = [
+    {
+      path: `public/data/prompts/shard-${shardId}.json`,
+      content: JSON.stringify(shard, null, 2),
+    },
+    {
+      path: 'public/data/prompts/index.json',
+      content: JSON.stringify(index, null, 2),
+    },
+  ]
+
+  const message = `feat: update prompt ${id}`
 
   if (directCommit) {
-    return commit.html_url!
+    const commit = await githubService.updateFiles(branch, files, message)
+
+    // Optimistic Cache Update
+    const cached = localStorage.getItem(CACHE_KEY)
+    if (cached) {
+      const { data } = JSON.parse(cached)
+      const cacheIdx = data.prompts.findIndex((p: Prompt) => p.id === id)
+      if (cacheIdx >= 0) {
+        data.prompts[cacheIdx] = updated
+        setPromptsCache(data)
+      }
+    }
+
+    return commit.html_url
   }
+
+  await githubService.updateFiles(branch, files, message)
 
   const prTitle = `Update prompt: ${updated.title}`
   const prBody = `Update prompt ${updated.id}`
@@ -220,39 +295,78 @@ export async function deletePromptById(
   directCommit = false,
 ): Promise<string> {
   const { owner, repo } = repoInfo()
+  githubService.setAccessToken(token)
   const base = await getDefaultBranch(owner, repo, token)
-  const baseSha = await getBranchSha(owner, repo, base, token)
+
+  const indexFile = await getFile(owner, repo, 'public/data/prompts/index.json', base, token)
+  const index = JSON.parse(indexFile.content) as ShardIndex
+  const shardId = getShardId(id, index.shardCount)
 
   let branch = base
   if (!directCommit) {
     branch = `prompt-delete-${id}-${Date.now()}`
+    const baseSha = await getBranchSha(owner, repo, base, token)
     await createBranch(owner, repo, branch, baseSha, token)
   }
 
-  const file = await getFile(owner, repo, 'public/data/prompts.json', base, token)
-  const data = JSON.parse(file.content) as { version: string; prompts: Prompt[] }
-  const next = { version: data.version, prompts: data.prompts.filter((x) => x.id !== id) }
-  // Fix: GitHub API requires content to be Base64 encoded
-  const content = btoa(unescape(encodeURIComponent(JSON.stringify(next, null, 2))))
-  const message = `feat: delete prompt ${id}`
-
-  const commit = await updateFile(
+  const shardFile = await getFile(
     owner,
     repo,
-    'public/data/prompts.json',
-    content,
-    message,
+    `public/data/prompts/shard-${shardId}.json`,
     branch,
-    file.sha,
     token,
   )
+  const shard = JSON.parse(shardFile.content) as ShardData
 
-  // Optimistically update cache so user sees change immediately
-  setPromptsCache(next)
+  const idx = shard.prompts.findIndex((x: Prompt) => x.id === id)
+  if (idx >= 0) {
+    const item = shard.prompts[idx]
+    shard.prompts.splice(idx, 1)
+
+    // Update Index
+    const cat = index.categories[item.category]
+    if (cat) {
+      cat.count--
+      cat.promptIds = cat.promptIds.filter((pid) => pid !== id)
+    }
+
+    const shardMapEntry = index.shardMap[shardId]
+    if (shardMapEntry) {
+      index.shardMap[shardId] = shardMapEntry.filter((pid) => pid !== id)
+    }
+    index.totalPrompts--
+  }
+
+  index.lastUpdated = new Date().toISOString()
+
+  const files = [
+    {
+      path: `public/data/prompts/shard-${shardId}.json`,
+      content: JSON.stringify(shard, null, 2),
+    },
+    {
+      path: 'public/data/prompts/index.json',
+      content: JSON.stringify(index, null, 2),
+    },
+  ]
+
+  const message = `feat: delete prompt ${id}`
 
   if (directCommit) {
-    return commit.html_url!
+    const commit = await githubService.updateFiles(branch, files, message)
+
+    // Optimistic Cache Update
+    const cached = localStorage.getItem(CACHE_KEY)
+    if (cached) {
+      const { data } = JSON.parse(cached)
+      data.prompts = data.prompts.filter((p: Prompt) => p.id !== id)
+      setPromptsCache(data)
+    }
+
+    return commit.html_url
   }
+
+  await githubService.updateFiles(branch, files, message)
 
   const prTitle = `Delete prompt: ${id}`
   const prBody = `Delete prompt ${id}`
