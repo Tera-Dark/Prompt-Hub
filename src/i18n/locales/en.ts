@@ -31,6 +31,7 @@ export default {
     playground: 'AI Playground',
   },
   common: {
+    search: 'Search...',
     sort: {
       sortBy: 'Sort by',
       order: 'Order',

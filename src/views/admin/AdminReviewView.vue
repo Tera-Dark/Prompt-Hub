@@ -61,20 +61,29 @@ const closeReview = () => {
 }
 
 const parsePromptFromIssueBody = (body: string): Partial<Prompt> => {
-  const titleMatch = body.match(/\*\*Title:\*\* (.*)/)
-  const categoryMatch = body.match(/\*\*Category:\*\* (.*)/)
-  const descMatch = body.match(/\*\*Description:\*\*\s*\n([\s\S]*?)\n\n\*\*Prompt:\*\*/)
-  const promptMatch = body.match(/```\n([\s\S]*?)\n```/)
-  const tagsMatch = body.match(/\*\*Tags:\*\* (.*)/)
-  const imagesMatch = body.match(/\*\*Images:\*\* (.*)/)
+  // Normalize line endings and whitespace for robust matching
+  const normalizedBody = body.replace(/\r\n/g, '\n')
+
+  // Use more robust regex matching that tolerates variations in spacing and line breaks
+  const titleMatch = normalizedBody.match(/\*\*Title:\*\*\s*(.*)/i)
+  const categoryMatch = normalizedBody.match(/\*\*Category:\*\*\s*(.*)/i)
+
+  // Description match: look for Description header, capture everything until Prompt header
+  const descMatch = normalizedBody.match(/\*\*Description:\*\*\s*\n([\s\S]*?)\n\s*\*\*Prompt:\*\*/)
+
+  // Prompt match: capture content between triple backticks
+  const promptMatch = normalizedBody.match(/```[\s\S]*?\n([\s\S]*?)\n```/)
+
+  const tagsMatch = normalizedBody.match(/\*\*Tags:\*\*\s*(.*)/i)
+  const imagesMatch = normalizedBody.match(/\*\*Images:\*\*\s*(.*)/i)
 
   let images: string[] | undefined
-  if (imagesMatch) {
+  if (imagesMatch && imagesMatch[1]) {
     try {
       // Try parsing as JSON
       images = JSON.parse(imagesMatch[1].trim())
     } catch {
-      // Fallback to comma separated if JSON fails (backward compatibility or manual edits)
+      // Fallback to comma separated
       images = imagesMatch[1]
         .split(',')
         .map((s) => s.trim())

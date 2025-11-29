@@ -445,8 +445,8 @@ ${newItem.prompt}
 \`\`\`
 
 **Tags:** ${newItem.tags.join(', ')}
-
 **Images:** ${JSON.stringify(newItem.images || (newItem.imageUrl ? [newItem.imageUrl] : []))}
+**Status:** ${newItem.status}
 
 **Author:** ${newItem.author?.username || 'Anonymous'}
 ${newItem.author?.avatarUrl ? `**Avatar:** ${newItem.author.avatarUrl}` : ''}

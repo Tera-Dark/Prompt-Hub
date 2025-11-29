@@ -31,6 +31,7 @@ export default {
     playground: 'AI 广场',
   },
   common: {
+    search: '搜索...',
     sort: {
       sortBy: '排序',
       order: '方向',
