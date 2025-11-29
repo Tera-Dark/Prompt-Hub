@@ -194,17 +194,21 @@ function formatDate(dateString: string): string {
 .card-image-wrapper {
   width: 100%;
   aspect-ratio: 9/16;
-  height: auto; /* Let aspect-ratio control height */
+  height: auto;
   border-radius: var(--radius-sm);
   overflow: hidden;
   background: var(--color-surface-alt);
   margin-bottom: 0.75rem;
+  position: relative;
 }
 
 .card-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
 .card-description {
