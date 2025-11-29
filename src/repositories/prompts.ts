@@ -202,7 +202,31 @@ export async function addPrompt(
   await githubService.updateFiles(branch, files, message)
 
   const prTitle = `Add prompt: ${item.title}`
-  const prBody = `Add prompt ${item.id}`
+  // CRITICAL FIX: PR body must contain structured data for review parsing
+  const prBody = `
+### New Prompt Submission
+
+**Title:** ${item.title}
+**Category:** ${item.category}
+**Description:**
+${item.description}
+
+**Prompt:**
+\`\`\`
+${item.prompt}
+\`\`\`
+
+**Tags:** ${item.tags.join(', ')}
+**Images:** ${JSON.stringify(item.images || (item.imageUrl ? [item.imageUrl] : []))}
+**Status:** ${item.status}
+
+**Author:** ${item.author?.username || 'Anonymous'}
+${item.author?.avatarUrl ? `**Avatar:** ${item.author.avatarUrl}` : ''}
+
+<!-- METADATA_JSON_START
+${JSON.stringify(item)}
+METADATA_JSON_END -->
+`
   return await createPullRequest(owner, repo, prTitle, branch, base, prBody, token)
 }
 
@@ -318,7 +342,31 @@ export async function updatePromptById(
   await githubService.updateFiles(branch, files, message)
 
   const prTitle = `Update prompt: ${updated.title}`
-  const prBody = `Update prompt ${updated.id}`
+  // CRITICAL FIX: PR body must contain structured data for review parsing
+  const prBody = `
+### Update Prompt Request
+
+**Original ID:** ${id}
+**Title:** ${updated.title}
+**Category:** ${updated.category}
+**Description:**
+${updated.description}
+
+**Prompt:**
+\`\`\`
+${updated.prompt}
+\`\`\`
+
+**Tags:** ${updated.tags.join(', ')}
+**Images:** ${JSON.stringify(updated.images || (updated.imageUrl ? [updated.imageUrl] : []))}
+**Status:** ${updated.status}
+
+**Author:** ${updated.author?.username || 'Anonymous'}
+
+<!-- METADATA_JSON_START
+${JSON.stringify(updated)}
+METADATA_JSON_END -->
+`
   return await createPullRequest(owner, repo, prTitle, branch, base, prBody, token)
 }
 
@@ -451,6 +499,10 @@ ${newItem.prompt}
 **Author:** ${newItem.author?.username || 'Anonymous'}
 ${newItem.author?.avatarUrl ? `**Avatar:** ${newItem.author.avatarUrl}` : ''}
 
+<!-- METADATA_JSON_START
+${JSON.stringify(newItem)}
+METADATA_JSON_END -->
+
 ---
 *Submitted via Prompt-Hub*
 `
@@ -486,6 +538,10 @@ ${updatedItem.prompt}
 **Status:** ${updatedItem.status}
 
 **Author:** ${updatedItem.author?.username || 'Anonymous'}
+
+<!-- METADATA_JSON_START
+${JSON.stringify(updatedItem)}
+METADATA_JSON_END -->
 
 ---
 *Submitted via Prompt-Hub*

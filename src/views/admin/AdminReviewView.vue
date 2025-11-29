@@ -61,6 +61,18 @@ const closeReview = () => {
 }
 
 const parsePromptFromIssueBody = (body: string): Partial<Prompt> => {
+  // 1. Try to parse structured metadata from hidden comment first (MOST ROBUST)
+  const metadataMatch = body.match(/<!-- METADATA_JSON_START\s*([\s\S]*?)\s*METADATA_JSON_END -->/)
+  if (metadataMatch && metadataMatch[1]) {
+    try {
+      const metadata = JSON.parse(metadataMatch[1])
+      return metadata
+    } catch (e) {
+      console.warn('Failed to parse metadata JSON from issue body, falling back to regex', e)
+    }
+  }
+
+  // 2. Fallback to Regex Parsing (Legacy support)
   // Normalize line endings and whitespace for robust matching
   const normalizedBody = body.replace(/\r\n/g, '\n')
 
