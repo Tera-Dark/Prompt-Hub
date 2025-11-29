@@ -101,19 +101,21 @@
               <div class="header-left">
                 <h2 class="view-title">{{ viewTitle }}</h2>
                 <p class="view-subtitle">{{ viewSubtitle }}</p>
-              </div>
 
-              <div class="header-controls">
                 <CategoryFilter
                   v-if="currentView === 'explore'"
                   v-model="selectedCategory"
                   :categories="categories"
+                  class="category-filter-inline"
                 />
+              </div>
 
+              <div class="header-controls">
                 <div class="view-toggle">
                   <button
                     class="toggle-btn"
                     :class="{ active: viewMode === 'grid' }"
+                    :title="t('common.viewMode.grid')"
                     @click="viewMode = 'grid'"
                   >
                     <Icon name="grid" :size="20" />
@@ -121,6 +123,7 @@
                   <button
                     class="toggle-btn"
                     :class="{ active: viewMode === 'list' }"
+                    :title="t('common.viewMode.list')"
                     @click="viewMode = 'list'"
                   >
                     <Icon name="list" :size="20" />
@@ -147,7 +150,7 @@
             />
 
             <div v-if="hasMore" class="load-more-container">
-              <Button variant="outline" @click="loadMore">
+              <Button variant="secondary" @click="loadMore">
                 {{ t('common.loadMore') }}
               </Button>
             </div>
@@ -690,12 +693,17 @@ function handleUserAction() {
 .view-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
+  align-items: flex-start;
   margin-bottom: 2rem;
   padding-bottom: 1rem;
   border-bottom: 1px solid var(--color-border);
   flex-wrap: wrap;
   gap: 1rem;
+}
+
+.header-left {
+  flex: 1;
+  min-width: 300px;
 }
 
 .view-title {
@@ -709,13 +717,19 @@ function handleUserAction() {
 .view-subtitle {
   font-size: 1rem;
   color: var(--color-text-tertiary);
-  margin: 0.5rem 0 0 0;
+  margin: 0.5rem 0 1rem 0;
+}
+
+.category-filter-inline {
+  margin-top: 1rem;
 }
 
 .header-controls {
   display: flex;
   align-items: center;
   gap: 1rem;
+  align-self: flex-start;
+  margin-top: 0.5rem;
 }
 
 .view-toggle {
@@ -738,6 +752,11 @@ function handleUserAction() {
   color: var(--color-text-tertiary);
   cursor: pointer;
   transition: all 0.2s;
+}
+
+.toggle-btn:hover {
+  background: var(--color-gray-100);
+  color: var(--color-text-secondary);
 }
 
 .toggle-btn.active {

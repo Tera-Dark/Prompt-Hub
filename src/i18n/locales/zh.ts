@@ -5,6 +5,9 @@ export default {
   home: {
     title: 'Prompt-Hub',
     subtitle: '发现、分享和管理您的 AI 提示词',
+    hero: {
+      subtitle: '根据您的兴趣和热门话题精选。',
+    },
     searchPlaceholder: '搜索提示词...',
     nav: {
       featured: '精选推荐',
@@ -58,6 +61,9 @@ export default {
       confirmWithdraw: '确定要撤回此提交吗？',
       confirmDeleteDraft: '确定要删除此草稿吗？',
     },
+    noResults: '暂无结果',
+    tryDifferentSearch: '请尝试调整搜索关键词或筛选条件',
+    loadMore: '加载更多',
     status: {
       loading: '加载中...',
       error: '错误',
@@ -84,6 +90,10 @@ export default {
     },
   },
   prompts: {
+    myPrompts: {
+      title: '我的提示词',
+      empty: '暂无提交记录',
+    },
     edit: {
       title: '编辑提示词',
       subtitle: '正在编辑提示词 #{id}',

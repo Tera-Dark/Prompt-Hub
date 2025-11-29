@@ -5,6 +5,9 @@ export default {
   home: {
     title: 'Prompt-Hub',
     subtitle: 'Discover, share, and manage your AI prompts',
+    hero: {
+      subtitle: 'Curated based on your interests and trending topics.',
+    },
     searchPlaceholder: 'Search prompts...',
     nav: {
       featured: 'Featured',
@@ -58,6 +61,9 @@ export default {
       confirmWithdraw: 'Are you sure you want to withdraw this submission?',
       confirmDeleteDraft: 'Are you sure you want to delete this draft?',
     },
+    noResults: 'No results found',
+    tryDifferentSearch: 'Try different keywords or filters',
+    loadMore: 'Load More',
     status: {
       loading: 'Loading...',
       error: 'Error',
@@ -84,6 +90,10 @@ export default {
     },
   },
   prompts: {
+    myPrompts: {
+      title: 'My Prompts',
+      empty: 'No submissions found',
+    },
     edit: {
       title: 'Edit prompt',
       subtitle: 'Currently editing prompt #{id}',

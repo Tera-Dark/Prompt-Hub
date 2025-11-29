@@ -135,14 +135,14 @@ function getCategoryIcon(category: string): string {
 }
 
 .category-pill.active {
-  background-color: var(--color-black);
+  background-color: var(--color-primary);
   color: var(--color-white);
-  border-color: var(--color-black);
+  border-color: var(--color-primary);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .category-pill.active:hover {
-  background-color: var(--color-gray-900);
+  background-color: var(--color-primary-dark);
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }

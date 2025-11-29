@@ -64,15 +64,23 @@
             <div class="content-section">
               <div class="modal-header">
                 <h2 class="modal-title">{{ prompt.title }}</h2>
+
                 <div class="header-meta">
-                  <Badge variant="default" rounded class="category-badge">{{
+                  <Badge variant="secondary" rounded class="category-badge">{{
                     prompt.category
                   }}</Badge>
+
+                  <div class="meta-separator"></div>
+
                   <div v-if="prompt.author" class="author-info">
+                    <div class="author-avatar-placeholder">
+                      {{ prompt.author.username.charAt(0).toUpperCase() }}
+                    </div>
                     <span class="author-name">{{ prompt.author.username }}</span>
-                    <span class="separator">•</span>
-                    <span class="date">{{ new Date(prompt.createdAt).toLocaleDateString() }}</span>
                   </div>
+
+                  <span class="meta-dot">·</span>
+                  <span class="date">{{ new Date(prompt.createdAt).toLocaleDateString() }}</span>
                 </div>
               </div>
 
@@ -97,8 +105,7 @@
                 <pre class="prompt-text">{{ prompt.prompt }}</pre>
               </div>
 
-              <div class="description-section">
-                <h3 class="section-title">{{ t('prompts.form.description') }}</h3>
+              <div v-if="prompt.description" class="description-section">
                 <p class="modal-description">{{ prompt.description }}</p>
               </div>
 
@@ -106,14 +113,6 @@
                 <div class="tags-list">
                   <span v-for="tag in prompt.tags" :key="tag" class="tag">#{{ tag }}</span>
                 </div>
-                <a
-                  v-if="prompt.sourceLink"
-                  :href="prompt.sourceLink"
-                  target="_blank"
-                  class="source-link"
-                >
-                  {{ t('common.actions.source') }} <Icon name="external-link" :size="14" />
-                </a>
               </div>
             </div>
           </div>
@@ -459,14 +458,14 @@ async function copyToClipboard() {
 }
 
 .modal-header {
-  margin-bottom: 0.5rem;
+  margin-bottom: 1.5rem;
 }
 
 .modal-title {
-  font-size: 2rem;
+  font-size: 1.75rem;
   font-weight: 800;
   color: var(--color-text-primary);
-  margin: 0 0 1rem 0;
+  margin: 0 0 0.75rem 0;
   line-height: 1.2;
   letter-spacing: -0.02em;
 }
@@ -474,59 +473,105 @@ async function copyToClipboard() {
 .header-meta {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
   flex-wrap: wrap;
+  font-size: var(--text-sm);
+}
+
+.category-badge {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.75rem;
+  background-color: var(--color-surface-alt);
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
+.meta-separator {
+  width: 1px;
+  height: 16px;
+  background-color: var(--color-border);
+  margin: 0 0.25rem;
 }
 
 .author-info {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: var(--text-sm);
-  color: var(--color-text-tertiary);
-}
-
-.author-name {
-  font-weight: 500;
   color: var(--color-text-secondary);
 }
 
-.separator {
-  color: var(--color-border);
+.author-avatar-placeholder {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: var(--color-primary-subtle);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.author-name {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.meta-dot {
+  color: var(--color-text-tertiary);
+  font-weight: bold;
+}
+
+.date {
+  color: var(--color-text-tertiary);
 }
 
 .prompt-content-box {
   background: var(--color-surface-alt);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  border: none; /* Removed border for cleaner look */
   overflow: hidden;
-  box-shadow: var(--shadow-sm);
+  margin-bottom: 1.5rem;
+}
+
+.box-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  background: transparent;
+}
+
+.prompt-text {
+  padding: 1.25rem;
+  margin: 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.925rem;
+  line-height: 1.7;
+  color: var(--color-text-primary);
+  white-space: pre-wrap;
+  overflow-x: auto;
+  max-height: 300px;
+  background: transparent;
 }
 
 .description-section {
-  margin-top: 0.5rem;
-}
-
-.section-title {
-  font-size: var(--text-sm);
-  font-weight: 600;
+  margin-top: 0;
   color: var(--color-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin: 0 0 0.75rem 0;
 }
 
 .modal-description {
   font-size: 1rem;
-  color: var(--color-text-secondary);
-  line-height: 1.7;
+  line-height: 1.6;
   margin: 0;
 }
 
 .modal-footer {
   margin-top: auto;
-  padding-top: 2rem;
-  border-top: 1px solid var(--color-border-light);
+  padding-top: 1.5rem;
+  border-top: none; /* Removed border */
 }
 
 .tags-list {
@@ -536,25 +581,18 @@ async function copyToClipboard() {
 }
 
 .tag {
-  font-size: var(--text-sm);
-  color: var(--color-primary);
-  background: var(--color-primary-subtle);
-  padding: 0.25rem 0.75rem;
-  border-radius: 1rem;
-}
-
-.source-link {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  font-size: 0.85rem;
   color: var(--color-text-secondary);
-  text-decoration: none;
-  font-size: var(--text-sm);
-  transition: color 0.2s;
+  background: var(--color-surface-alt);
+  padding: 0.35rem 0.85rem;
+  border-radius: 2rem;
+  font-weight: 500;
+  transition: all 0.2s;
 }
 
-.source-link:hover {
-  color: var(--color-primary);
+.tag:hover {
+  background: var(--color-border-light);
+  color: var(--color-text-primary);
 }
 
 @media (max-width: 768px) {
