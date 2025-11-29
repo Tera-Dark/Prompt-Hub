@@ -193,7 +193,8 @@ function formatDate(dateString: string): string {
 
 .card-image-wrapper {
   width: 100%;
-  height: 120px;
+  aspect-ratio: 9/16;
+  height: auto; /* Let aspect-ratio control height */
   border-radius: var(--radius-sm);
   overflow: hidden;
   background: var(--color-surface-alt);

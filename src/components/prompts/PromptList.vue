@@ -385,8 +385,8 @@ onMounted(() => {
 
 .prompt-container.grid {
   display: grid;
-  gap: 2rem;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 }
 
 .prompt-container.list {
@@ -411,7 +411,7 @@ onMounted(() => {
 
 @media (min-width: 1400px) {
   .prompt-container.grid {
-    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   }
 }
 </style>

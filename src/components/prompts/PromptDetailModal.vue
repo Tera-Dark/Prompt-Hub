@@ -63,14 +63,17 @@
             <!-- Right Column: Content -->
             <div class="content-section">
               <div class="modal-header">
-                <div class="header-top">
-                  <Badge variant="default" rounded>{{ prompt.category }}</Badge>
-                  <div class="meta-info">
-                    <!-- Metrics temporarily removed -->
+                <h2 class="modal-title">{{ prompt.title }}</h2>
+                <div class="header-meta">
+                  <Badge variant="default" rounded class="category-badge">{{
+                    prompt.category
+                  }}</Badge>
+                  <div v-if="prompt.author" class="author-info">
+                    <span class="author-name">{{ prompt.author.username }}</span>
+                    <span class="separator">•</span>
+                    <span class="date">{{ new Date(prompt.createdAt).toLocaleDateString() }}</span>
                   </div>
                 </div>
-                <h2 class="modal-title">{{ prompt.title }}</h2>
-                <p class="modal-description">{{ prompt.description }}</p>
               </div>
 
               <div class="prompt-content-box">
@@ -92,6 +95,11 @@
                   </div>
                 </div>
                 <pre class="prompt-text">{{ prompt.prompt }}</pre>
+              </div>
+
+              <div class="description-section">
+                <h3 class="section-title">{{ t('prompts.form.description') }}</h3>
+                <p class="modal-description">{{ prompt.description }}</p>
               </div>
 
               <div class="modal-footer">
@@ -442,89 +450,82 @@ async function copyToClipboard() {
 
 /* Right Column: Content */
 .content-section {
-  padding: 2rem;
+  padding: 2.5rem;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 2rem;
   overflow-y: auto;
-  max-height: 80vh; /* Ensure scrolling within the panel if content is long */
+  max-height: 80vh;
 }
 
-.header-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-
-.meta-info {
-  display: flex;
-  gap: 1rem;
-  color: var(--color-text-tertiary);
-  font-size: var(--text-sm);
+.modal-header {
+  margin-bottom: 0.5rem;
 }
 
 .modal-title {
-  font-size: var(--text-2xl);
-  font-weight: 700;
+  font-size: 2rem;
+  font-weight: 800;
   color: var(--color-text-primary);
-  margin: 0 0 0.5rem 0;
-  line-height: 1.3;
+  margin: 0 0 1rem 0;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
 }
 
-.modal-description {
+.header-meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.author-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+}
+
+.author-name {
+  font-weight: 500;
   color: var(--color-text-secondary);
-  line-height: 1.6;
+}
+
+.separator {
+  color: var(--color-border);
 }
 
 .prompt-content-box {
   background: var(--color-surface-alt);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   border: 1px solid var(--color-border-light);
   overflow: hidden;
-  margin-top: auto; /* Push to bottom if space permits */
+  box-shadow: var(--shadow-sm);
 }
 
-.box-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--color-border-light);
-  background: rgba(0, 0, 0, 0.02);
+.description-section {
+  margin-top: 0.5rem;
 }
 
-.actions-group {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.box-label {
+.section-title {
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--color-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  margin: 0 0 0.75rem 0;
 }
 
-.prompt-text {
-  padding: 1.5rem;
+.modal-description {
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+  line-height: 1.7;
   margin: 0;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: var(--text-sm);
-  line-height: 1.6;
-  color: var(--color-text-primary);
-  white-space: pre-wrap;
-  overflow-x: auto;
-  max-height: 300px; /* Limit height of code block */
-  overflow-y: auto;
 }
 
 .modal-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 1rem;
+  margin-top: auto;
+  padding-top: 2rem;
   border-top: 1px solid var(--color-border-light);
 }
 
