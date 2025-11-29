@@ -6,18 +6,22 @@
       "title": "图片上传测试",
       "category": "测试",
       "description": "图片上传测试",
-      "prompt": "测试测试",
-      "tags": ["测试"],
+      "prompt": "测试测试测试",
+      "tags": [
+        "测试"
+      ],
       "createdAt": "2025-11-28T15:15:36.782Z",
       "status": "published",
       "images": [
-        "https://cdn.jsdelivr.net/gh/tera-dark/Prompt-Hub@main/public/data/images/2025/11/1764342676523-xwgyyo.png"
+        "https://cdn.jsdelivr.net/gh/tera-dark/Prompt-Hub@main/public/data/images/2025/11/1764342676523-xwgyyo.png",
+        "https://cdn.jsdelivr.net/gh/tera-dark/Prompt-Hub@main/public/data/images/2025/11/1764345562870-qs1ej7.png"
       ],
       "imageUrl": "https://cdn.jsdelivr.net/gh/tera-dark/Prompt-Hub@main/public/data/images/2025/11/1764342676523-xwgyyo.png",
       "author": {
         "username": "Tera-Dark",
         "avatarUrl": "https://avatars.githubusercontent.com/u/142307294?v=4"
-      }
+      },
+      "updatedAt": "2025-11-28T15:59:38.916Z"
     }
   ]
 }
