@@ -783,7 +783,7 @@ export async function fetchPendingSubmissions(token: string): Promise<PendingSub
         sourceLink: pr.html_url,
         action: pr.title.startsWith('Update prompt:') ? 'update' : 'create',
         originalId: pr.title.startsWith('Update prompt:')
-          ? pr.body?.match(/\*\*Original ID:\*\*\s*(.*)/)?.[1] || undefined
+          ? pr.body?.match(/\*\*Original ID:\*\*\s*(.*)/i)?.[1]?.trim() || undefined
           : undefined,
       })
     } else if (pr.title.startsWith('Delete prompt:')) {

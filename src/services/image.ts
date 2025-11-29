@@ -1,4 +1,4 @@
-import { githubService } from './github'
+import { githubService, getDefaultBranch } from './github'
 
 function repoInfo() {
   const owner = import.meta.env.VITE_GITHUB_REPO_OWNER
@@ -9,6 +9,10 @@ function repoInfo() {
 
 export async function uploadImage(file: File, token: string): Promise<string> {
   githubService.setAccessToken(token)
+  const { owner, repo } = repoInfo()
+
+  // Get default branch dynamically
+  const branch = await getDefaultBranch(owner, repo, token)
 
   // 1. Read file as Base64
   const base64Content = await new Promise<string>((resolve, reject) => {
@@ -37,13 +41,12 @@ export async function uploadImage(file: File, token: string): Promise<string> {
 
   // 4. Commit File
   await githubService.updateFiles(
-    'main', // Assuming main branch
+    branch,
     [{ path, sha: blobData.sha }],
     `chore: upload image ${path}`,
   )
 
   // 5. Return URL
   // Using jsdelivr for better CDN performance and correct MIME types
-  const { owner, repo } = repoInfo()
-  return `https://cdn.jsdelivr.net/gh/${owner}/${repo}@main/${path}`
+  return `https://cdn.jsdelivr.net/gh/${owner}/${repo}@${branch}/${path}`
 }

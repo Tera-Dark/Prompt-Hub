@@ -354,7 +354,48 @@ onMounted(() => {
 
           <!-- Create Mode -->
           <div v-if="selectedSubmission.action === 'create'">
-            <div class="content-box">
+            <div
+              v-if="parsePromptFromIssueBody(selectedSubmission.prompt).title"
+              class="diff-container"
+            >
+              <div
+                v-for="field in ['title', 'description', 'prompt', 'category', 'tags']"
+                :key="field"
+                class="diff-field"
+              >
+                <div class="diff-label">{{ t(`review.fields.${field}`) }}</div>
+                <div class="diff-content">
+                  {{
+                    String(
+                      parsePromptFromIssueBody(selectedSubmission.prompt)[field as keyof Prompt] ||
+                        '',
+                    )
+                  }}
+                </div>
+              </div>
+
+              <!-- Images -->
+              <div class="diff-field">
+                <div class="diff-label">Images</div>
+                <div class="image-diff-grid">
+                  <div
+                    v-for="img in parsePromptFromIssueBody(selectedSubmission.prompt).images || []"
+                    :key="img"
+                    class="diff-image-item added"
+                  >
+                    <img :src="img" loading="lazy" />
+                  </div>
+                </div>
+                <div
+                  v-if="!(parsePromptFromIssueBody(selectedSubmission.prompt).images || []).length"
+                  class="diff-content text-gray-400 italic"
+                >
+                  No images
+                </div>
+              </div>
+            </div>
+            <div v-else class="content-box">
+              <div class="text-gray-500 text-sm mb-2">Raw Content (Parsing Failed):</div>
               <pre class="code-block">{{ selectedSubmission.prompt }}</pre>
             </div>
           </div>

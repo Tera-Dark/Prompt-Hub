@@ -20,7 +20,9 @@
           <img
             :src="prompt.images?.[0] || prompt.imageUrl"
             :alt="prompt.title"
+            :title="prompt.title"
             class="card-image"
+            loading="lazy"
           />
         </div>
         <p class="card-description">{{ prompt.description }}</p>
