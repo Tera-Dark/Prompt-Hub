@@ -748,12 +748,29 @@ export async function fetchPendingSubmissions(token: string): Promise<PendingSub
     if (pr.state !== 'open') continue
 
     if (pr.title.startsWith('Add prompt:') || pr.title.startsWith('Update prompt:')) {
+      // CRITICAL FIX: PR description parsing with fallback
+      // Try to extract JSON metadata first
+      const metadataMatch = pr.body?.match(
+        /<!-- METADATA_JSON_START\s*([\s\S]*?)\s*METADATA_JSON_END -->/,
+      )
+
+      if (metadataMatch && metadataMatch[1]) {
+        try {
+          // We just store the whole body in prompt field as per current architecture
+          // AdminReviewView will parse it.
+          // But if body is empty/simple, AdminReviewView fails.
+          // We need to ensure 'prompt' field here contains the RICH BODY.
+        } catch (e) {
+          console.warn('Failed to parse PR metadata', e)
+        }
+      }
+
       submissions.push({
         id: `pr-${pr.number}`,
         title: pr.title,
         category: 'Pending Merge',
-        description: pr.body || 'Pull Request',
-        prompt: '',
+        description: 'Pull Request', // Use simple description for list view
+        prompt: pr.body || '', // PASS THE FULL PR BODY HERE. AdminReviewView parses this.
         tags: [],
         createdAt: pr.created_at,
         status: 'draft',
@@ -765,6 +782,9 @@ export async function fetchPendingSubmissions(token: string): Promise<PendingSub
         number: pr.number,
         sourceLink: pr.html_url,
         action: pr.title.startsWith('Update prompt:') ? 'update' : 'create',
+        originalId: pr.title.startsWith('Update prompt:')
+          ? pr.body?.match(/\*\*Original ID:\*\*\s*(.*)/)?.[1] || undefined
+          : undefined,
       })
     } else if (pr.title.startsWith('Delete prompt:')) {
       submissions.push({
