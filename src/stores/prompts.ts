@@ -29,7 +29,9 @@ export function usePromptStore() {
   const allPrompts = computed(() => prompts.value)
 
   const featuredPrompts = computed(() => {
-    return prompts.value.slice(0, 3)
+    // Mock featured algorithm: return first 24 prompts
+    // In a real app, this would use view counts or editor picks
+    return prompts.value.slice(0, 24)
   })
 
   const categories = computed(() => {
@@ -51,7 +53,9 @@ export function usePromptStore() {
   ) {
     let result = prompts.value
 
-    if (view === 'favorites') {
+    if (view === 'recommendations') {
+      result = featuredPrompts.value
+    } else if (view === 'favorites') {
       result = favoritesService.getFavoritePrompts(result)
     }
 

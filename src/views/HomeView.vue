@@ -93,24 +93,50 @@
 
     <main class="home-main">
       <div class="container content-area">
-        <!-- Recommendations View -->
+        <!-- Unified View -->
         <Transition name="fade" mode="out-in">
-          <div v-if="currentView === 'recommendations'" key="recs">
-            <RecommendationSection
-              :prompts="featuredPrompts"
-              :loading="isLoading"
-              @select="handlePromptSelect"
-            />
-          </div>
+          <div :key="currentView" class="view-container">
+            <!-- View Header -->
+            <div class="view-header">
+              <div class="header-left">
+                <h2 class="view-title">{{ viewTitle }}</h2>
+                <p class="view-subtitle">{{ viewSubtitle }}</p>
+              </div>
 
-          <!-- Explore View -->
-          <div v-else key="explore" class="explore-view">
-            <div class="explore-header">
-              <CategoryFilter v-model="selectedCategory" :categories="categories" />
+              <div class="header-controls">
+                <CategoryFilter
+                  v-if="currentView === 'explore'"
+                  v-model="selectedCategory"
+                  :categories="categories"
+                />
+
+                <div class="view-toggle">
+                  <button
+                    class="toggle-btn"
+                    :class="{ active: viewMode === 'grid' }"
+                    @click="viewMode = 'grid'"
+                  >
+                    <Icon name="grid" :size="20" />
+                  </button>
+                  <button
+                    class="toggle-btn"
+                    :class="{ active: viewMode === 'list' }"
+                    @click="viewMode = 'list'"
+                  >
+                    <Icon name="list" :size="20" />
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div v-if="isLoading" class="prompts-grid">
-              <PromptCardSkeleton v-for="i in 6" :key="i" />
+              <PromptCardSkeleton v-for="i in 8" :key="i" />
+            </div>
+
+            <div v-else-if="visiblePrompts.length === 0" class="empty-state">
+              <Icon name="search" :size="48" class="empty-icon" />
+              <h3>{{ t('common.noResults') }}</h3>
+              <p>{{ t('common.tryDifferentSearch') }}</p>
             </div>
 
             <PromptList
@@ -216,7 +242,6 @@ import CategoryFilter from '@/components/prompts/CategoryFilter.vue'
 import PromptList from '@/components/prompts/PromptList.vue'
 import PromptCardSkeleton from '@/components/prompts/PromptCardSkeleton.vue'
 import AIPlaygroundDrawer from '@/components/admin/AIPlaygroundDrawer.vue'
-import RecommendationSection from '@/components/home/RecommendationSection.vue'
 import PromptDetailModal from '@/components/prompts/PromptDetailModal.vue'
 import { recommendationService } from '@/services/recommendations'
 import { usePromptStore } from '@/stores/prompts'
@@ -243,8 +268,33 @@ const PAGE_SIZE = 24
 const currentPage = ref(1)
 
 const isLoading = computed(() => promptStore.isLoading.value)
-const featuredPrompts = computed(() => promptStore.featuredPrompts.value)
 const categories = computed(() => promptStore.categories.value)
+
+const viewTitle = computed(() => {
+  switch (currentView.value) {
+    case 'recommendations':
+      return t('home.nav.featured')
+    case 'explore':
+      return t('home.nav.explore')
+    case 'favorites':
+      return t('home.nav.favorites')
+    default:
+      return ''
+  }
+})
+
+const viewSubtitle = computed(() => {
+  switch (currentView.value) {
+    case 'recommendations':
+      return t('home.hero.subtitle')
+    case 'explore':
+      return t('home.searchPlaceholder')
+    case 'favorites':
+      return t('home.nav.favorites') + ' ' + t('nav.prompts')
+    default:
+      return ''
+  }
+})
 
 onMounted(async () => {
   try {
@@ -635,6 +685,90 @@ function handleUserAction() {
   justify-content: center;
   margin-top: 2rem;
   padding-bottom: 2rem;
+}
+
+.view-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--color-border);
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.view-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.view-subtitle {
+  font-size: 1rem;
+  color: var(--color-text-tertiary);
+  margin: 0.5rem 0 0 0;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.view-toggle {
+  display: flex;
+  background: var(--color-surface-alt);
+  padding: 0.25rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+.toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: none;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.toggle-btn.active {
+  background: var(--color-surface);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 0;
+  color: var(--color-text-secondary);
+}
+
+.empty-icon {
+  color: var(--color-text-tertiary);
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+@media (max-width: 768px) {
+  .view-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .header-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
 }
 
 /* Mobile Bottom Navigation Styles */
