@@ -17,7 +17,11 @@
           v-if="prompt.imageUrl || (prompt.images && prompt.images.length > 0)"
           class="card-image-wrapper"
         >
-          <img :src="prompt.imageUrl || prompt.images![0]" :alt="prompt.title" class="card-image" />
+          <img
+            :src="prompt.images?.[0] || prompt.imageUrl"
+            :alt="prompt.title"
+            class="card-image"
+          />
         </div>
         <p class="card-description">{{ prompt.description }}</p>
         <div class="prompt-preview">

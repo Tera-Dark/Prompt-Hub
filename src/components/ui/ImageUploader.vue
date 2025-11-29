@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { uploadImage } from '../../services/image'
 
@@ -13,17 +13,14 @@ const emit = defineEmits(['update:modelValue'])
 
 const { t } = useI18n()
 const isDragging = ref(false)
+const isUploading = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 const uploadQueue = ref<
   { id: string; url?: string; file?: File; progress: boolean; error?: string }[]
 >([])
 
-// Initialize queue from modelValue
-// We only track new uploads in the queue for progress, but we display everything mixed?
-// Actually simpler: `modelValue` is the source of truth for *finished* uploads.
-// We need a local state to show *uploading* items.
-
 const triggerSelect = () => {
+  if (isUploading.value) return
   fileInput.value?.click()
 }
 
@@ -36,6 +33,7 @@ const handleFileSelect = async (event: Event) => {
 }
 
 const handleDrop = async (event: DragEvent) => {
+  if (isUploading.value) return
   isDragging.value = false
   if (event.dataTransfer?.files) {
     await processFiles(Array.from(event.dataTransfer.files))
@@ -43,54 +41,82 @@ const handleDrop = async (event: DragEvent) => {
 }
 
 const processFiles = async (files: File[]) => {
-  const remainingSlots = (props.limit || 9) - props.modelValue.length - uploadingCount.value
+  if (isUploading.value) return
+
+  const remainingSlots = (props.limit || 9) - props.modelValue.length
   if (remainingSlots <= 0) {
     alert(t('imageUploader.limitReached'))
     return
   }
 
   const filesToUpload = files.slice(0, remainingSlots)
+  const validFiles: File[] = []
 
+  // Pre-check files
   for (const file of filesToUpload) {
     if (!file.type.startsWith('image/')) continue
     if (file.size > 10 * 1024 * 1024) {
-      // 10MB limit
       alert(t('imageUploader.fileTooLarge', { name: file.name }))
       continue
     }
-
-    await uploadSingleFile(file)
+    validFiles.push(file)
   }
-}
 
-const uploadingCount = computed(() => uploadQueue.value.filter((item) => item.progress).length)
+  if (validFiles.length === 0) return
 
-const uploadSingleFile = async (file: File) => {
-  const id = Math.random().toString(36).substring(7)
-  // Create local preview
-  const reader = new FileReader()
-  reader.readAsDataURL(file)
-  reader.onload = (e) => {
-    const previewUrl = e.target?.result as string
-    uploadQueue.value.push({ id, url: previewUrl, file, progress: true })
-  }
+  isUploading.value = true
+
+  // 1. Create queue items for all files immediately
+  const queueItems = validFiles.map((file) => {
+    const id = Math.random().toString(36).substring(7)
+    const item = { id, file, progress: true, url: '' } // url will be set by FileReader
+
+    // Create preview
+    const reader = new FileReader()
+    reader.readAsDataURL(file)
+    reader.onload = (e) => {
+      item.url = e.target?.result as string
+    }
+
+    return item
+  })
+
+  uploadQueue.value.push(...queueItems)
 
   try {
-    const publicUrl = await uploadImage(file, props.token)
-    // Update modelValue
-    emit('update:modelValue', [...props.modelValue, publicUrl])
-    // Remove from queue
-    uploadQueue.value = uploadQueue.value.filter((item) => item.id !== id)
-  } catch (e) {
-    console.error(e)
-    // Mark error in queue
-    const item = uploadQueue.value.find((i) => i.id === id)
-    if (item) {
-      item.progress = false
-      item.error = 'Upload failed'
+    // 2. Upload in parallel
+    const uploadPromises = queueItems.map(async (item) => {
+      if (!item.file) return null
+      try {
+        const publicUrl = await uploadImage(item.file, props.token)
+        // Remove from queue on success
+        uploadQueue.value = uploadQueue.value.filter((q) => q.id !== item.id)
+        return publicUrl
+      } catch (e) {
+        console.error(e)
+        // Mark error in queue
+        const qItem = uploadQueue.value.find((q) => q.id === item.id)
+        if (qItem) {
+          qItem.progress = false
+          qItem.error = 'Upload failed'
+        }
+        return null
+      }
+    })
+
+    const results = await Promise.all(uploadPromises)
+    const successfulUrls = results.filter((url): url is string => url !== null)
+
+    // 3. Update modelValue ONCE with all new URLs
+    if (successfulUrls.length > 0) {
+      emit('update:modelValue', [...props.modelValue, ...successfulUrls])
     }
+  } finally {
+    isUploading.value = false
   }
 }
+
+// uploadSingleFile removed as it is integrated into processFiles
 
 const removeImage = (index: number) => {
   const newImages = [...props.modelValue]
@@ -160,7 +186,11 @@ const removeQueueItem = (id: string) => {
     <div
       v-if="modelValue.length + uploadQueue.length < (limit || 9)"
       class="drop-zone"
-      :class="{ 'is-dragging': isDragging, 'is-compact': modelValue.length > 0 }"
+      :class="{
+        'is-dragging': isDragging,
+        'is-compact': modelValue.length > 0,
+        'is-disabled': isUploading,
+      }"
       @dragenter.prevent="isDragging = true"
       @dragleave.prevent="isDragging = false"
       @dragover.prevent
@@ -290,6 +320,14 @@ const removeQueueItem = (id: string) => {
 .drop-zone.is-dragging {
   border-color: var(--color-gray-400);
   background-color: var(--color-gray-100);
+}
+
+.drop-zone.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+  background-color: var(--color-gray-50);
+  border-color: var(--color-gray-200);
 }
 
 .hidden-input {
