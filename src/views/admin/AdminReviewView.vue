@@ -66,6 +66,21 @@ const parsePromptFromIssueBody = (body: string): Partial<Prompt> => {
   const descMatch = body.match(/\*\*Description:\*\*\s*\n([\s\S]*?)\n\n\*\*Prompt:\*\*/)
   const promptMatch = body.match(/```\n([\s\S]*?)\n```/)
   const tagsMatch = body.match(/\*\*Tags:\*\* (.*)/)
+  const imagesMatch = body.match(/\*\*Images:\*\* (.*)/)
+
+  let images: string[] | undefined
+  if (imagesMatch) {
+    try {
+      // Try parsing as JSON
+      images = JSON.parse(imagesMatch[1].trim())
+    } catch {
+      // Fallback to comma separated if JSON fails (backward compatibility or manual edits)
+      images = imagesMatch[1]
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+    }
+  }
 
   return {
     title: titleMatch ? titleMatch[1].trim() : undefined,
@@ -73,6 +88,7 @@ const parsePromptFromIssueBody = (body: string): Partial<Prompt> => {
     description: descMatch ? descMatch[1].trim() : undefined,
     prompt: promptMatch ? promptMatch[1].trim() : undefined,
     tags: tagsMatch ? tagsMatch[1].split(',').map((s) => s.trim()) : undefined,
+    images,
   }
 }
 
@@ -89,6 +105,20 @@ const getFieldDiff = (submission: PendingSubmission, field: keyof Prompt) => {
   const newVal = newValues[field] !== undefined ? String(newValues[field]) : oldVal
 
   return getDiff(oldVal, newVal)
+}
+
+const getImageDiff = (submission: PendingSubmission) => {
+  const original = submission.originalId ? originalPrompts.value[submission.originalId] : null
+  const newValues = parsePromptFromIssueBody(submission.prompt)
+
+  const oldImages = original?.images || (original?.imageUrl ? [original.imageUrl] : [])
+  const newImages = newValues.images || []
+
+  const added = newImages.filter((img) => !oldImages.includes(img))
+  const removed = oldImages.filter((img) => !newImages.includes(img))
+  const unchanged = oldImages.filter((img) => newImages.includes(img))
+
+  return { added, removed, unchanged }
 }
 
 const handleApprove = async (submission?: PendingSubmission) => {
@@ -327,6 +357,46 @@ onMounted(() => {
                   }"
                   >{{ part.value }}</span
                 >
+              </div>
+            </div>
+
+            <!-- Images Diff -->
+            <div class="diff-field">
+              <div class="diff-label">Images</div>
+              <div class="image-diff-grid">
+                <div
+                  v-for="img in getImageDiff(selectedSubmission).added"
+                  :key="img"
+                  class="diff-image-item added"
+                >
+                  <img :src="img" loading="lazy" />
+                  <div class="diff-tag add">+</div>
+                </div>
+                <div
+                  v-for="img in getImageDiff(selectedSubmission).removed"
+                  :key="img"
+                  class="diff-image-item removed"
+                >
+                  <img :src="img" loading="lazy" />
+                  <div class="diff-tag remove">-</div>
+                </div>
+                <div
+                  v-for="img in getImageDiff(selectedSubmission).unchanged"
+                  :key="img"
+                  class="diff-image-item unchanged"
+                >
+                  <img :src="img" loading="lazy" />
+                </div>
+              </div>
+              <div
+                v-if="
+                  !getImageDiff(selectedSubmission).added.length &&
+                  !getImageDiff(selectedSubmission).removed.length &&
+                  !getImageDiff(selectedSubmission).unchanged.length
+                "
+                class="diff-content text-gray-400 italic"
+              >
+                No images
               </div>
             </div>
           </div>
@@ -762,5 +832,70 @@ onMounted(() => {
   color: var(--color-gray-500);
   background-color: var(--color-gray-50);
   border-radius: var(--radius-lg);
+}
+
+/* Image Diff Styles */
+.image-diff-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+  background-color: var(--color-gray-50);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-md);
+}
+
+.diff-image-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 2px solid transparent;
+  background-color: var(--color-white);
+}
+
+.diff-image-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.diff-image-item.added {
+  border-color: #22c55e; /* success */
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+}
+
+.diff-image-item.removed {
+  border-color: #ef4444; /* danger */
+  opacity: 0.6;
+  filter: grayscale(100%);
+}
+
+.diff-image-item.unchanged {
+  border-color: var(--color-gray-200);
+}
+
+.diff-tag {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  font-size: 14px;
+  border-bottom-left-radius: 8px;
+  z-index: 10;
+}
+
+.diff-tag.add {
+  background-color: #22c55e;
+}
+
+.diff-tag.remove {
+  background-color: #ef4444;
 }
 </style>

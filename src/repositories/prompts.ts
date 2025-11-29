@@ -446,6 +446,8 @@ ${newItem.prompt}
 
 **Tags:** ${newItem.tags.join(', ')}
 
+**Images:** ${JSON.stringify(newItem.images || (newItem.imageUrl ? [newItem.imageUrl] : []))}
+
 **Author:** ${newItem.author?.username || 'Anonymous'}
 ${newItem.author?.avatarUrl ? `**Avatar:** ${newItem.author.avatarUrl}` : ''}
 
@@ -480,6 +482,7 @@ ${updatedItem.prompt}
 \`\`\`
 
 **Tags:** ${updatedItem.tags.join(', ')}
+**Images:** ${JSON.stringify(updatedItem.images || (updatedItem.imageUrl ? [updatedItem.imageUrl] : []))}
 **Status:** ${updatedItem.status}
 
 **Author:** ${updatedItem.author?.username || 'Anonymous'}
@@ -765,6 +768,19 @@ export async function approveSubmission(
       const promptMatch = body.match(/```\n([\s\S]*?)\n```/)
       const tagsMatch = body.match(/\*\*Tags:\*\* (.*)/)
       const statusMatch = body.match(/\*\*Status:\*\* (.*)/)
+      const imagesMatch = body.match(/\*\*Images:\*\* (.*)/)
+
+      let images: string[] = []
+      if (imagesMatch) {
+        try {
+          images = JSON.parse(imagesMatch[1].trim())
+        } catch {
+          images = imagesMatch[1]
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean)
+        }
+      }
 
       if (!titleMatch || !categoryMatch || !promptMatch) {
         throw new Error('Failed to parse issue body. Please merge manually.')
@@ -781,6 +797,8 @@ export async function approveSubmission(
           tags: tagsMatch ? tagsMatch[1].split(',').map((s) => s.trim()) : [],
           updatedAt: new Date().toISOString(),
           status: (statusMatch ? statusMatch[1].trim() : 'published') as Prompt['status'],
+          images: images.length > 0 ? images : undefined,
+          imageUrl: images.length > 0 ? images[0] : undefined,
         }),
         token,
         true,
@@ -796,6 +814,19 @@ export async function approveSubmission(
     const descMatch = body.match(/\*\*Description:\*\*\s*\n([\s\S]*?)\n\n\*\*Prompt:\*\*/)
     const promptMatch = body.match(/```\n([\s\S]*?)\n```/)
     const tagsMatch = body.match(/\*\*Tags:\*\* (.*)/)
+    const imagesMatch = body.match(/\*\*Images:\*\* (.*)/)
+
+    let images: string[] = []
+    if (imagesMatch) {
+      try {
+        images = JSON.parse(imagesMatch[1].trim())
+      } catch {
+        images = imagesMatch[1]
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
+      }
+    }
 
     if (!titleMatch || !categoryMatch || !promptMatch) {
       throw new Error('Failed to parse issue body. Please merge manually.')
@@ -811,6 +842,8 @@ export async function approveSubmission(
       createdAt: new Date().toISOString(),
       status: 'published',
       author: submission.author,
+      images: images.length > 0 ? images : undefined,
+      imageUrl: images.length > 0 ? images[0] : undefined,
     }
 
     await addPrompt(newItem, token, true)
