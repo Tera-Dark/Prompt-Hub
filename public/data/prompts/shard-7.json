@@ -2,14 +2,30 @@
   "shardId": 7,
   "prompts": [
     {
+      "id": "测试--202511290315",
+      "title": "多图测试",
+      "category": "测试",
+      "description": "多图多图多图",
+      "prompt": "多图多图多图",
+      "tags": ["测试"],
+      "createdAt": "2025-11-29T03:15:12.396Z",
+      "status": "published",
+      "images": [
+        "https://cdn.jsdelivr.net/gh/tera-dark/Prompt-Hub@main/public/data/images/2025/11/1764386002329-0mc2gj.png"
+      ],
+      "imageUrl": "https://cdn.jsdelivr.net/gh/tera-dark/Prompt-Hub@main/public/data/images/2025/11/1764386002329-0mc2gj.png",
+      "author": {
+        "username": "Tera-Dark",
+        "avatarUrl": "https://avatars.githubusercontent.com/u/142307294?v=4"
+      }
+    },
+    {
       "id": "测试--202511281515",
       "title": "图片上传测试",
       "category": "测试",
       "description": "图片上传测试",
       "prompt": "测试测试测试",
-      "tags": [
-        "测试"
-      ],
+      "tags": ["测试"],
       "createdAt": "2025-11-28T15:15:36.782Z",
       "status": "published",
       "images": [
