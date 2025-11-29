@@ -151,7 +151,11 @@ export class GitHubService {
 
   async updateFiles(
     branch: string,
-    files: { path: string; content?: string; sha?: string }[],
+    filesOrUpdater:
+      | { path: string; content?: string; sha?: string }[]
+      | ((
+          currentFiles: Record<string, { content: string; sha: string }>,
+        ) => Promise<{ path: string; content: string }[]>),
     message: string,
     retries = 3,
   ) {
@@ -178,8 +182,45 @@ export class GitHubService {
         })
         const currentTreeSha = currentCommit.tree.sha
 
+        let filesToUpdate: { path: string; content?: string; sha?: string }[] = []
+
+        if (typeof filesOrUpdater === 'function') {
+          // Dynamic update mode (Optimistic Locking)
+          // Need to know which files the updater cares about.
+          // Limitation: The updater must know paths in advance or we fetch root tree?
+          // Ideally, we should pass a "getter" to the updater that fetches file content on demand given the currentTreeSha.
+          // For now, let's assume the updater handles fetching via `getFile` using `currentCommitSha` as ref.
+          // Actually, to be truly atomic, we should pass the current file contents to the updater.
+          // BUT, `updateFiles` signature is generic.
+          // Let's slightly change the contract: updater receives `currentCommitSha`.
+          // The updater is responsible for fetching the *latest* version of files it needs using that SHA.
+
+          // However, the type definition above implies `currentFiles` map.
+          // Let's simplify: if function, we pass the `currentCommitSha` so the caller can fetch fresh data.
+          // But TypeScript signature needs to match.
+          // Let's cast for internal logic.
+
+          // WAIT: A better approach for atomic updates on GitHub API without locking:
+          // 1. Get Ref SHA
+          // 2. Get File Content at that SHA
+          // 3. Modify
+          // 4. Create Tree/Commit based on that SHA
+          // 5. Update Ref (CAS: compare old SHA) -> This is what we do at step 5.
+
+          // So, we just need to provide the `currentCommitSha` to the updater function
+          // so it can fetch the *exact version* of the files it wants to modify.
+
+          // Redefining signature for the implementation:
+          const updater = filesOrUpdater as (
+            baseSha: string,
+          ) => Promise<{ path: string; content: string }[]>
+          filesToUpdate = await updater(currentCommitSha)
+        } else {
+          filesToUpdate = filesOrUpdater
+        }
+
         // 3. Create a new tree with the updated files
-        const tree = files.map((file) => ({
+        const tree = filesToUpdate.map((file) => ({
           path: file.path,
           mode: '100644' as const,
           type: 'blob' as const,
