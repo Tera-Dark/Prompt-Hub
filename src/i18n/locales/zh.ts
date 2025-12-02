@@ -9,6 +9,13 @@ export default {
     promptNotFoundDelete: '未找到待删除的提示词，可能已被删除或位于其他分片',
     mockLoginSubmit: '模拟登录无法提交到真实 GitHub。请退出并使用 GitHub 登录。',
     indexCorrupted: '索引文件损坏或为空，正在初始化新索引',
+    network: '网络错误',
+    git: {
+      conflict: '更新冲突 (非快进模式)。请刷新页面后重试。',
+      unprocessable: '无法处理的请求 (Git 错误)',
+      notFound: '资源未找到',
+      forbidden: '权限不足。请检查您的访问权限。',
+    },
   },
   admin: {
     debug: {
@@ -45,6 +52,7 @@ export default {
   },
   common: {
     search: '搜索...',
+    selected: '已选择 {count} 项',
     sort: {
       sortBy: '排序',
       order: '方向',

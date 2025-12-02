@@ -11,6 +11,13 @@ export default {
     mockLoginSubmit:
       'Mock login cannot submit to real GitHub. Please sign out and sign in with GitHub.',
     indexCorrupted: 'Index file corrupted or empty, initializing new index',
+    network: 'Network Error',
+    git: {
+      conflict: 'Update conflict (not fast-forward). Please refresh and try again.',
+      unprocessable: 'Unprocessable Entity (Git Error)',
+      notFound: 'Resource not found',
+      forbidden: 'Permission denied. Please check your access rights.',
+    },
   },
   admin: {
     debug: {
@@ -47,6 +54,7 @@ export default {
   },
   common: {
     search: 'Search...',
+    selected: '{count} selected',
     sort: {
       sortBy: 'Sort by',
       order: 'Order',

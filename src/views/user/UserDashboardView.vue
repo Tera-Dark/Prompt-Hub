@@ -29,14 +29,36 @@
     </div>
 
     <div v-else-if="userPrompts.length > 0" class="prompts-card">
+      <div v-if="selectedIds.size > 0" class="batch-actions-bar">
+        <span>{{ t('common.selected', { count: selectedIds.size }) }}</span>
+        <Button variant="danger" size="sm" :disabled="isBatchDeleting" @click="handleBatchDelete">
+          {{
+            isBatchDeleting
+              ? `Deleting (${batchProgress.current}/${batchProgress.total})`
+              : t('common.actions.delete')
+          }}
+        </Button>
+      </div>
+
       <header class="prompts-card__header">
+        <div class="col-checkbox">
+          <input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll" />
+        </div>
         <span>{{ t('prompts.list.columns.title') }}</span>
         <span>{{ t('prompts.list.columns.category') }}</span>
         <span>{{ t('common.status.title') }}</span>
         <span>{{ t('prompts.list.columns.actions') }}</span>
       </header>
       <ul class="prompts-list">
-        <li v-for="p in userPrompts" :key="p.id" class="prompts-row">
+        <li
+          v-for="p in userPrompts"
+          :key="p.id"
+          class="prompts-row"
+          :class="{ 'is-selected': selectedIds.has(p.id) }"
+        >
+          <div class="col-checkbox">
+            <input type="checkbox" :checked="selectedIds.has(p.id)" @change="toggleSelect(p.id)" />
+          </div>
           <div class="prompt-info">
             <h3>{{ p.title }}</h3>
             <p>{{ p.description }}</p>
@@ -153,6 +175,7 @@ import {
 } from '@/repositories/prompts'
 import { useLocalDrafts } from '@/composables/useLocalDrafts'
 import type { Prompt } from '@/types/prompt'
+import { getFriendlyErrorMessage } from '@/utils/errorMapper'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -167,6 +190,11 @@ const showDrafts = ref(false)
 const withdrawing = ref<string | null>(null)
 const searchQuery = ref('')
 const deleting = ref<string | null>(null)
+
+// Batch Selection
+const selectedIds = ref<Set<string>>(new Set())
+const isBatchDeleting = ref(false)
+const batchProgress = ref({ current: 0, total: 0 })
 
 onMounted(async () => {
   promptStore.fetchPrompts()
@@ -208,6 +236,26 @@ const userPrompts = computed(() => {
   )
 })
 
+const isAllSelected = computed(() => {
+  return userPrompts.value.length > 0 && selectedIds.value.size === userPrompts.value.length
+})
+
+const toggleSelectAll = () => {
+  if (isAllSelected.value) {
+    selectedIds.value.clear()
+  } else {
+    userPrompts.value.forEach((p) => selectedIds.value.add(p.id))
+  }
+}
+
+const toggleSelect = (id: string) => {
+  if (selectedIds.value.has(id)) {
+    selectedIds.value.delete(id)
+  } else {
+    selectedIds.value.add(id)
+  }
+}
+
 function getStatusLabel(status?: string) {
   if (!status || status === 'published') return t('common.status.published')
   if (status === 'draft') return t('common.status.draft')
@@ -231,11 +279,54 @@ async function handleDelete(prompt: Prompt) {
       const url = await submitPromptDelete(prompt.id, token.value!)
       alert(t('common.messages.issueCreated', { url }))
     }
+    // Remove from selection if present
+    selectedIds.value.delete(prompt.id)
   } catch (e) {
     console.error(e)
-    alert(t('common.messages.deleteFailed'))
+    alert(getFriendlyErrorMessage(e))
   } finally {
     deleting.value = null
+  }
+}
+
+async function handleBatchDelete() {
+  const count = selectedIds.value.size
+  if (count === 0) return
+
+  if (!confirm(`Are you sure you want to delete ${count} prompts?`)) return
+
+  isBatchDeleting.value = true
+  batchProgress.value = { current: 0, total: count }
+
+  const ids = Array.from(selectedIds.value)
+  let successCount = 0
+  let failCount = 0
+
+  for (const id of ids) {
+    try {
+      if (hasRepoWriteAccess.value) {
+        await deletePromptById(id, token.value!, true)
+      } else {
+        await submitPromptDelete(id, token.value!)
+      }
+      successCount++
+      selectedIds.value.delete(id)
+    } catch (e) {
+      console.error(`Failed to delete ${id}`, e)
+      failCount++
+    } finally {
+      batchProgress.value.current++
+    }
+  }
+
+  isBatchDeleting.value = false
+
+  if (failCount > 0) {
+    alert(
+      `Batch delete completed. Success: ${successCount}, Failed: ${failCount}. Check console for details.`,
+    )
+  } else {
+    alert(t('common.messages.deleteSuccess'))
   }
 }
 
@@ -251,9 +342,10 @@ async function handleWithdraw(id: string) {
     await withdrawSubmission(issueNumber, token.value)
     // Remove from local list
     pendingSubmissions.value = pendingSubmissions.value.filter((p) => p.id !== id)
+    selectedIds.value.delete(id)
   } catch (e) {
     console.error('Failed to withdraw submission', e)
-    alert(t('common.messages.withdrawFailed'))
+    alert(getFriendlyErrorMessage(e))
   } finally {
     withdrawing.value = null
   }
@@ -349,7 +441,7 @@ function removeDraft(id: string) {
 
 .prompts-card__header {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) 1fr 1fr 1.5fr;
+  grid-template-columns: 40px minmax(0, 2fr) 1fr 1fr 1.5fr;
   padding: 1rem 1.5rem;
   background: var(--color-gray-50);
   border-bottom: 1px solid var(--color-gray-100);
@@ -366,11 +458,32 @@ function removeDraft(id: string) {
 
 .prompts-row {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) 1fr 1fr 1.5fr;
+  grid-template-columns: 40px minmax(0, 2fr) 1fr 1fr 1.5fr;
   padding: 1.5rem;
   border-bottom: 1px solid var(--color-gray-100);
   align-items: center;
   transition: background-color 0.2s;
+}
+
+.prompts-row.is-selected {
+  background-color: var(--color-primary-50);
+}
+
+.col-checkbox {
+  display: flex;
+  align-items: center;
+}
+
+.batch-actions-bar {
+  padding: 0.75rem 1.5rem;
+  background: var(--color-primary-50);
+  border-bottom: 1px solid var(--color-primary-100);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--color-primary-900);
+  font-size: 0.875rem;
+  font-weight: 500;
 }
 
 .prompts-row:last-child {
