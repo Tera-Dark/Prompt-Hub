@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { uploadImage } from '../../services/image'
+import { uploadImage, uploadToImgur } from '../../services/image'
 
 const props = defineProps<{
   modelValue: string[]
@@ -92,16 +92,15 @@ const processFiles = async (files: File[]) => {
     uploadQueue.value = [item]
 
     try {
-      const publicUrl = await uploadImage(item.file, props.token)
+      const publicUrl = await uploadImage(item.file!, props.token)
       // Replace modelValue with just this new URL
       emit('update:modelValue', [publicUrl])
       uploadQueue.value = []
     } catch (e: any) {
       console.error('Upload error:', e)
       const qItem = uploadQueue.value.find((q) => q.id === item.id)
-      if (qItem) {
-        qItem.progress = false
 
+      if (qItem) {
         // Check if it's a permission error (404 on blob creation)
         const isPermissionError =
           e?.status === 404 ||
@@ -109,9 +108,20 @@ const processFiles = async (files: File[]) => {
           e?.message?.includes('createBlob')
 
         if (isPermissionError) {
-          qItem.error = '⚠️ 无上传权限,请粘贴图片URL'
-          console.warn('🔒 User lacks repository write permission. Suggesting URL input.')
+          console.warn('🔒 User lacks repository write permission. Falling back to Imgur.')
+          try {
+            const imgurUrl = await uploadToImgur(item.file!)
+            emit('update:modelValue', [imgurUrl])
+            uploadQueue.value = []
+            isUploading.value = false
+            return
+          } catch (imgurError) {
+            console.error('Imgur fallback failed:', imgurError)
+            qItem.progress = false
+            qItem.error = '上传失败 (GitHub无权限且图床失败)'
+          }
         } else {
+          qItem.progress = false
           qItem.error = t('imageUploader.uploadFailed') || 'Upload failed'
         }
       }
@@ -174,8 +184,27 @@ const processFiles = async (files: File[]) => {
 
         // FIX: Update modelValue by adding ONLY the new URL (not accumulated)
         emit('update:modelValue', [...props.modelValue, publicUrl])
-      } catch (e) {
+      } catch (e: any) {
         console.error(e)
+
+        // Check permission error
+        const isPermissionError =
+          e?.status === 404 ||
+          e?.message?.includes('Not Found') ||
+          e?.message?.includes('createBlob')
+
+        if (isPermissionError) {
+          console.warn('🔒 User lacks repository write permission. Falling back to Imgur.')
+          try {
+            const imgurUrl = await uploadToImgur(item.file)
+            uploadQueue.value = uploadQueue.value.filter((q) => q.id !== item.id)
+            emit('update:modelValue', [...props.modelValue, imgurUrl])
+            continue // Success, move to next
+          } catch (imgurError) {
+            console.error('Imgur fallback failed:', imgurError)
+          }
+        }
+
         // Mark error in queue
         const qItem = uploadQueue.value.find((q) => q.id === item.id)
         if (qItem) {

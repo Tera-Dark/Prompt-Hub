@@ -50,3 +50,39 @@ export async function uploadImage(file: File, token: string): Promise<string> {
   // Using jsdelivr for better CDN performance and correct MIME types
   return `https://cdn.jsdelivr.net/gh/${owner}/${repo}@${branch}/${path}`
 }
+
+export async function uploadToImgur(file: File): Promise<string> {
+  // Use provided Client ID or fallback to a demo one (Note: Demo ID might be rate limited)
+  const clientId = import.meta.env.VITE_IMGUR_CLIENT_ID || 'dd5403e23253504'
+
+  const base64Content = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.readAsDataURL(file)
+    reader.onload = () => {
+      const result = reader.result as string
+      const base64 = result.split(',')[1]
+      resolve(base64)
+    }
+    reader.onerror = (error) => reject(error)
+  })
+
+  const response = await fetch('https://api.imgur.com/3/image', {
+    method: 'POST',
+    headers: {
+      Authorization: `Client-ID ${clientId}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      image: base64Content,
+      type: 'base64',
+    }),
+  })
+
+  const data = await response.json()
+
+  if (!data.success) {
+    throw new Error(data.data.error || 'Imgur upload failed')
+  }
+
+  return data.data.link
+}
