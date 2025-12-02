@@ -242,18 +242,22 @@ const isAllSelected = computed(() => {
 
 const toggleSelectAll = () => {
   if (isAllSelected.value) {
-    selectedIds.value.clear()
+    selectedIds.value = new Set()
   } else {
-    userPrompts.value.forEach((p) => selectedIds.value.add(p.id))
+    const newSet = new Set<string>()
+    userPrompts.value.forEach((p) => newSet.add(p.id))
+    selectedIds.value = newSet
   }
 }
 
 const toggleSelect = (id: string) => {
-  if (selectedIds.value.has(id)) {
-    selectedIds.value.delete(id)
+  const newSet = new Set(selectedIds.value)
+  if (newSet.has(id)) {
+    newSet.delete(id)
   } else {
-    selectedIds.value.add(id)
+    newSet.add(id)
   }
+  selectedIds.value = newSet
 }
 
 function getStatusLabel(status?: string) {
@@ -280,7 +284,11 @@ async function handleDelete(prompt: Prompt) {
       alert(t('common.messages.issueCreated', { url }))
     }
     // Remove from selection if present
-    selectedIds.value.delete(prompt.id)
+    if (selectedIds.value.has(prompt.id)) {
+      const newSet = new Set(selectedIds.value)
+      newSet.delete(prompt.id)
+      selectedIds.value = newSet
+    }
   } catch (e) {
     console.error(e)
     alert(getFriendlyErrorMessage(e))
@@ -310,7 +318,9 @@ async function handleBatchDelete() {
         await submitPromptDelete(id, token.value!)
       }
       successCount++
-      selectedIds.value.delete(id)
+      const newSet = new Set(selectedIds.value)
+      newSet.delete(id)
+      selectedIds.value = newSet
     } catch (e) {
       console.error(`Failed to delete ${id}`, e)
       failCount++
@@ -342,7 +352,12 @@ async function handleWithdraw(id: string) {
     await withdrawSubmission(issueNumber, token.value)
     // Remove from local list
     pendingSubmissions.value = pendingSubmissions.value.filter((p) => p.id !== id)
-    selectedIds.value.delete(id)
+    pendingSubmissions.value = pendingSubmissions.value.filter((p) => p.id !== id)
+    if (selectedIds.value.has(id)) {
+      const newSet = new Set(selectedIds.value)
+      newSet.delete(id)
+      selectedIds.value = newSet
+    }
   } catch (e) {
     console.error('Failed to withdraw submission', e)
     alert(getFriendlyErrorMessage(e))

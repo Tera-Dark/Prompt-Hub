@@ -24,14 +24,36 @@
     </header>
 
     <div v-if="paginatedItems.length" class="prompts-card">
+      <div v-if="selectedIds.size > 0" class="batch-actions-bar">
+        <span>{{ t('common.selected', { count: selectedIds.size }) }}</span>
+        <button class="action danger" :disabled="isBatchDeleting" @click="handleBatchDelete">
+          {{
+            isBatchDeleting
+              ? `Deleting (${batchProgress.current}/${batchProgress.total})`
+              : t('common.actions.delete')
+          }}
+        </button>
+      </div>
+
       <header class="prompts-card__header">
+        <div class="col-checkbox">
+          <input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll" />
+        </div>
         <span>{{ t('prompts.list.columns.title') }}</span>
         <span>{{ t('prompts.list.columns.category') }}</span>
         <span>{{ t('prompts.list.columns.updated') }}</span>
         <span>{{ t('prompts.list.columns.actions') }}</span>
       </header>
       <ul class="prompts-list">
-        <li v-for="p in paginatedItems" :key="p.id" class="prompts-row">
+        <li
+          v-for="p in paginatedItems"
+          :key="p.id"
+          class="prompts-row"
+          :class="{ 'is-selected': selectedIds.has(p.id) }"
+        >
+          <div class="col-checkbox">
+            <input type="checkbox" :checked="selectedIds.has(p.id)" @change="toggleSelect(p.id)" />
+          </div>
           <div class="prompt-info">
             <h3>{{ p.title }}</h3>
             <p>{{ p.description }}</p>
@@ -118,6 +140,77 @@ const showDrafts = ref(false)
 const searchQuery = ref('')
 const { token, hasRepoWriteAccess } = useAuth()
 const { drafts, loadDrafts, deleteDraft } = useLocalDrafts()
+
+// Batch Selection
+const selectedIds = ref<Set<string>>(new Set())
+const isBatchDeleting = ref(false)
+const batchProgress = ref({ current: 0, total: 0 })
+
+const isAllSelected = computed(() => {
+  return filteredItems.value.length > 0 && selectedIds.value.size === filteredItems.value.length
+})
+
+const toggleSelectAll = () => {
+  if (isAllSelected.value) {
+    selectedIds.value = new Set()
+  } else {
+    const newSet = new Set<string>()
+    filteredItems.value.forEach((p) => newSet.add(p.id))
+    selectedIds.value = newSet
+  }
+}
+
+const toggleSelect = (id: string) => {
+  const newSet = new Set(selectedIds.value)
+  if (newSet.has(id)) {
+    newSet.delete(id)
+  } else {
+    newSet.add(id)
+  }
+  selectedIds.value = newSet
+}
+
+async function handleBatchDelete() {
+  const count = selectedIds.value.size
+  if (count === 0) return
+
+  ensureAuth()
+  if (!confirm(`Are you sure you want to delete ${count} prompts?`)) return
+
+  isBatchDeleting.value = true
+  batchProgress.value = { current: 0, total: count }
+
+  const ids = Array.from(selectedIds.value)
+  let successCount = 0
+  let failCount = 0
+
+  for (const id of ids) {
+    try {
+      const tVal = token.value!
+      await deletePromptById(id, tVal, hasRepoWriteAccess.value)
+      successCount++
+      const newSet = new Set(selectedIds.value)
+      newSet.delete(id)
+      selectedIds.value = newSet
+      items.value = items.value.filter((x) => x.id !== id)
+    } catch (e) {
+      console.error(`Failed to delete ${id}`, e)
+      failCount++
+    } finally {
+      batchProgress.value.current++
+    }
+  }
+
+  isBatchDeleting.value = false
+
+  if (failCount > 0) {
+    alert(
+      `Batch delete completed. Success: ${successCount}, Failed: ${failCount}. Check console for details.`,
+    )
+  } else {
+    alert(t('common.messages.deleteSuccess'))
+  }
+}
 
 // repo info handled in repository layer
 
@@ -281,7 +374,7 @@ function removeDraft(id: string) {
 
 .prompts-card__header {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) 160px 160px 220px;
+  grid-template-columns: 40px minmax(0, 2fr) 160px 160px 220px;
   padding: 1rem 1.5rem;
   font-size: var(--text-sm);
   font-weight: 600;
@@ -296,11 +389,32 @@ function removeDraft(id: string) {
 
 .prompts-row {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) 160px 160px 220px;
+  grid-template-columns: 40px minmax(0, 2fr) 160px 160px 220px;
   align-items: center;
   gap: 1rem;
   padding: 1.25rem 1.5rem;
   border-top: 1px solid var(--color-gray-100);
+}
+
+.prompts-row.is-selected {
+  background-color: var(--color-primary-50);
+}
+
+.col-checkbox {
+  display: flex;
+  align-items: center;
+}
+
+.batch-actions-bar {
+  padding: 0.75rem 1.5rem;
+  background: var(--color-primary-50);
+  border-bottom: 1px solid var(--color-primary-100);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--color-primary-900);
+  font-size: 0.875rem;
+  font-weight: 500;
 }
 
 .prompts-row:first-of-type {
