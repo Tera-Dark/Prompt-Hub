@@ -7,6 +7,10 @@ function repoInfo() {
   return { owner, repo }
 }
 
+/**
+ * Upload image to GitHub Repository
+ * Requires write access token
+ */
 export async function uploadImage(file: File, token: string): Promise<string> {
   githubService.setAccessToken(token)
   const { owner, repo } = repoInfo()
@@ -51,6 +55,80 @@ export async function uploadImage(file: File, token: string): Promise<string> {
   return `https://cdn.jsdelivr.net/gh/${owner}/${repo}@${branch}/${path}`
 }
 
+// --- External Hosting Services ---
+
+/**
+ * Upload to Catbox.moe (Primary)
+ * Max size: 200MB
+ * Retention: Permanent
+ */
+async function uploadToCatbox(file: File): Promise<string> {
+  console.log('🚀 Trying upload to Catbox.moe...')
+  const formData = new FormData()
+  formData.append('reqtype', 'fileupload')
+  formData.append('fileToUpload', file)
+
+  try {
+    const response = await fetch('https://catbox.moe/user/api.php', {
+      method: 'POST',
+      body: formData,
+    })
+
+    if (!response.ok) {
+      throw new Error(`Catbox upload failed: ${response.status} ${response.statusText}`)
+    }
+
+    const url = await response.text()
+    if (!url.startsWith('http')) {
+      throw new Error('Invalid response from Catbox')
+    }
+    console.log('✅ Catbox upload success:', url)
+    return url
+  } catch (e) {
+    console.warn('⚠️ Catbox upload failed:', e)
+    throw e
+  }
+}
+
+/**
+ * Upload to Telegra.ph (Secondary)
+ * Max size: ~5MB
+ * Retention: Unlimited (theoretically)
+ */
+async function uploadToTelegraph(file: File): Promise<string> {
+  console.log('🚀 Trying upload to Telegra.ph...')
+  const formData = new FormData()
+  formData.append('file', file)
+
+  try {
+    const response = await fetch('https://telegra.ph/upload', {
+      method: 'POST',
+      body: formData,
+    })
+
+    if (!response.ok) {
+      throw new Error(`Telegraph upload failed: ${response.status} ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    // Response format: [{"src":"\/file\/xxx.jpg"}]
+    if (Array.isArray(data) && data[0] && data[0].src) {
+      const url = 'https://telegra.ph' + data[0].src
+      console.log('✅ Telegraph upload success:', url)
+      return url
+    } else {
+      throw new Error('Invalid response from Telegraph')
+    }
+  } catch (e) {
+    console.warn('⚠️ Telegraph upload failed:', e)
+    throw e
+  }
+}
+
+/**
+ * Upload to Imgur (Backup)
+ * Max size: 10MB (Anon)
+ */
 export async function uploadToImgur(file: File): Promise<string> {
   // Fallback Client IDs to try if one fails
   const clientIds = [
@@ -74,7 +152,7 @@ export async function uploadToImgur(file: File): Promise<string> {
 
   for (const clientId of clientIds) {
     try {
-      console.log(`Trying Imgur upload with Client ID: ${clientId?.substring(0, 5)}...`)
+      console.log(`🚀 Trying Imgur upload with Client ID: ${clientId?.substring(0, 5)}...`)
 
       const response = await fetch('https://api.imgur.com/3/image', {
         method: 'POST',
@@ -91,7 +169,7 @@ export async function uploadToImgur(file: File): Promise<string> {
       const data = await response.json()
 
       if (!data.success) {
-        console.warn('Imgur upload failed for ID:', clientId, data)
+        console.warn('⚠️ Imgur upload failed for ID:', clientId, data)
         throw new Error(data.data.error || 'Imgur upload failed')
       }
 
@@ -105,3 +183,39 @@ export async function uploadToImgur(file: File): Promise<string> {
 
   throw lastError || new Error('All Imgur upload attempts failed')
 }
+
+/**
+ * Unified External Upload Strategy
+ * Order: Catbox -> Telegraph -> Imgur
+ */
+export async function uploadExternal(file: File): Promise<string> {
+  const errors: string[] = []
+
+  // 1. Try Catbox (Best for devs, permanent)
+  try {
+    return await uploadToCatbox(file)
+  } catch (e) {
+    errors.push(`Catbox: ${e instanceof Error ? e.message : String(e)}`)
+  }
+
+  // 2. Try Telegraph (Fast, free)
+  try {
+    return await uploadToTelegraph(file)
+  } catch (e) {
+    errors.push(`Telegraph: ${e instanceof Error ? e.message : String(e)}`)
+  }
+
+  // 3. Try Imgur (Backup)
+  try {
+    return await uploadToImgur(file)
+  } catch (e) {
+    errors.push(`Imgur: ${e instanceof Error ? e.message : String(e)}`)
+  }
+
+  // If all failed
+  console.error('❌ All external upload services failed:', errors)
+  throw new Error('所有图床上传均失败，请稍后重试或联系管理员。\n' + errors.join('\n'))
+}
+
+// Export legacy name for compatibility
+export { uploadExternal as uploadToImgurFallback }

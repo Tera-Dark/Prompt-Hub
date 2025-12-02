@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { uploadImage, uploadToImgur } from '../../services/image'
+import { uploadImage, uploadExternal } from '../../services/image'
 
 const props = defineProps<{
   modelValue: string[]
@@ -108,17 +108,20 @@ const processFiles = async (files: File[]) => {
           e?.message?.includes('createBlob')
 
         if (isPermissionError) {
-          console.warn('🔒 User lacks repository write permission. Falling back to Imgur.')
+          console.warn(
+            '🔒 User lacks repository write permission. Falling back to external hosting (Catbox/Telegraph/Imgur).',
+          )
           try {
-            const imgurUrl = await uploadToImgur(item.file!)
-            emit('update:modelValue', [imgurUrl])
+            // Use unified external upload strategy
+            const externalUrl = await uploadExternal(item.file!)
+            emit('update:modelValue', [externalUrl])
             uploadQueue.value = []
             isUploading.value = false
             return
-          } catch (imgurError) {
-            console.error('Imgur fallback failed:', imgurError)
+          } catch (externalError) {
+            console.error('External upload fallback failed:', externalError)
             qItem.progress = false
-            qItem.error = '上传失败 (GitHub无权限且图床失败)'
+            qItem.error = '上传失败 (GitHub无权限且所有图床均失败)'
           }
         } else {
           qItem.progress = false
@@ -194,14 +197,16 @@ const processFiles = async (files: File[]) => {
           e?.message?.includes('createBlob')
 
         if (isPermissionError) {
-          console.warn('🔒 User lacks repository write permission. Falling back to Imgur.')
+          console.warn(
+            '🔒 User lacks repository write permission. Falling back to external hosting (Catbox/Telegraph/Imgur).',
+          )
           try {
-            const imgurUrl = await uploadToImgur(item.file)
+            const externalUrl = await uploadExternal(item.file)
             uploadQueue.value = uploadQueue.value.filter((q) => q.id !== item.id)
-            emit('update:modelValue', [...props.modelValue, imgurUrl])
+            emit('update:modelValue', [...props.modelValue, externalUrl])
             continue // Success, move to next
-          } catch (imgurError) {
-            console.error('Imgur fallback failed:', imgurError)
+          } catch (externalError) {
+            console.error('External upload fallback failed:', externalError)
           }
         }
 
