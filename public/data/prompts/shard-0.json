@@ -1,21 +1,4 @@
 {
   "shardId": 0,
-  "prompts": [
-    {
-      "id": "prompt-1764660662719",
-      "title": "玩玩",
-      "category": "测试",
-      "description": "www",
-      "prompt": "wwwwww",
-      "tags": [
-        "测试"
-      ],
-      "createdAt": "2025-12-02T07:31:02.719Z",
-      "status": "published",
-      "author": {
-        "username": "EEESERT",
-        "avatarUrl": "https://avatars.githubusercontent.com/u/196584526?v=4"
-      }
-    }
-  ]
+  "prompts": []
 }
