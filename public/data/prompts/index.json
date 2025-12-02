@@ -1,8 +1,8 @@
 {
   "version": "2.0.0",
   "shardCount": 8,
-  "totalPrompts": 5,
-  "lastUpdated": "2025-12-02T13:15:11.545Z",
+  "totalPrompts": 6,
+  "lastUpdated": "2025-12-02T13:22:10.247Z",
   "categories": {
     "测试": {
       "count": 5,
@@ -23,6 +23,15 @@
         "prompt-1764680313008",
         "prompt-1764681019793"
       ]
+    },
+    "AI绘画": {
+      "count": 1,
+      "shards": [
+        7
+      ],
+      "promptIds": [
+        "AI绘画-ai-202512021322"
+      ]
     }
   },
   "shardMap": {
@@ -42,6 +51,8 @@
       "测试-3-202512020604"
     ],
     "6": [],
-    "7": []
+    "7": [
+      "AI绘画-ai-202512021322"
+    ]
   }
 }
