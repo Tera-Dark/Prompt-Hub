@@ -12,11 +12,15 @@
       ],
       "createdAt": "2025-12-02T06:04:46.340Z",
       "status": "published",
-      "images": [],
+      "images": [
+        "https://cdn.jsdelivr.net/gh/tera-dark/Prompt-Hub@main/public/data/images/2025/12/1764656202749-eqzi63.jpg"
+      ],
       "author": {
         "username": "Tera-Dark",
         "avatarUrl": "https://avatars.githubusercontent.com/u/142307294?v=4"
-      }
+      },
+      "updatedAt": "2025-12-02T06:16:50.646Z",
+      "imageUrl": "https://cdn.jsdelivr.net/gh/tera-dark/Prompt-Hub@main/public/data/images/2025/12/1764656202749-eqzi63.jpg"
     }
   ]
 }
