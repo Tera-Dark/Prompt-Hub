@@ -199,9 +199,17 @@ function toggleLanguage() {
   inset: 0;
   background: rgba(0, 0, 0, 0.2);
   z-index: 20;
+  display: none; /* Hidden by default on desktop */
+}
+
+@media (max-width: 1024px) {
+  .sidebar-backdrop {
+    display: block;
+  }
 }
 
 .admin-sidebar {
+  position: relative;
   width: 240px;
   background: var(--color-surface);
   border-right: 1px solid var(--color-border);

@@ -29,6 +29,8 @@ const { toasts, remove } = useToast()
   flex-direction: column;
   gap: 0.75rem;
   pointer-events: none; /* Allow clicking through the container area */
+  width: auto;
+  max-width: 400px;
 }
 
 .toast-container > * {
