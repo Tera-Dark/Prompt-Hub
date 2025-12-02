@@ -2,6 +2,22 @@
   "shardId": 1,
   "prompts": [
     {
+      "id": "prompt-1764677594459",
+      "title": "尝尝",
+      "category": "测试",
+      "description": "尝尝",
+      "prompt": "尝尝",
+      "tags": [
+        "尝尝"
+      ],
+      "createdAt": "2025-12-02T12:13:14.459Z",
+      "status": "published",
+      "author": {
+        "username": "EEESERT",
+        "avatarUrl": "https://avatars.githubusercontent.com/u/196584526?v=4"
+      }
+    },
+    {
       "id": "测试--202512020542",
       "title": "图文测试",
       "category": "测试",
