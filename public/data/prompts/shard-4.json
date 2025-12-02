@@ -1,4 +1,25 @@
 {
   "shardId": 4,
-  "prompts": []
+  "prompts": [
+    {
+      "id": "prompt-1764680313008",
+      "title": "图片url测试",
+      "category": "测试",
+      "description": "呃呃呃",
+      "prompt": "鹅鹅鹅饿",
+      "tags": [
+        "测试"
+      ],
+      "createdAt": "2025-12-02T12:58:33.008Z",
+      "status": "published",
+      "author": {
+        "username": "EEESERT",
+        "avatarUrl": "https://avatars.githubusercontent.com/u/196584526?v=4"
+      },
+      "images": [
+        "https://files.catbox.moe/h3xq5s.jpg"
+      ],
+      "imageUrl": "https://files.catbox.moe/h3xq5s.jpg"
+    }
+  ]
 }
