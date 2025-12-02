@@ -775,6 +775,256 @@ METADATA_JSON_END -->
   return await createIssue(owner, repo, title, body, token)
 }
 
+export async function deletePromptsBatch(
+  ids: string[],
+  token: string,
+  directCommit = false,
+): Promise<string> {
+  const { owner, repo } = repoInfo()
+  githubService.setAccessToken(token)
+  const base = await getDefaultBranch(owner, repo, token)
+
+  // 1. Prepare Branch
+  let branch = base
+  if (!directCommit) {
+    branch = `batch-delete-${Date.now()}`
+    const baseSha = await getBranchSha(owner, repo, base, token)
+    await createBranch(owner, repo, branch, baseSha, token)
+  }
+
+  const message = `feat: batch delete ${ids.length} prompts`
+
+  // 2. Atomic Update
+  if (directCommit) {
+    await githubService.updateFiles(
+      branch,
+      async (baseSha) => {
+        // A. Fetch Index
+        const indexFile = await getFile(
+          owner,
+          repo,
+          'public/data/prompts/index.json',
+          baseSha,
+          token,
+        )
+        let index: ShardIndex
+        try {
+          index = JSON.parse(indexFile.content) as ShardIndex
+        } catch {
+          // Should not happen, but fail safe
+          throw new Error(i18n.global.t('errors.indexCorrupted'))
+        }
+
+        // B. Identify Shards to Fetch
+        const shardsToFetch = new Set<number>()
+
+        ids.forEach((id) => {
+          const shardId = getShardId(id, index.shardCount)
+          shardsToFetch.add(shardId)
+        })
+
+        // C. Fetch Shards
+        const shardFiles = await Promise.all(
+          Array.from(shardsToFetch).map((shardId) =>
+            getFile(owner, repo, `public/data/prompts/shard-${shardId}.json`, baseSha, token).then(
+              (f) => ({ shardId, content: f.content }),
+            ),
+          ),
+        )
+
+        const shardsMap = new Map<number, ShardData>()
+        shardFiles.forEach(({ shardId, content }) => {
+          shardsMap.set(shardId, JSON.parse(content) as ShardData)
+        })
+
+        // D. Perform Deletions
+        let deletedCount = 0
+
+        ids.forEach((id) => {
+          const shardId = getShardId(id, index.shardCount)
+          const shard = shardsMap.get(shardId)
+          if (!shard) return // Should not happen
+
+          const idx = shard.prompts.findIndex((p) => p.id === id)
+          if (idx !== -1) {
+            const item = shard.prompts[idx]
+            shard.prompts.splice(idx, 1)
+            deletedCount++
+
+            // Update Index Stats
+            const cat = index.categories[item.category]
+            if (cat) {
+              cat.count--
+              cat.promptIds = cat.promptIds.filter((pid) => pid !== id)
+            }
+
+            const shardMapEntry = index.shardMap[shardId]
+            if (shardMapEntry) {
+              index.shardMap[shardId] = shardMapEntry.filter((pid) => pid !== id)
+            }
+          }
+        })
+
+        index.totalPrompts -= deletedCount
+        index.lastUpdated = new Date().toISOString()
+
+        // E. Prepare Files for Commit
+        const filesToUpdate = [
+          {
+            path: 'public/data/prompts/index.json',
+            content: JSON.stringify(index, null, 2),
+          },
+        ]
+
+        shardsMap.forEach((shard, shardId) => {
+          filesToUpdate.push({
+            path: `public/data/prompts/shard-${shardId}.json`,
+            content: JSON.stringify(shard, null, 2),
+          })
+        })
+
+        return filesToUpdate
+      },
+      message,
+    )
+
+    // Optimistic Cache Update
+    const cached = localStorage.getItem(CACHE_KEY)
+    if (cached) {
+      const { data } = JSON.parse(cached)
+      const idsSet = new Set(ids)
+      data.prompts = data.prompts.filter((p: Prompt) => !idsSet.has(p.id))
+      setPromptsCache(data)
+    }
+
+    return `https://github.com/${owner}/${repo}`
+  }
+
+  // Non-direct commit (PR flow) - simplified for now:
+  // We can't easily do multi-file PRs without creating the branch first (which we did above)
+  // AND updating the files on that branch.
+  // So we reuse the logic but targeting the new branch.
+  // HOWEVER, updateFiles with function updater works on the branch tip.
+  // So we can just call the same logic but with directCommit=true effectively on the feature branch.
+  // Wait, the logic above uses `branch` variable.
+  // So if we are here, we already created `branch`.
+  // We just need to execute the update on `branch`.
+
+  // Actually, the code block above is inside `if (directCommit)`.
+  // We should extract the updater logic to be reusable or just duplicate it for now since the flow is slightly different?
+  // No, `updateFiles` handles it.
+  // If `directCommit` is false, we created a branch. We should run the SAME update logic on that branch.
+  // The only difference is the return value (PR URL vs Repo URL).
+
+  // Let's refactor slightly to avoid duplication.
+  // But for now, to ensure correctness, I will copy the updater logic.
+
+  await githubService.updateFiles(
+    branch,
+    async (baseSha) => {
+      // A. Fetch Index
+      const indexFile = await getFile(owner, repo, 'public/data/prompts/index.json', baseSha, token)
+      let index: ShardIndex
+      try {
+        index = JSON.parse(indexFile.content) as ShardIndex
+      } catch {
+        throw new Error(i18n.global.t('errors.indexCorrupted'))
+      }
+
+      // B. Identify Shards
+      const shardsToFetch = new Set<number>()
+      ids.forEach((id) => {
+        const shardId = getShardId(id, index.shardCount)
+        shardsToFetch.add(shardId)
+      })
+
+      // C. Fetch Shards
+      const shardFiles = await Promise.all(
+        Array.from(shardsToFetch).map((shardId) =>
+          getFile(owner, repo, `public/data/prompts/shard-${shardId}.json`, baseSha, token).then(
+            (f) => ({ shardId, content: f.content }),
+          ),
+        ),
+      )
+
+      const shardsMap = new Map<number, ShardData>()
+      shardFiles.forEach(({ shardId, content }) => {
+        shardsMap.set(shardId, JSON.parse(content) as ShardData)
+      })
+
+      // D. Perform Deletions
+      let deletedCount = 0
+      ids.forEach((id) => {
+        const shardId = getShardId(id, index.shardCount)
+        const shard = shardsMap.get(shardId)
+        if (!shard) return
+
+        const idx = shard.prompts.findIndex((p) => p.id === id)
+        if (idx !== -1) {
+          const item = shard.prompts[idx]
+          shard.prompts.splice(idx, 1)
+          deletedCount++
+
+          // Update Index Stats
+          const cat = index.categories[item.category]
+          if (cat) {
+            cat.count--
+            cat.promptIds = cat.promptIds.filter((pid) => pid !== id)
+          }
+
+          const shardMapEntry = index.shardMap[shardId]
+          if (shardMapEntry) {
+            index.shardMap[shardId] = shardMapEntry.filter((pid) => pid !== id)
+          }
+        }
+      })
+
+      index.totalPrompts -= deletedCount
+      index.lastUpdated = new Date().toISOString()
+
+      // E. Prepare Files
+      const filesToUpdate = [
+        {
+          path: 'public/data/prompts/index.json',
+          content: JSON.stringify(index, null, 2),
+        },
+      ]
+
+      shardsMap.forEach((shard, shardId) => {
+        filesToUpdate.push({
+          path: `public/data/prompts/shard-${shardId}.json`,
+          content: JSON.stringify(shard, null, 2),
+        })
+      })
+
+      return filesToUpdate
+    },
+    message,
+  )
+
+  const prTitle = `Batch delete ${ids.length} prompts`
+  const prBody = `Batch delete request for prompts:\n\n${ids.map((id) => `- ${id}`).join('\n')}`
+  return await createPullRequest(owner, repo, prTitle, branch, base, prBody, token)
+}
+
+export async function submitPromptDeleteBatch(ids: string[], token: string): Promise<string> {
+  if (token === 'mock-token') {
+    throw new Error(i18n.global.t('errors.mockLoginSubmit'))
+  }
+  const { owner, repo } = repoInfo()
+  const title = `[Batch Delete] ${ids.length} prompts`
+  const body = `
+### Batch Delete Prompt Request
+
+**IDs:**
+${ids.map((id) => `- ${id}`).join('\n')}
+
+---
+*Submitted via Prompt-Hub*
+`
+  return await createIssue(owner, repo, title, body, token)
+}
+
 export async function submitPromptDelete(id: string, token: string): Promise<string> {
   if (token === 'mock-token') {
     throw new Error(i18n.global.t('errors.mockLoginSubmit'))

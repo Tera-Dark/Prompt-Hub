@@ -76,6 +76,11 @@ export function usePromptStore() {
     return result
   }
 
+  function removePrompts(ids: string[]) {
+    const idSet = new Set(ids)
+    prompts.value = prompts.value.filter((p) => !idSet.has(p.id))
+  }
+
   return {
     prompts: allPrompts,
     featuredPrompts,
@@ -84,5 +89,6 @@ export function usePromptStore() {
     error,
     fetchPrompts,
     getFilteredPrompts,
+    removePrompts,
   }
 }

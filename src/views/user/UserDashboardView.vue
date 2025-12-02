@@ -170,7 +170,9 @@ import {
   getUserSubmissions,
   withdrawSubmission,
   deletePromptById,
+  deletePromptsBatch,
   submitPromptDelete,
+  submitPromptDeleteBatch,
   type PendingSubmission,
 } from '@/repositories/prompts'
 import { useLocalDrafts } from '@/composables/useLocalDrafts'
@@ -307,36 +309,39 @@ async function handleBatchDelete() {
   batchProgress.value = { current: 0, total: count }
 
   const ids = Array.from(selectedIds.value)
-  let successCount = 0
-  let failCount = 0
 
-  for (const id of ids) {
-    try {
-      if (hasRepoWriteAccess.value) {
-        await deletePromptById(id, token.value!, true)
-      } else {
-        await submitPromptDelete(id, token.value!)
-      }
-      successCount++
-      const newSet = new Set(selectedIds.value)
-      newSet.delete(id)
-      selectedIds.value = newSet
-    } catch (e) {
-      console.error(`Failed to delete ${id}`, e)
-      failCount++
-    } finally {
-      batchProgress.value.current++
+  // Optimistic UI Update
+  const originalSelection = new Set(selectedIds.value)
+
+  // Remove from view immediately
+  selectedIds.value.clear()
+  // Note: userPrompts is computed, so we can't mutate it directly.
+  // But we can filter the source lists if we want true optimistic UI.
+  // For now, let's rely on the fact that `deletePromptsBatch` updates the cache,
+  // so a re-fetch or reactivity update should happen.
+  // However, `userPrompts` depends on `allPrompts` from store.
+  // We should update the store manually or re-fetch.
+
+  try {
+    if (hasRepoWriteAccess.value) {
+      await deletePromptsBatch(ids, token.value!, true)
+      // Update store locally to reflect changes immediately if cache update didn't trigger reactivity
+      promptStore.removePrompts(ids)
+      alert(t('common.messages.deleteSuccess'))
+    } else {
+      const url = await submitPromptDeleteBatch(ids, token.value!)
+      alert(t('common.messages.issueCreated', { url }))
     }
-  }
+  } catch (e) {
+    console.error('Batch delete failed', e)
+    alert(getFriendlyErrorMessage(e))
 
-  isBatchDeleting.value = false
-
-  if (failCount > 0) {
-    alert(
-      `Batch delete completed. Success: ${successCount}, Failed: ${failCount}. Check console for details.`,
-    )
-  } else {
-    alert(t('common.messages.deleteSuccess'))
+    // Revert Optimistic UI (reload)
+    promptStore.fetchPrompts()
+    selectedIds.value = originalSelection
+  } finally {
+    isBatchDeleting.value = false
+    batchProgress.value = { current: count, total: count }
   }
 }
 

@@ -129,7 +129,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '@/composables/useAuth'
 import { type Prompt } from '@/types/prompt'
-import { deletePromptById, loadPrompts } from '@/repositories/prompts'
+import { deletePromptById, deletePromptsBatch, loadPrompts } from '@/repositories/prompts'
 import { useLocalDrafts } from '@/composables/useLocalDrafts'
 
 const { t } = useI18n()
@@ -181,34 +181,26 @@ async function handleBatchDelete() {
   batchProgress.value = { current: 0, total: count }
 
   const ids = Array.from(selectedIds.value)
-  let successCount = 0
-  let failCount = 0
+  const originalSelection = new Set(selectedIds.value)
+  const originalItems = [...items.value]
 
-  for (const id of ids) {
-    try {
-      const tVal = token.value!
-      await deletePromptById(id, tVal, hasRepoWriteAccess.value)
-      successCount++
-      const newSet = new Set(selectedIds.value)
-      newSet.delete(id)
-      selectedIds.value = newSet
-      items.value = items.value.filter((x) => x.id !== id)
-    } catch (e) {
-      console.error(`Failed to delete ${id}`, e)
-      failCount++
-    } finally {
-      batchProgress.value.current++
-    }
-  }
+  // Optimistic UI
+  selectedIds.value.clear()
+  items.value = items.value.filter((p) => !originalSelection.has(p.id))
 
-  isBatchDeleting.value = false
-
-  if (failCount > 0) {
-    alert(
-      `Batch delete completed. Success: ${successCount}, Failed: ${failCount}. Check console for details.`,
-    )
-  } else {
+  try {
+    const tVal = token.value!
+    await deletePromptsBatch(ids, tVal, hasRepoWriteAccess.value)
     alert(t('common.messages.deleteSuccess'))
+  } catch (e) {
+    console.error('Batch delete failed', e)
+    // Revert
+    items.value = originalItems
+    selectedIds.value = originalSelection
+    alert(e instanceof Error ? e.message : 'Batch delete failed')
+  } finally {
+    isBatchDeleting.value = false
+    batchProgress.value = { current: count, total: count }
   }
 }
 
