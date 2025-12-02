@@ -1129,18 +1129,28 @@ export async function approveSubmission(
       const promptMatch = body.match(/```\n([\s\S]*?)\n```/)
       const tagsMatch = body.match(/\*\*Tags:\*\* (.*)/)
       const statusMatch = body.match(/\*\*Status:\*\* (.*)/)
-      const imagesMatch = body.match(/\*\*Images:\*\* (.*)/)
+      const imagesMatch = body.match(/\*\*Images:\*\*\s*(.+?)(?=\n|$)/i)
 
       let images: string[] = []
-      if (imagesMatch) {
+      if (imagesMatch && imagesMatch[1]) {
         try {
-          images = JSON.parse(imagesMatch[1].trim())
-        } catch {
-          images = imagesMatch[1]
-            .split(',')
-            .map((s) => s.trim())
-            .filter(Boolean)
+          const parsed = JSON.parse(imagesMatch[1].trim())
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            images = parsed
+            console.log('✅ [approveSubmission UPDATE] Parsed images:', images)
+          }
+        } catch (e) {
+          console.warn('⚠️ [approveSubmission UPDATE] Failed to parse images JSON, trying fallback')
+          const raw = imagesMatch[1].trim()
+          if (raw && raw !== '[]' && raw !== 'null') {
+            images = raw
+              .split(',')
+              .map((s) => s.trim())
+              .filter(Boolean)
+          }
         }
+      } else {
+        console.log('⚠️ [approveSubmission UPDATE] No Images field found in issue body')
       }
 
       if (!titleMatch || !categoryMatch || !promptMatch) {
@@ -1175,18 +1185,28 @@ export async function approveSubmission(
     const descMatch = body.match(/\*\*Description:\*\*\s*\n([\s\S]*?)\n\n\*\*Prompt:\*\*/)
     const promptMatch = body.match(/```\n([\s\S]*?)\n```/)
     const tagsMatch = body.match(/\*\*Tags:\*\* (.*)/)
-    const imagesMatch = body.match(/\*\*Images:\*\* (.*)/)
+    const imagesMatch = body.match(/\*\*Images:\*\*\s*(.+?)(?=\n|$)/i)
 
     let images: string[] = []
-    if (imagesMatch) {
+    if (imagesMatch && imagesMatch[1]) {
       try {
-        images = JSON.parse(imagesMatch[1].trim())
-      } catch {
-        images = imagesMatch[1]
-          .split(',')
-          .map((s) => s.trim())
-          .filter(Boolean)
+        const parsed = JSON.parse(imagesMatch[1].trim())
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          images = parsed
+          console.log('✅ [approveSubmission CREATE] Parsed images:', images)
+        }
+      } catch (e) {
+        console.warn('⚠️ [approveSubmission CREATE] Failed to parse images JSON, trying fallback')
+        const raw = imagesMatch[1].trim()
+        if (raw && raw !== '[]' && raw !== 'null') {
+          images = raw
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean)
+        }
       }
+    } else {
+      console.log('⚠️ [approveSubmission CREATE] No Images field found in issue body')
     }
 
     if (!titleMatch || !categoryMatch || !promptMatch) {
