@@ -2,6 +2,26 @@
   "shardId": 3,
   "prompts": [
     {
+      "id": "prompt-1764681019793",
+      "title": "图片拖拽上传测试",
+      "category": "测试",
+      "description": "wwww",
+      "prompt": "wwwwww",
+      "tags": [
+        "测试"
+      ],
+      "createdAt": "2025-12-02T13:10:19.793Z",
+      "status": "published",
+      "author": {
+        "username": "EEESERT",
+        "avatarUrl": "https://avatars.githubusercontent.com/u/196584526?v=4"
+      },
+      "images": [
+        "https://files.catbox.moe/hq57vl.jpg"
+      ],
+      "imageUrl": "https://files.catbox.moe/hq57vl.jpg"
+    },
+    {
       "id": "prompt-1764680196396",
       "title": "呃呃1",
       "category": "测试",
