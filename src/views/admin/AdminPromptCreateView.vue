@@ -253,6 +253,14 @@ async function handleSubmit(_draft = false) {
           }
         : undefined,
     }
+
+    // Debug logging
+    console.log('📤 Submitting prompt with images:', {
+      images: newItem.images,
+      imageUrl: newItem.imageUrl,
+      hasImages: newItem.images && newItem.images.length > 0,
+    })
+
     let url: string
     if (hasRepoWriteAccess.value) {
       try {

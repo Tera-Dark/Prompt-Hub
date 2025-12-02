@@ -61,15 +61,23 @@ const closeReview = () => {
 }
 
 const parsePromptFromIssueBody = (body: string): Partial<Prompt> => {
+  console.log('🔍 Parsing issue body for prompt data...')
+
   // 1. Try to parse structured metadata from hidden comment first (MOST ROBUST)
   const metadataMatch = body.match(/<!-- METADATA_JSON_START\s*([\s\S]*?)\s*METADATA_JSON_END -->/)
   if (metadataMatch && metadataMatch[1]) {
     try {
       const metadata = JSON.parse(metadataMatch[1])
+      console.log('✅ Successfully parsed metadata JSON:', {
+        hasImages: metadata.images && metadata.images.length > 0,
+        imageCount: metadata.images?.length || 0,
+      })
       return metadata
     } catch (e) {
       console.warn('Failed to parse metadata JSON from issue body, falling back to regex', e)
     }
+  } else {
+    console.log('⚠️ No METADATA_JSON found, using regex parsing')
   }
 
   // 2. Fallback to Regex Parsing (Legacy support)
@@ -87,20 +95,38 @@ const parsePromptFromIssueBody = (body: string): Partial<Prompt> => {
   const promptMatch = normalizedBody.match(/```[\s\S]*?\n([\s\S]*?)\n```/)
 
   const tagsMatch = normalizedBody.match(/\*\*Tags:\*\*\s*(.*)/i)
-  const imagesMatch = normalizedBody.match(/\*\*Images:\*\*\s*(.*)/i)
+  const imagesMatch = normalizedBody.match(/\*\*Images:\*\*\s*(.+?)(?=\n|$)/i)
 
   let images: string[] | undefined
   if (imagesMatch && imagesMatch[1]) {
     try {
-      // Try parsing as JSON
-      images = JSON.parse(imagesMatch[1].trim())
-    } catch {
-      // Fallback to comma separated
-      images = imagesMatch[1]
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean)
+      // Try parsing as JSON array
+      const parsed = JSON.parse(imagesMatch[1].trim())
+      // Only set images if it's a non-empty array
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        images = parsed
+        console.log('✅ Successfully parsed images from JSON:', images)
+      } else {
+        console.log('⚠️ Images field is empty array')
+      }
+    } catch (e) {
+      console.warn('⚠️ Failed to parse images as JSON, trying fallback:', e)
+      // Fallback: try comma-separated values
+      const raw = imagesMatch[1].trim()
+      if (raw && raw !== '[]' && raw !== 'null') {
+        images = raw
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
+        if (images.length > 0) {
+          console.log('✅ Parsed images from CSV:', images)
+        } else {
+          console.log('⚠️ No valid images in CSV format')
+        }
+      }
     }
+  } else {
+    console.log('⚠️ No Images field found in issue body')
   }
 
   return {
