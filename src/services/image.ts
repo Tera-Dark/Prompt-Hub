@@ -52,8 +52,12 @@ export async function uploadImage(file: File, token: string): Promise<string> {
 }
 
 export async function uploadToImgur(file: File): Promise<string> {
-  // Use provided Client ID or fallback to a demo one (Note: Demo ID might be rate limited)
-  const clientId = import.meta.env.VITE_IMGUR_CLIENT_ID || 'dd5403e23253504'
+  // Fallback Client IDs to try if one fails
+  const clientIds = [
+    import.meta.env.VITE_IMGUR_CLIENT_ID,
+    'e08d9e36853650d', // Public demo ID 1
+    '546c25a59c58ad7', // Public demo ID 2
+  ].filter(Boolean)
 
   const base64Content = await new Promise<string>((resolve, reject) => {
     const reader = new FileReader()
@@ -66,23 +70,38 @@ export async function uploadToImgur(file: File): Promise<string> {
     reader.onerror = (error) => reject(error)
   })
 
-  const response = await fetch('https://api.imgur.com/3/image', {
-    method: 'POST',
-    headers: {
-      Authorization: `Client-ID ${clientId}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      image: base64Content,
-      type: 'base64',
-    }),
-  })
+  let lastError: any
 
-  const data = await response.json()
+  for (const clientId of clientIds) {
+    try {
+      console.log(`Trying Imgur upload with Client ID: ${clientId?.substring(0, 5)}...`)
 
-  if (!data.success) {
-    throw new Error(data.data.error || 'Imgur upload failed')
+      const response = await fetch('https://api.imgur.com/3/image', {
+        method: 'POST',
+        headers: {
+          Authorization: `Client-ID ${clientId}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          image: base64Content,
+          type: 'base64',
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!data.success) {
+        console.warn('Imgur upload failed for ID:', clientId, data)
+        throw new Error(data.data.error || 'Imgur upload failed')
+      }
+
+      console.log('✅ Imgur upload success:', data.data.link)
+      return data.data.link
+    } catch (e) {
+      lastError = e
+      continue // Try next ID
+    }
   }
 
-  return data.data.link
+  throw lastError || new Error('All Imgur upload attempts failed')
 }
