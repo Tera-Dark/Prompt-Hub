@@ -22,22 +22,6 @@
       "imageUrl": "https://files.catbox.moe/hq57vl.jpg"
     },
     {
-      "id": "prompt-1764680196396",
-      "title": "呃呃1",
-      "category": "测试",
-      "description": "呃呃",
-      "prompt": "呃呃呃",
-      "tags": [
-        "测试"
-      ],
-      "createdAt": "2025-12-02T12:56:36.396Z",
-      "status": "published",
-      "author": {
-        "username": "EEESERT",
-        "avatarUrl": "https://avatars.githubusercontent.com/u/196584526?v=4"
-      }
-    },
-    {
       "id": "测试-2-202512020603",
       "title": "图文测试2",
       "category": "测试",
