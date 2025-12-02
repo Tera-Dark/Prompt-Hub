@@ -70,8 +70,8 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label">Images (Max 9)</label>
-            <ImageUploader v-model="form.images" :limit="9" :token="token || ''" />
+            <label class="form-label">{{ t('prompts.create.form.images') }}</label>
+            <ImageUploader v-model="form.images" :limit="1" :token="token || ''" />
           </div>
         </aside>
 
@@ -201,6 +201,7 @@ async function saveDraft() {
     tags: tagsInput.value,
     status: form.value.status,
     images: form.value.images,
+    imageUrl: form.value.images[0] || '',
   })
 
   if (id) {

@@ -169,6 +169,7 @@ export default {
         bodyPlaceholder: '在此输入您的提示词模版...',
         tags: '标签',
         tagsPlaceholder: '邮件, 写作, 效率 (用逗号分隔)',
+        images: '图片',
       },
       actions: {
         saveDraft: '保存草稿',
@@ -216,6 +217,7 @@ export default {
     dropText: '拖拽图片到此处或点击上传',
     limitReached: '已达到最大图片数量限制',
     fileTooLarge: '文件 {name} 太大 (最大 10MB)',
+    uploadFailed: '上传失败',
   },
   dataTools: {
     title: '数据工具',

@@ -171,6 +171,7 @@ export default {
         bodyPlaceholder: 'Enter your prompt template here...',
         tags: 'Tags',
         tagsPlaceholder: 'email, writing, productivity (comma separated)',
+        images: 'Images',
       },
       actions: {
         saveDraft: 'Save Draft',
@@ -218,6 +219,7 @@ export default {
     dropText: 'Drop images here or click to upload',
     limitReached: 'Maximum number of images reached',
     fileTooLarge: 'File {name} is too large (max 10MB)',
+    uploadFailed: 'Upload failed',
   },
   dataTools: {
     title: 'Data Tools',

@@ -44,6 +44,56 @@ const handleDrop = async (event: DragEvent) => {
 const processFiles = async (files: File[]) => {
   if (isUploading.value) return
 
+  const isSingleMode = props.limit === 1
+
+  // If single mode, we don't check remaining slots against length,
+  // we just take the first file and replace everything.
+  if (isSingleMode) {
+    if (files.length === 0) return
+    // Take only the first file
+    const file = files[0]
+
+    if (!file.type.startsWith('image/')) return
+    if (file.size > 10 * 1024 * 1024) {
+      alert(t('imageUploader.fileTooLarge', { name: file.name }))
+      return
+    }
+
+    isUploading.value = true
+
+    // Clear existing queue and model
+    uploadQueue.value = []
+
+    const id = Math.random().toString(36).substring(7)
+    const item = { id, file, progress: true, url: '' }
+
+    const reader = new FileReader()
+    reader.readAsDataURL(file)
+    reader.onload = (e) => {
+      item.url = e.target?.result as string
+    }
+
+    uploadQueue.value = [item]
+
+    try {
+      const publicUrl = await uploadImage(item.file, props.token)
+      // Replace modelValue with just this new URL
+      emit('update:modelValue', [publicUrl])
+      uploadQueue.value = []
+    } catch (e) {
+      console.error(e)
+      const qItem = uploadQueue.value.find((q) => q.id === item.id)
+      if (qItem) {
+        qItem.progress = false
+        qItem.error = t('imageUploader.uploadFailed') || 'Upload failed'
+      }
+    } finally {
+      isUploading.value = false
+    }
+    return
+  }
+
+  // Multi-image mode (existing logic)
   const remainingSlots = (props.limit || 9) - props.modelValue.length
   if (remainingSlots <= 0) {
     alert(t('imageUploader.limitReached'))
@@ -102,7 +152,7 @@ const processFiles = async (files: File[]) => {
         const qItem = uploadQueue.value.find((q) => q.id === item.id)
         if (qItem) {
           qItem.progress = false
-          qItem.error = 'Upload failed'
+          qItem.error = t('imageUploader.uploadFailed') || 'Upload failed'
         }
       }
     }
@@ -191,7 +241,7 @@ const closeZoom = () => {
 
     <!-- Drop Zone -->
     <div
-      v-if="modelValue.length + uploadQueue.length < (limit || 9)"
+      v-if="limit === 1 || modelValue.length + uploadQueue.length < (limit || 9)"
       class="drop-zone"
       :class="{
         'is-dragging': isDragging,

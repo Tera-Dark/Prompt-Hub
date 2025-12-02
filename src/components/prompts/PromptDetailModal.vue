@@ -665,13 +665,13 @@ async function copyToClipboard() {
 }
 
 .zoom-close {
-  position: absolute;
-  top: -40px;
-  right: 0;
-  width: 32px;
-  height: 32px;
-  background: rgba(255, 255, 255, 0.9);
-  color: black;
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
   border: none;
   border-radius: 50%;
   display: flex;
@@ -679,10 +679,11 @@ async function copyToClipboard() {
   justify-content: center;
   cursor: pointer;
   transition: background 0.2s;
+  z-index: 10001;
 }
 
 .zoom-close:hover {
-  background: white;
+  background: rgba(0, 0, 0, 0.8);
 }
 
 @media (max-width: 768px) {
