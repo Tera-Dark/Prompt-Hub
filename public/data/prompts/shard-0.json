@@ -1,4 +1,21 @@
 {
   "shardId": 0,
-  "prompts": []
+  "prompts": [
+    {
+      "id": "prompt-1764678586092",
+      "title": "试试",
+      "category": "测试",
+      "description": "试试",
+      "prompt": "试试",
+      "tags": [
+        "测试"
+      ],
+      "createdAt": "2025-12-02T12:29:46.092Z",
+      "status": "published",
+      "author": {
+        "username": "EEESERT",
+        "avatarUrl": "https://avatars.githubusercontent.com/u/196584526?v=4"
+      }
+    }
+  ]
 }
