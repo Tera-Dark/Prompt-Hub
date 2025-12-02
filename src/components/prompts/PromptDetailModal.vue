@@ -11,7 +11,7 @@
             <!-- Left Column: Image Gallery -->
             <div v-if="allImages.length > 0" class="image-gallery-section">
               <div class="gallery-container">
-                <div class="main-image-wrapper">
+                <div class="main-image-wrapper" @dblclick="openZoom">
                   <img :src="allImages[currentImageIndex]" :alt="prompt.title" class="main-image" />
 
                   <!-- Navigation Arrows -->
@@ -32,14 +32,9 @@
                     <Icon name="chevron-right" :size="24" />
                   </button>
 
-                  <!-- Download Button -->
-                  <button
-                    class="download-btn"
-                    title="Download original image"
-                    @click.stop="downloadCurrentImage"
-                  >
-                    <Icon name="download" :size="20" />
-                  </button>
+                  <div class="zoom-hint">
+                    {{ t('imageUploader.doubleClickZoom') || '双击查看大图' }}
+                  </div>
                 </div>
 
                 <!-- Thumbnails/Dots -->
@@ -63,7 +58,19 @@
             <!-- Right Column: Content -->
             <div class="content-section">
               <div class="modal-header">
-                <h2 class="modal-title">{{ prompt.title }}</h2>
+                <div class="title-row">
+                  <h2 class="modal-title">{{ prompt.title }}</h2>
+                  <div class="header-actions-top">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      title="Download"
+                      @click="downloadCurrentImage"
+                    >
+                      <Icon name="download" :size="20" />
+                    </Button>
+                  </div>
+                </div>
 
                 <div class="header-meta">
                   <Badge variant="default" rounded class="category-badge">{{
@@ -119,6 +126,17 @@
         </div>
       </div>
     </div>
+
+    <!-- Zoom Modal -->
+    <div v-if="zoomedImage" class="zoom-modal" @click="closeZoom">
+      <div class="zoom-backdrop"></div>
+      <div class="zoom-content">
+        <img :src="zoomedImage" alt="Zoomed image" />
+        <button class="zoom-close" @click="closeZoom">
+          <Icon name="x" :size="24" />
+        </button>
+      </div>
+    </div>
   </Teleport>
 </template>
 
@@ -145,6 +163,7 @@ const { success, error } = useToast()
 const isCopied = ref(false)
 const isFavorite = ref(false)
 const currentImageIndex = ref(0)
+const zoomedImage = ref<string | null>(null)
 
 const isOpenRef = computed(() => props.isOpen)
 useScrollLock(isOpenRef)
@@ -171,6 +190,17 @@ function prevImage() {
   }
 }
 
+function openZoom() {
+  const url = allImages.value[currentImageIndex.value]
+  if (url) {
+    zoomedImage.value = url
+  }
+}
+
+function closeZoom() {
+  zoomedImage.value = null
+}
+
 async function downloadCurrentImage() {
   const url = allImages.value[currentImageIndex.value]
   if (!url) return
@@ -190,6 +220,7 @@ async function downloadCurrentImage() {
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(link.href)
+    success(t('common.actions.downloaded') || 'Download started')
   } catch (err) {
     console.error('Download failed:', err)
     error('Failed to download image')
@@ -257,7 +288,7 @@ async function copyToClipboard() {
   background: var(--color-surface);
   border-radius: var(--radius-lg);
   width: 100%;
-  max-width: 1100px;
+  max-width: 1200px; /* Increased width */
   max-height: 90vh;
   overflow: hidden;
   position: relative;
@@ -308,8 +339,8 @@ async function copyToClipboard() {
 
 .modal-grid {
   display: grid;
-  grid-template-columns: 45% 55%;
-  min-height: 500px;
+  grid-template-columns: 55% 45%; /* Adjusted ratio for larger image */
+  min-height: 600px; /* Increased min-height */
 }
 
 /* Left Column: Gallery */
@@ -337,18 +368,19 @@ async function copyToClipboard() {
   border-radius: var(--radius-md);
   overflow: hidden;
   box-shadow: var(--shadow-md);
-  aspect-ratio: auto; /* Let the image define aspect ratio within limits */
-  max-height: 500px;
+  aspect-ratio: auto;
+  max-height: 70vh; /* Increased max-height */
   background: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: zoom-in;
 }
 
 .main-image {
   width: 100%;
   height: 100%;
-  max-height: 500px;
+  max-height: 70vh; /* Increased max-height */
   object-fit: contain;
   display: block;
 }
@@ -390,30 +422,23 @@ async function copyToClipboard() {
   right: 1rem;
 }
 
-.download-btn {
+.zoom-hint {
   position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background: rgba(255, 255, 255, 0.8);
-  border: none;
-  border-radius: 50%;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: var(--color-text-primary);
-  transition: all 0.2s;
-  backdrop-filter: blur(4px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  z-index: 5;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  text-align: center;
+  padding: 0.5rem;
+  font-size: var(--text-xs);
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
 }
 
-.download-btn:hover {
-  background: white;
-  transform: scale(1.1);
-  color: var(--color-primary);
+.main-image-wrapper:hover .zoom-hint {
+  opacity: 1;
 }
 
 .gallery-indicators {
@@ -454,18 +479,32 @@ async function copyToClipboard() {
   flex-direction: column;
   gap: 2rem;
   overflow-y: auto;
-  max-height: 80vh;
+  max-height: 90vh;
 }
 
 .modal-header {
   margin-bottom: 1.5rem;
 }
 
+.title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.header-actions-top {
+  display: flex;
+  gap: 0.5rem;
+  padding-right: 2rem; /* Space for close button */
+}
+
 .modal-title {
   font-size: 1.75rem;
   font-weight: 800;
   color: var(--color-text-primary);
-  margin: 0 0 0.75rem 0;
+  margin: 0;
   line-height: 1.2;
   letter-spacing: -0.02em;
 }
@@ -530,7 +569,7 @@ async function copyToClipboard() {
 .prompt-content-box {
   background: var(--color-surface-alt);
   border-radius: var(--radius-md);
-  border: none; /* Removed border for cleaner look */
+  border: none;
   overflow: hidden;
   margin-bottom: 1.5rem;
 }
@@ -571,7 +610,7 @@ async function copyToClipboard() {
 .modal-footer {
   margin-top: auto;
   padding-top: 1.5rem;
-  border-top: none; /* Removed border */
+  border-top: none;
 }
 
 .tags-list {
@@ -595,6 +634,57 @@ async function copyToClipboard() {
   color: var(--color-text-primary);
 }
 
+/* Zoom Modal */
+.zoom-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.zoom-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.9);
+}
+
+.zoom-content {
+  position: relative;
+  max-width: 95vw;
+  max-height: 95vh;
+  z-index: 10000;
+}
+
+.zoom-content img {
+  max-width: 100%;
+  max-height: 95vh;
+  object-fit: contain;
+  border-radius: var(--radius-lg);
+}
+
+.zoom-close {
+  position: absolute;
+  top: -40px;
+  right: 0;
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.9);
+  color: black;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.zoom-close:hover {
+  background: white;
+}
+
 @media (max-width: 768px) {
   .modal-grid {
     grid-template-columns: 1fr;
@@ -603,8 +693,8 @@ async function copyToClipboard() {
   .image-gallery-section {
     border-right: none;
     border-bottom: 1px solid var(--color-border-light);
-    padding: 0; /* Remove padding to let image span full width */
-    background: #000; /* Black background for image gallery on mobile */
+    padding: 0;
+    background: #000;
   }
 
   .gallery-container {

@@ -122,6 +122,11 @@ const routes: RouteRecordRaw[] = [
   },
 ]
 
+import NProgress from 'nprogress'
+
+// Configure NProgress
+NProgress.configure({ showSpinner: false })
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
@@ -129,7 +134,9 @@ const router = createRouter({
 
 const auth = useAuth()
 
-router.beforeEach((to) => {
+router.beforeEach((to, _from, next) => {
+  NProgress.start()
+
   if (!auth.isReady.value) {
     auth.refreshFromStorage()
   }
@@ -137,26 +144,34 @@ router.beforeEach((to) => {
   if (to.meta.requiresAuth) {
     if (!auth.isAuthed.value) {
       auth.setAttemptedRoute(to.fullPath)
-      return { name: 'Login' }
+      next({ name: 'Login' })
+      return
     }
 
     // Check if trying to access admin routes without write access
     if (to.path.startsWith('/admin') && !auth.hasRepoWriteAccess.value) {
       // Regular users should be redirected to UserDashboard
-      return { name: 'UserDashboard' }
+      next({ name: 'UserDashboard' })
+      return
     }
   }
 
   // Redirect logged in users from login page based on their role
   if (to.name === 'Login' && auth.isAuthed.value) {
     if (auth.hasRepoWriteAccess.value) {
-      return { name: 'AdminDashboard' }
+      next({ name: 'AdminDashboard' })
+      return
     } else {
-      return { name: 'UserDashboard' }
+      next({ name: 'UserDashboard' })
+      return
     }
   }
 
-  return true
+  next()
+})
+
+router.afterEach(() => {
+  NProgress.done()
 })
 
 export default router
