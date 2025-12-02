@@ -61,15 +61,17 @@ export async function uploadImage(file: File, token: string): Promise<string> {
  * Upload to Catbox.moe (Primary)
  * Max size: 200MB
  * Retention: Permanent
+ * Note: Uses corsproxy.io to bypass CORS restrictions
  */
 async function uploadToCatbox(file: File): Promise<string> {
   console.log('🚀 Trying upload to Catbox.moe...')
   const formData = new FormData()
   formData.append('reqtype', 'fileupload')
-  formData.append('fileToUpload', file)
+  formData.append('fileToUpload', file, file.name) // Explicit filename
 
   try {
-    const response = await fetch('https://catbox.moe/user/api.php', {
+    // Use CORS proxy because Catbox doesn't support CORS
+    const response = await fetch('https://corsproxy.io/?https://catbox.moe/user/api.php', {
       method: 'POST',
       body: formData,
     })
@@ -98,7 +100,7 @@ async function uploadToCatbox(file: File): Promise<string> {
 async function uploadToTelegraph(file: File): Promise<string> {
   console.log('🚀 Trying upload to Telegra.ph...')
   const formData = new FormData()
-  formData.append('file', file)
+  formData.append('file', file, file.name) // Explicit filename
 
   try {
     const response = await fetch('https://telegra.ph/upload', {
@@ -117,7 +119,7 @@ async function uploadToTelegraph(file: File): Promise<string> {
       console.log('✅ Telegraph upload success:', url)
       return url
     } else {
-      throw new Error('Invalid response from Telegraph')
+      throw new Error('Invalid response from Telegraph: ' + JSON.stringify(data))
     }
   } catch (e) {
     console.warn('⚠️ Telegraph upload failed:', e)
