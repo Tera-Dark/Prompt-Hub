@@ -1,8 +1,8 @@
 {
   "version": "2.0.0",
   "shardCount": 8,
-  "totalPrompts": 7,
-  "lastUpdated": "2025-12-02T13:24:26.228Z",
+  "totalPrompts": 8,
+  "lastUpdated": "2025-12-02T13:26:13.937Z",
   "categories": {
     "测试": {
       "count": 5,
@@ -41,12 +41,22 @@
       "promptIds": [
         "AI音乐-suno-v5-202512021324"
       ]
+    },
+    "设计": {
+      "count": 1,
+      "shards": [
+        1
+      ],
+      "promptIds": [
+        "设计-oc-202512021326"
+      ]
     }
   },
   "shardMap": {
     "0": [],
     "1": [
-      "测试--202512020542"
+      "测试--202512020542",
+      "设计-oc-202512021326"
     ],
     "2": [],
     "3": [
