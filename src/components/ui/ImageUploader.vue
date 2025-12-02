@@ -19,6 +19,22 @@ const uploadQueue = ref<
   { id: string; url?: string; file?: File; progress: boolean; error?: string }[]
 >([])
 const zoomedImage = ref<string | null>(null)
+const imageUrlInput = ref('')
+
+const addImageFromUrl = () => {
+  const url = imageUrlInput.value.trim()
+  if (!url) return
+
+  // Basic URL validation
+  try {
+    new URL(url)
+    emit('update:modelValue', [url])
+    imageUrlInput.value = ''
+    console.log('✅ Added image from URL:', url)
+  } catch (e) {
+    alert('请输入有效的图片URL')
+  }
+}
 
 const triggerSelect = () => {
   if (isUploading.value) return
@@ -80,12 +96,24 @@ const processFiles = async (files: File[]) => {
       // Replace modelValue with just this new URL
       emit('update:modelValue', [publicUrl])
       uploadQueue.value = []
-    } catch (e) {
-      console.error(e)
+    } catch (e: any) {
+      console.error('Upload error:', e)
       const qItem = uploadQueue.value.find((q) => q.id === item.id)
       if (qItem) {
         qItem.progress = false
-        qItem.error = t('imageUploader.uploadFailed') || 'Upload failed'
+
+        // Check if it's a permission error (404 on blob creation)
+        const isPermissionError =
+          e?.status === 404 ||
+          e?.message?.includes('Not Found') ||
+          e?.message?.includes('createBlob')
+
+        if (isPermissionError) {
+          qItem.error = '⚠️ 无上传权限,请粘贴图片URL'
+          console.warn('🔒 User lacks repository write permission. Suggesting URL input.')
+        } else {
+          qItem.error = t('imageUploader.uploadFailed') || 'Upload failed'
+        }
       }
     } finally {
       isUploading.value = false
@@ -280,6 +308,33 @@ const closeZoom = () => {
           <line x1="12" y1="3" x2="12" y2="15"></line>
         </svg>
         <span class="upload-text">{{ t('imageUploader.dropText') }}</span>
+      </div>
+    </div>
+
+    <!-- URL Input (Alternative for users without write access) -->
+    <div v-if="limit === 1 && modelValue.length === 0" class="url-input-section">
+      <div class="url-input-label">或粘贴图片URL:</div>
+      <div class="url-input-group">
+        <input
+          v-model="imageUrlInput"
+          type="url"
+          class="url-input"
+          placeholder="https://example.com/image.jpg"
+          @keyup.enter="addImageFromUrl"
+        />
+        <button
+          type="button"
+          class="url-add-btn"
+          :disabled="!imageUrlInput.trim()"
+          @click="addImageFromUrl"
+        >
+          添加
+        </button>
+      </div>
+      <div class="url-hint">
+        推荐使用: <a href="https://imgur.com" target="_blank">Imgur</a>,
+        <a href="https://sm.ms" target="_blank">SM.MS</a>,
+        <a href="https://postimages.org" target="_blank">PostImages</a>
       </div>
     </div>
 
@@ -481,6 +536,73 @@ const closeZoom = () => {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* URL Input Section */
+.url-input-section {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--color-surface-alt, #f9fafb);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: var(--radius-md);
+}
+
+.url-input-label {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.url-input-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.url-input {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  background: white;
+}
+
+.url-input:focus {
+  outline: none;
+  border-color: var(--color-primary, #000);
+}
+
+.url-add-btn {
+  padding: 0.5rem 1rem;
+  background: var(--color-primary, #000);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.url-add-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.url-add-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.url-hint {
+  margin-top: 0.5rem;
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+}
+
+.url-hint a {
+  color: var(--color-primary, #000);
+  text-decoration: underline;
 }
 
 /* Zoom Modal */
