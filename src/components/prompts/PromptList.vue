@@ -384,9 +384,16 @@ onMounted(() => {
 }
 
 .prompt-container.grid {
-  display: grid;
-  gap: 1.5rem;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  display: block; /* Masonry layout uses block display with columns */
+  column-count: 4;
+  column-gap: 1.5rem;
+}
+
+.prompt-container.grid > * {
+  break-inside: avoid;
+  margin-bottom: 1.5rem;
+  /* Ensure card width is 100% of column */
+  width: 100%;
 }
 
 .prompt-container.list {
@@ -395,10 +402,21 @@ onMounted(() => {
   gap: 1rem;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1400px) {
   .prompt-container.grid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
+    column-count: 3;
+  }
+}
+
+@media (max-width: 1024px) {
+  .prompt-container.grid {
+    column-count: 2;
+  }
+}
+
+@media (max-width: 640px) {
+  .prompt-container.grid {
+    column-count: 1;
   }
 
   .loading,
@@ -406,12 +424,6 @@ onMounted(() => {
   .empty {
     padding: 3rem 1.5rem;
     min-height: 300px;
-  }
-}
-
-@media (min-width: 1400px) {
-  .prompt-container.grid {
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   }
 }
 </style>

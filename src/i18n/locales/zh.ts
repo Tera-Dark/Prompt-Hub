@@ -2,6 +2,19 @@ export default {
   app: {
     name: 'Prompt-Hub',
   },
+  errors: {
+    repoConfigMissing: '缺少仓库配置',
+    promptNotFound: '未找到提示词',
+    promptNotFoundEdit: '未找到待编辑的提示词',
+    promptNotFoundDelete: '未找到待删除的提示词，可能已被删除或位于其他分片',
+    mockLoginSubmit: '模拟登录无法提交到真实 GitHub。请退出并使用 GitHub 登录。',
+    indexCorrupted: '索引文件损坏或为空，正在初始化新索引',
+  },
+  admin: {
+    debug: {
+      notAuthenticated: '调试：未认证。Token: {hasToken}, User: {hasUser}',
+    },
+  },
   home: {
     title: 'Prompt-Hub',
     subtitle: '发现、分享和管理您的 AI 提示词',
@@ -49,6 +62,7 @@ export default {
       pageInfo: '{current} / {total}',
     },
     actions: {
+      new: '新建提示词',
       edit: '编辑',
       delete: '删除',
       copy: '复制',

@@ -71,7 +71,7 @@
               @click="handleSubmitPrompt"
             >
               <Icon name="plus" :size="16" />
-              {{ t('nav.prompts') }}
+              {{ t('common.actions.new') }}
             </Button>
 
             <div v-if="isAuthenticated" class="user-menu">

@@ -126,21 +126,25 @@ const currentUser = computed(() => auth.user.value)
 const navigation = computed<NavigationItem[]>(() => {
   if (hasRepoWriteAccess.value) {
     return [
-      { key: 'dashboard', to: { name: 'AdminDashboard' }, match: /^\/admin(?:\/dashboard)?$/ },
+      { key: 'dashboard', to: { name: 'AdminDashboard' }, match: /^\/admin(?:\/dashboard)?\/?$/ },
       { key: 'prompts', to: { name: 'AdminPrompts' }, match: /^\/admin\/prompts(\/.*)?$/ },
-      { key: 'review', to: { name: 'AdminReview' }, match: /^\/admin\/review$/ },
-      { key: 'data', to: { name: 'AdminData' }, match: /^\/admin\/data$/ },
+      { key: 'review', to: { name: 'AdminReview' }, match: /^\/admin\/review\/?$/ },
+      { key: 'data', to: { name: 'AdminData' }, match: /^\/admin\/data(\/.*)?$/ },
       {
         key: 'aiSettings',
         to: { name: 'AdminAISettings' },
-        match: /^\/admin\/ai-settings$/,
+        match: /^\/admin\/ai-settings(\/.*)?$/,
       },
     ]
   } else {
     return [
-      { key: 'dashboard', to: { name: 'UserDashboard' }, match: /^\/dashboard$/ },
-      { key: 'myPrompts', to: { name: 'UserPrompts' }, match: /^\/dashboard\/prompts$/ },
-      { key: 'aiSettings', to: { name: 'UserAISettings' }, match: /^\/dashboard\/ai-settings$/ },
+      { key: 'dashboard', to: { name: 'UserDashboard' }, match: /^\/dashboard\/?$/ },
+      { key: 'myPrompts', to: { name: 'UserPrompts' }, match: /^\/dashboard\/prompts(\/.*)?$/ },
+      {
+        key: 'aiSettings',
+        to: { name: 'UserAISettings' },
+        match: /^\/dashboard\/ai-settings(\/.*)?$/,
+      },
     ]
   }
 })

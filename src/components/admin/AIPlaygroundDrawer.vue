@@ -70,9 +70,14 @@
             </option>
           </select>
         </div>
-        <Button :disabled="loading || !canRun" @click="runPrompt">
-          {{ loading ? t('playground.running') : t('playground.run') }}
-        </Button>
+        <div class="footer-buttons">
+          <Button id="copy-btn" variant="secondary" :disabled="!canRun" @click="copyPrompt">
+            {{ t('common.actions.copy') }}
+          </Button>
+          <Button :disabled="loading || !canRun || activeProviders.length === 0" @click="runPrompt">
+            {{ loading ? t('playground.running') : t('playground.run') }}
+          </Button>
+        </div>
       </footer>
     </div>
   </div>
@@ -106,16 +111,21 @@ const output = ref('')
 const error = ref('')
 const loading = ref(false)
 
-// Extract variables from prompt template {{variable}}
+// Extract variables from prompt template {{variable}} or <variable>
 const variables = computed(() => {
-  const matches = props.promptTemplate.match(/\{\{([^}]+)\}\}/g)
-  if (!matches) return []
-  return [...new Set(matches.map((m) => m.slice(2, -2).trim()))]
+  // Match {{var}}
+  const mustacheMatches = props.promptTemplate.match(/\{\{([^}]+)\}\}/g) || []
+  const mustacheVars = mustacheMatches.map((m) => m.slice(2, -2).trim())
+
+  // Match <var>
+  const angleMatches = props.promptTemplate.match(/<([^>]+)>/g) || []
+  const angleVars = angleMatches.map((m) => m.slice(1, -1).trim())
+
+  return [...new Set([...mustacheVars, ...angleVars])]
 })
 
 const activeProviders = computed(() => providers.value.filter((p) => p.enabled))
 const canRun = computed(() => {
-  if (activeProviders.value.length === 0) return false
   if (props.promptTemplate) return true
   return manualPrompt.value.trim().length > 0
 })
@@ -140,6 +150,41 @@ function openSettings() {
   close()
 }
 
+function getFinalPrompt() {
+  let finalPrompt = props.promptTemplate
+  if (finalPrompt) {
+    for (const v of variables.value) {
+      const val = variableValues.value[v] || ''
+      // Replace {{var}}
+      finalPrompt = finalPrompt.replace(new RegExp(`\\{\\{${v}\\}\\}`, 'g'), val)
+      // Replace <var>
+      finalPrompt = finalPrompt.replace(new RegExp(`<${v}>`, 'g'), val)
+    }
+  } else {
+    finalPrompt = manualPrompt.value
+  }
+  return finalPrompt
+}
+
+async function copyPrompt() {
+  const text = getFinalPrompt()
+  try {
+    await navigator.clipboard.writeText(text)
+    // Optional: Show toast (we can reuse a simple alert or assume success)
+    // For better UX, change button text momentarily
+    const btn = document.getElementById('copy-btn')
+    if (btn) {
+      const originalText = btn.innerText
+      btn.innerText = t('common.actions.copied')
+      setTimeout(() => {
+        btn.innerText = originalText
+      }, 2000)
+    }
+  } catch (err) {
+    console.error('Failed to copy', err)
+  }
+}
+
 async function runPrompt() {
   if (!selectedProviderId.value) return
 
@@ -148,16 +193,7 @@ async function runPrompt() {
   error.value = ''
 
   try {
-    // Interpolate variables
-    let finalPrompt = props.promptTemplate
-    if (finalPrompt) {
-      for (const v of variables.value) {
-        const val = variableValues.value[v] || ''
-        finalPrompt = finalPrompt.replace(new RegExp(`\\{\\{${v}\\}\\}`, 'g'), val)
-      }
-    } else {
-      finalPrompt = manualPrompt.value
-    }
+    const finalPrompt = getFinalPrompt()
 
     const provider = providers.value.find((p) => p.id === selectedProviderId.value)
     if (!provider) throw new Error('Provider not found')
@@ -388,18 +424,25 @@ textarea:focus {
 }
 
 .drawer-footer {
-  padding: 1rem 1.5rem;
+  padding: 1.5rem;
   border-top: 1px solid var(--color-border);
+  background: var(--color-gray-50);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--color-surface);
 }
 
 .provider-select select {
   padding: 0.5rem;
   border-radius: var(--radius-md);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-gray-300);
+  background: var(--color-white);
+  font-size: 0.9rem;
+}
+
+.footer-buttons {
+  display: flex;
+  gap: 0.5rem;
 }
 
 .loading-spinner {

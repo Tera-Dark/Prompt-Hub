@@ -84,14 +84,20 @@ const processFiles = async (files: File[]) => {
   uploadQueue.value.push(...queueItems)
 
   try {
-    // 2. Upload in parallel
-    const uploadPromises = queueItems.map(async (item) => {
-      if (!item.file) return null
+    // 2. Upload SEQUENTIALLY to avoid race conditions on branch creation
+    const successfulUrls: string[] = []
+
+    for (const item of queueItems) {
+      if (!item.file) continue
+
       try {
         const publicUrl = await uploadImage(item.file, props.token)
         // Remove from queue on success
         uploadQueue.value = uploadQueue.value.filter((q) => q.id !== item.id)
-        return publicUrl
+        successfulUrls.push(publicUrl)
+
+        // Update modelValue incrementally so user sees progress
+        emit('update:modelValue', [...props.modelValue, ...successfulUrls])
       } catch (e) {
         console.error(e)
         // Mark error in queue
@@ -100,16 +106,7 @@ const processFiles = async (files: File[]) => {
           qItem.progress = false
           qItem.error = 'Upload failed'
         }
-        return null
       }
-    })
-
-    const results = await Promise.all(uploadPromises)
-    const successfulUrls = results.filter((url): url is string => url !== null)
-
-    // 3. Update modelValue ONCE with all new URLs
-    if (successfulUrls.length > 0) {
-      emit('update:modelValue', [...props.modelValue, ...successfulUrls])
     }
   } finally {
     isUploading.value = false

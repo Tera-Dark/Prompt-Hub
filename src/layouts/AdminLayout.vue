@@ -94,8 +94,12 @@
 
       <main class="admin-content">
         <div v-if="!isAuthenticated" style="padding: 2rem; color: red">
-          Debug: Not Authenticated. Token: {{ auth.token.value ? 'Yes' : 'No' }}, User:
-          {{ auth.user.value ? 'Yes' : 'No' }}
+          {{
+            t('admin.debug.notAuthenticated', {
+              hasToken: auth.token.value ? 'Yes' : 'No',
+              hasUser: auth.user.value ? 'Yes' : 'No',
+            })
+          }}
         </div>
         <RouterView v-if="isAuthenticated" />
       </main>

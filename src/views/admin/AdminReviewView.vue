@@ -33,8 +33,8 @@ const fetchSubmissions = async () => {
     // Fetch original prompts for updates/deletes
     try {
       const promptList = await loadPrompts()
-      const promptMap = promptList.reduce(
-        (acc, p) => {
+      const promptMap = promptList.prompts.reduce(
+        (acc: Record<string, Prompt>, p: Prompt) => {
           acc[p.id] = p
           return acc
         },
@@ -135,9 +135,9 @@ const getImageDiff = (submission: PendingSubmission) => {
   const oldImages = original?.images || (original?.imageUrl ? [original.imageUrl] : [])
   const newImages = newValues.images || []
 
-  const added = newImages.filter((img) => !oldImages.includes(img))
-  const removed = oldImages.filter((img) => !newImages.includes(img))
-  const unchanged = oldImages.filter((img) => newImages.includes(img))
+  const added = newImages.filter((img: string) => !oldImages.includes(img))
+  const removed = oldImages.filter((img: string) => !newImages.includes(img))
+  const unchanged = oldImages.filter((img: string) => newImages.includes(img))
 
   return { added, removed, unchanged }
 }
@@ -180,14 +180,14 @@ const handleReject = async (submission?: PendingSubmission) => {
   }
 }
 
-const getAuthorName = (author: string | { username: string; avatarUrl?: string }) => {
+const getAuthorName = (author: string | { username: string; avatarUrl?: string } | undefined) => {
   if (typeof author === 'string') return author
   return author?.username || 'Anonymous'
 }
 
-const getAuthorAvatar = (author: string | { username: string; avatarUrl?: string }) => {
+const getAuthorAvatar = (author: string | { username: string; avatarUrl?: string } | undefined) => {
   if (typeof author === 'object' && author?.avatarUrl) return author.avatarUrl
-  return null
+  return undefined
 }
 
 const getSubmissionTitle = (submission: PendingSubmission) => {

@@ -9,8 +9,8 @@
       <article class="tool-card">
         <h3>{{ t('dataTools.exports.title') }}</h3>
         <p>{{ t('dataTools.exports.desc') }}</p>
-        <button type="button" class="tool-button" @click="handleClick('export')">
-          {{ t('dataTools.exports.action') }}
+        <button type="button" class="tool-button" :disabled="isExporting" @click="handleExport">
+          {{ isExporting ? 'Exporting...' : t('dataTools.exports.action') }}
         </button>
       </article>
 
@@ -34,9 +34,37 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { loadAllPrompts } from '@/utils/shard'
 
 const { t } = useI18n()
+const isExporting = ref(false)
+
+async function handleExport() {
+  if (isExporting.value) return
+  isExporting.value = true
+
+  try {
+    const prompts = await loadAllPrompts()
+    const dataStr = JSON.stringify(prompts, null, 2)
+    const blob = new Blob([dataStr], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `prompt-hub-export-${new Date().toISOString().split('T')[0]}.json`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  } catch (e) {
+    console.error('Export failed', e)
+    alert(t('errors.exportFailed') || 'Export failed')
+  } finally {
+    isExporting.value = false
+  }
+}
 
 function handleClick(action: string) {
   console.info(`[admin] ${action} action is not connected yet.`)

@@ -153,9 +153,7 @@ export class GitHubService {
     branch: string,
     filesOrUpdater:
       | { path: string; content?: string; sha?: string }[]
-      | ((
-          currentFiles: Record<string, { content: string; sha: string }>,
-        ) => Promise<{ path: string; content: string }[]>),
+      | ((baseSha: string) => Promise<{ path: string; content: string }[]>),
     message: string,
     retries = 3,
   ) {

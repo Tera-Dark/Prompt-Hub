@@ -2,6 +2,21 @@ export default {
   app: {
     name: 'Prompt-Hub',
   },
+  errors: {
+    repoConfigMissing: 'Repository configuration missing',
+    promptNotFound: 'Prompt not found',
+    promptNotFoundEdit: 'Prompt to edit not found',
+    promptNotFoundDelete:
+      'Prompt to delete not found, it may have been deleted or is in another shard',
+    mockLoginSubmit:
+      'Mock login cannot submit to real GitHub. Please sign out and sign in with GitHub.',
+    indexCorrupted: 'Index file corrupted or empty, initializing new index',
+  },
+  admin: {
+    debug: {
+      notAuthenticated: 'Debug: Not Authenticated. Token: {hasToken}, User: {hasUser}',
+    },
+  },
   home: {
     title: 'Prompt-Hub',
     subtitle: 'Discover, share, and manage your AI prompts',
@@ -49,6 +64,7 @@ export default {
       pageInfo: '{current} / {total}',
     },
     actions: {
+      new: 'New Prompt',
       edit: 'Edit',
       delete: 'Delete',
       copy: 'Copy',

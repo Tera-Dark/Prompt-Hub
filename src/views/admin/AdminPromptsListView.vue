@@ -322,6 +322,7 @@ function removeDraft(id: string) {
   margin-top: 0.25rem;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

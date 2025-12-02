@@ -66,7 +66,7 @@
                 <h2 class="modal-title">{{ prompt.title }}</h2>
 
                 <div class="header-meta">
-                  <Badge variant="secondary" rounded class="category-badge">{{
+                  <Badge variant="default" rounded class="category-badge">{{
                     prompt.category
                   }}</Badge>
 

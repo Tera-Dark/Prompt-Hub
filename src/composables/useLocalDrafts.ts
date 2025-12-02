@@ -11,6 +11,7 @@ export interface LocalDraft {
   status: string
   imageUrl: string
   savedAt: string
+  images?: string[]
 }
 
 const DRAFTS_KEY = 'prompt_hub_local_drafts'

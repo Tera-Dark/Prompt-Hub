@@ -149,6 +149,7 @@ import {
   withdrawSubmission,
   deletePromptById,
   submitPromptDelete,
+  type PendingSubmission,
 } from '@/repositories/prompts'
 import { useLocalDrafts } from '@/composables/useLocalDrafts'
 import type { Prompt } from '@/types/prompt'
@@ -160,7 +161,7 @@ const { user, token, hasRepoWriteAccess } = useAuth()
 const { drafts, loadDrafts, deleteDraft } = useLocalDrafts()
 const { prompts: allPrompts, isLoading: loadingPrompts } = promptStore
 
-const pendingSubmissions = ref<Prompt[]>([])
+const pendingSubmissions = ref<PendingSubmission[]>([])
 const loadingSubmissions = ref(false)
 const showDrafts = ref(false)
 const withdrawing = ref<string | null>(null)
@@ -195,7 +196,7 @@ const userPrompts = computed(() => {
   const published = allPrompts.value.filter(
     (p) => p.author?.username === user.value?.login && !pendingDeleteIds.includes(p.id),
   )
-  const all = [...pendingSubmissions.value, ...published]
+  const all: Prompt[] = [...pendingSubmissions.value, ...published]
 
   if (!searchQuery.value) return all
   const q = searchQuery.value.toLowerCase()

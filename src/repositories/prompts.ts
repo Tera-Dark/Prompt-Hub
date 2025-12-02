@@ -1,4 +1,5 @@
 import type { Prompt } from '@/types/prompt'
+export type { Prompt }
 import {
   getDefaultBranch,
   getBranchSha,
@@ -21,10 +22,12 @@ import {
   type ShardData,
 } from '@/utils/shard'
 
+import i18n from '@/i18n'
+
 function repoInfo() {
   const owner = import.meta.env.VITE_GITHUB_REPO_OWNER
   const repo = import.meta.env.VITE_GITHUB_REPO_NAME
-  if (!owner || !repo) throw new Error('缺少仓库配置')
+  if (!owner || !repo) throw new Error(i18n.global.t('errors.repoConfigMissing'))
   return { owner, repo }
 }
 
@@ -118,7 +121,7 @@ export async function addPrompt(
   try {
     index = JSON.parse(indexFile.content) as ShardIndex
   } catch (e) {
-    console.warn('Index file corrupted or empty, initializing new index')
+    console.warn(i18n.global.t('errors.indexCorrupted'))
     index = {
       version: '2.0.0',
       shardCount: 8,
@@ -317,7 +320,7 @@ export async function updatePromptById(
   try {
     index = JSON.parse(indexFile.content) as ShardIndex
   } catch (e) {
-    console.warn('Index file corrupted or empty, initializing new index')
+    console.warn(i18n.global.t('errors.indexCorrupted'))
     index = {
       version: '2.0.0',
       shardCount: 8,
@@ -348,7 +351,7 @@ export async function updatePromptById(
   const shard = JSON.parse(shardFile.content) as ShardData
 
   const idx = shard.prompts.findIndex((x: Prompt) => x.id === id)
-  if (idx < 0) throw new Error('未找到待编辑的提示词')
+  if (idx < 0) throw new Error(i18n.global.t('errors.promptNotFoundEdit'))
 
   const oldItem = shard.prompts[idx]
   const updated = updater(oldItem)
@@ -538,7 +541,7 @@ export async function deletePromptById(
   try {
     index = JSON.parse(indexFile.content) as ShardIndex
   } catch (e) {
-    console.warn('Index file corrupted or empty, initializing new index')
+    console.warn(i18n.global.t('errors.indexCorrupted'))
     index = {
       version: '2.0.0',
       shardCount: 8,
@@ -569,7 +572,7 @@ export async function deletePromptById(
 
   const idx = shard.prompts.findIndex((x: Prompt) => x.id === id)
   if (idx < 0) {
-    throw new Error('未找到待删除的提示词，可能已被删除或位于其他分片')
+    throw new Error(i18n.global.t('errors.promptNotFoundDelete'))
   }
 
   const item = shard.prompts[idx]
@@ -698,9 +701,7 @@ export async function deletePromptById(
 
 export async function submitPromptIssue(newItem: Prompt, token: string): Promise<string> {
   if (token === 'mock-token') {
-    throw new Error(
-      'Mock login cannot submit to real GitHub. Please sign out and sign in with GitHub.',
-    )
+    throw new Error(i18n.global.t('errors.mockLoginSubmit'))
   }
   const { owner, repo } = repoInfo()
   const title = `[Submission] ${newItem.title}`
@@ -740,7 +741,7 @@ export async function submitPromptUpdate(
   token: string,
 ): Promise<string> {
   if (token === 'mock-token') {
-    throw new Error('Mock login cannot submit to real GitHub')
+    throw new Error(i18n.global.t('errors.mockLoginSubmit'))
   }
   const { owner, repo } = repoInfo()
   const title = `[Update] ${originalId}`
@@ -776,7 +777,7 @@ METADATA_JSON_END -->
 
 export async function submitPromptDelete(id: string, token: string): Promise<string> {
   if (token === 'mock-token') {
-    throw new Error('Mock login cannot submit to real GitHub')
+    throw new Error(i18n.global.t('errors.mockLoginSubmit'))
   }
   const { owner, repo } = repoInfo()
   const title = `[Delete] ${id}`
@@ -796,25 +797,50 @@ export async function withdrawSubmission(issueNumber: number, token: string): Pr
   await closeIssue(owner, repo, issueNumber, token)
 }
 
-export async function getUserSubmissions(username: string, token: string): Promise<Prompt[]> {
+export async function getUserSubmissions(
+  username: string,
+  token: string,
+): Promise<PendingSubmission[]> {
   const { owner, repo } = repoInfo()
   const issues = await listIssues(owner, repo, username, token)
 
-  return issues.map((issue) => ({
-    id: `issue-${issue.number}`,
-    title: issue.title.replace('[Submission] ', ''),
-    category: 'Pending Review',
-    description: 'This prompt is currently under review.',
-    prompt: '', // Content is in issue body, difficult to parse perfectly without structure
-    tags: [],
-    createdAt: issue.created_at,
-    status: 'draft',
-    author: {
-      username: issue.user?.login || username,
-      avatarUrl: issue.user?.avatar_url,
-    },
-    sourceLink: issue.html_url,
-  }))
+  return issues.map((issue) => {
+    let action: PendingSubmission['action'] = 'create'
+    let originalId: string | undefined
+    let title = issue.title
+
+    if (issue.title.includes('[Submission]')) {
+      title = issue.title.replace('[Submission] ', '')
+    } else if (issue.title.includes('[Update]')) {
+      action = 'update'
+      originalId = issue.title.replace('[Update] ', '').trim()
+      title = `Update: ${originalId}`
+    } else if (issue.title.includes('[Delete]')) {
+      action = 'delete'
+      originalId = issue.title.replace('[Delete] ', '').trim()
+      title = `Delete: ${originalId}`
+    }
+
+    return {
+      id: `issue-${issue.number}`,
+      title,
+      category: 'Pending Review',
+      description: 'This prompt is currently under review.',
+      prompt: issue.body || '',
+      tags: [],
+      createdAt: issue.created_at,
+      status: 'draft',
+      author: {
+        username: issue.user?.login || username,
+        avatarUrl: issue.user?.avatar_url,
+      },
+      sourceLink: issue.html_url,
+      type: 'issue',
+      number: issue.number,
+      action,
+      originalId,
+    }
+  })
 }
 
 export async function getAllPendingSubmissions(token: string): Promise<number> {
