@@ -182,45 +182,11 @@
     />
 
     <!-- Mobile Bottom Navigation -->
-    <nav class="mobile-bottom-nav">
-      <button
-        class="nav-btn"
-        :class="{ active: currentView === 'recommendations' }"
-        @click="switchView('recommendations')"
-      >
-        <Icon name="sparkles" :size="24" />
-        <span>{{ t('home.nav.featured') }}</span>
-      </button>
-
-      <button
-        class="nav-btn"
-        :class="{ active: currentView === 'explore' }"
-        @click="switchView('explore')"
-      >
-        <Icon name="compass-simple" :size="24" />
-        <span>{{ t('home.nav.explore') }}</span>
-      </button>
-
-      <button class="nav-btn center-btn" @click="handleSubmitPrompt">
-        <div class="plus-circle">
-          <Icon name="plus" :size="24" />
-        </div>
-      </button>
-
-      <button
-        class="nav-btn"
-        :class="{ active: currentView === 'favorites' }"
-        @click="switchView('favorites')"
-      >
-        <Icon name="bookmark" :size="24" />
-        <span>{{ t('home.nav.favorites') }}</span>
-      </button>
-
-      <button class="nav-btn" @click="handleUserAction">
-        <Icon name="user" :size="24" />
-        <span>{{ isAuthenticated ? t('nav.dashboard') : t('nav.login') }}</span>
-      </button>
-    </nav>
+    <MobileBottomNav
+      :current-view="currentView"
+      @update:view="switchView"
+      @create="handleSubmitPrompt"
+    />
 
     <PromptDetailModal
       v-if="selectedPrompt"
@@ -235,7 +201,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '@/composables/useAuth'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import type { Prompt } from '@/types/prompt'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
@@ -246,6 +212,7 @@ import PromptList from '@/components/prompts/PromptList.vue'
 import PromptCardSkeleton from '@/components/prompts/PromptCardSkeleton.vue'
 import AIPlaygroundDrawer from '@/components/admin/AIPlaygroundDrawer.vue'
 import PromptDetailModal from '@/components/prompts/PromptDetailModal.vue'
+import MobileBottomNav from '@/components/layout/MobileBottomNav.vue'
 import { recommendationService } from '@/services/recommendations'
 import { usePromptStore } from '@/stores/prompts'
 import { useDebounce } from '@/composables/useDebounce'
@@ -253,6 +220,7 @@ import { useDebounce } from '@/composables/useDebounce'
 const { t, locale } = useI18n()
 const auth = useAuth()
 const router = useRouter()
+const route = useRoute()
 const promptStore = usePromptStore()
 
 const isAuthenticated = computed(() => auth.isAuthed.value)
@@ -301,6 +269,12 @@ const viewSubtitle = computed(() => {
 
 onMounted(async () => {
   try {
+    // Check for tab query param
+    const tab = route.query.tab as string
+    if (tab && ['recommendations', 'explore', 'favorites'].includes(tab)) {
+      currentView.value = tab as any
+    }
+
     // auth is auto-initialized
     await promptStore.fetchPrompts()
   } catch (e) {
@@ -328,13 +302,15 @@ function loadMore() {
   currentPage.value++
 }
 
-function switchView(view: 'recommendations' | 'explore' | 'favorites') {
-  currentView.value = view
-  if (view === 'recommendations') {
-    selectedCategory.value = null
-    searchQuery.value = ''
+function switchView(view: string) {
+  if (['recommendations', 'explore', 'favorites'].includes(view)) {
+    currentView.value = view as 'recommendations' | 'explore' | 'favorites'
+    if (view === 'recommendations') {
+      selectedCategory.value = null
+      searchQuery.value = ''
+    }
+    currentPage.value = 1
   }
-  currentPage.value = 1
 }
 
 watch([debouncedSearchQuery, selectedCategory, currentView], () => {
@@ -358,14 +334,6 @@ function toggleLanguage() {
 function handleSubmitPrompt() {
   if (isAuthenticated.value) {
     router.push('/admin/prompts/new')
-  } else {
-    router.push('/login')
-  }
-}
-
-function handleUserAction() {
-  if (isAuthenticated.value) {
-    router.push('/admin')
   } else {
     router.push('/login')
   }
@@ -615,7 +583,8 @@ function handleUserAction() {
   left: 0;
   top: 50%;
   transform: translateY(-50%);
-  background: var(--color-surface);
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
   border: 1px solid var(--color-border);
   border-left: none;
   border-radius: 0 var(--radius-md) var(--radius-md) 0;
@@ -632,39 +601,46 @@ function handleUserAction() {
 
 @media (max-width: 768px) {
   .playground-trigger {
-    left: auto;
-    right: 1.5rem;
-    top: auto;
-    bottom: 1.5rem;
-    transform: none;
-    border: 1px solid var(--color-border);
-    border-radius: 50%;
-    width: 56px;
-    height: 56px;
-    padding: 0;
+    left: 0;
+    right: auto;
+    top: 50%;
+    bottom: auto;
+    transform: translateY(-50%);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    width: auto;
+    height: auto;
+    padding: 1rem 0.5rem;
     justify-content: center;
-    background: var(--color-primary);
-    color: white;
-    box-shadow: var(--shadow-lg);
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    color: var(--color-text-primary);
+    box-shadow: var(--shadow-md);
   }
 
   .playground-trigger .label {
-    display: none;
+    display: block;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
   }
 
   .playground-trigger .icon {
-    font-size: 1.75rem;
+    font-size: 1.5rem;
   }
 
   .playground-trigger:hover {
-    transform: scale(1.05);
-    background: var(--color-primary-dark);
-    padding: 0;
+    transform: translateY(-50%) translateX(5px);
+    background: rgba(255, 255, 255, 0.95);
+    padding: 1rem 0.5rem;
   }
 }
 
 .playground-trigger:hover {
-  background: var(--color-surface-hover);
+  background: rgba(255, 255, 255, 0.95);
   padding-right: 1rem;
   transform: translateY(-50%) translateX(5px);
 }
@@ -787,64 +763,6 @@ function handleUserAction() {
   .header-controls {
     width: 100%;
     justify-content: space-between;
-  }
-}
-
-/* Mobile Bottom Navigation Styles */
-.mobile-bottom-nav {
-  display: none;
-}
-
-@media (max-width: 768px) {
-  .mobile-bottom-nav {
-    display: flex;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 60px;
-    background: var(--color-surface);
-    border-top: 1px solid var(--color-border);
-    justify-content: space-around;
-    align-items: center;
-    z-index: 50;
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-
-  .mobile-bottom-nav .nav-btn {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: none;
-    border: none;
-    padding: 0.5rem 0;
-    color: var(--color-text-tertiary);
-    font-size: 10px;
-    gap: 2px;
-    cursor: pointer;
-  }
-
-  .mobile-bottom-nav .nav-btn.active {
-    color: var(--color-primary);
-  }
-
-  .mobile-bottom-nav .center-btn {
-    position: relative;
-    top: -15px;
-  }
-
-  .mobile-bottom-nav .plus-circle {
-    width: 48px;
-    height: 48px;
-    background: var(--color-primary);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
   }
 
   /* Hide original mobile menu toggle */

@@ -96,6 +96,8 @@
         <RouterView v-if="isAuthenticated" />
       </main>
     </div>
+
+    <MobileBottomNav />
   </div>
 </template>
 
@@ -105,6 +107,7 @@ import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { useI18n } from 'vue-i18n'
 import Button from '@/components/ui/Button.vue'
+import MobileBottomNav from '@/components/layout/MobileBottomNav.vue'
 
 type NavigationItem = {
   key: string

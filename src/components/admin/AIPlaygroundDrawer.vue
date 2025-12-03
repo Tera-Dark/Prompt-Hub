@@ -88,6 +88,7 @@ import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAIConfig } from '@/composables/useAIConfig'
+import { useScrollLock } from '@/composables/useScrollLock'
 import { aiService } from '@/services/ai'
 import Button from '@/components/ui/Button.vue'
 
@@ -111,6 +112,8 @@ const output = ref('')
 const error = ref('')
 const loading = ref(false)
 
+useScrollLock(computed(() => props.isOpen))
+
 // Extract variables from prompt template {{variable}} or <variable>
 const variables = computed(() => {
   // Match {{var}}
@@ -126,6 +129,7 @@ const variables = computed(() => {
 
 const activeProviders = computed(() => providers.value.filter((p) => p.enabled))
 const canRun = computed(() => {
+  if (!selectedProviderId.value) return false
   if (props.promptTemplate) return true
   return manualPrompt.value.trim().length > 0
 })
@@ -225,8 +229,9 @@ async function runPrompt() {
 .drawer-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 50;
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(4px);
+  z-index: 100;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s ease;
@@ -240,16 +245,18 @@ async function runPrompt() {
 .drawer-panel {
   position: absolute;
   top: 0;
-  left: 0; /* Left side drawer */
+  left: 0;
   bottom: 0;
-  width: 400px;
+  width: 450px;
   max-width: 100%;
-  background: var(--color-surface);
-  box-shadow: var(--shadow-lg);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  box-shadow: 20px 0 40px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
   transform: translateX(-100%);
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 @media (max-width: 480px) {
@@ -263,12 +270,12 @@ async function runPrompt() {
 }
 
 .drawer-header {
-  padding: 1.25rem 1.5rem;
+  padding: 1.5rem;
   border-bottom: 1px solid var(--color-border);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--color-surface-alt);
+  background: rgba(255, 255, 255, 0.5);
 }
 
 .header-title {
@@ -278,21 +285,24 @@ async function runPrompt() {
 }
 
 .drawer-header h3 {
-  font-size: var(--text-lg);
-  font-weight: 600;
+  font-size: 1.25rem;
+  font-weight: 700;
   margin: 0;
-  color: var(--color-text-primary);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #a855f7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .badge {
-  font-size: 0.7rem;
-  padding: 0.1rem 0.4rem;
-  background: var(--color-primary-subtle);
-  color: var(--color-primary);
+  font-size: 0.65rem;
+  padding: 0.15rem 0.5rem;
+  background: var(--color-primary);
+  color: white;
   border-radius: 999px;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .header-actions {
@@ -305,21 +315,25 @@ async function runPrompt() {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-md);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
   color: var(--color-text-secondary);
   transition: all 0.2s;
   font-size: 1.1rem;
+  background: transparent;
+  border: 1px solid transparent;
 }
 
 .icon-btn:hover {
-  background-color: var(--color-surface-hover);
+  background-color: rgba(0, 0, 0, 0.05);
   color: var(--color-text-primary);
+  transform: scale(1.05);
 }
 
-.close-btn {
-  font-size: 1.25rem;
+.close-btn:hover {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--color-danger);
 }
 
 .drawer-content {
@@ -328,17 +342,16 @@ async function runPrompt() {
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  background: var(--color-surface);
+  gap: 2rem;
 }
 
 .section h4 {
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-text-tertiary);
   margin: 0 0 0.75rem 0;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
 }
 
 .variables-grid {
@@ -350,40 +363,45 @@ async function runPrompt() {
 .variable-field {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.5rem;
 }
 
 .variable-field span {
-  font-size: var(--text-xs);
-  font-family: monospace;
+  font-size: 0.75rem;
+  font-family: 'Fira Code', monospace;
   color: var(--color-primary);
   background: var(--color-primary-subtle);
-  padding: 0.1rem 0.4rem;
-  border-radius: 4px;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
   align-self: flex-start;
+  font-weight: 500;
 }
 
 input,
 textarea {
   width: 100%;
-  padding: 0.75rem;
+  padding: 0.875rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  background: var(--color-surface-alt);
-  font-size: var(--text-sm);
-  transition: border-color 0.2s;
+  background: rgba(255, 255, 255, 0.5);
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  font-family: inherit;
 }
 
 input:focus,
 textarea:focus {
   border-color: var(--color-primary);
+  background: white;
   outline: none;
+  box-shadow: 0 0 0 3px var(--color-primary-subtle);
 }
 
 .output-section {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-height: 300px;
 }
 
 .section-header {
@@ -397,15 +415,14 @@ textarea:focus {
   flex: 1;
   background: #1e1e1e;
   color: #e0e0e0;
-  border-radius: var(--radius-md);
-  padding: 1.25rem;
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
   font-family: 'Fira Code', monospace;
-  font-size: var(--text-sm);
-  line-height: 1.6;
+  font-size: 0.85rem;
+  line-height: 1.7;
   overflow-y: auto;
-  min-height: 250px;
-  border: 1px solid var(--color-border);
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
 .output-box pre {
@@ -415,40 +432,57 @@ textarea:focus {
 }
 
 .placeholder {
-  color: var(--color-gray-500);
+  color: #666;
   font-style: italic;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  opacity: 0.5;
 }
 
 .error-msg {
-  color: var(--color-danger);
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
 .drawer-footer {
   padding: 1.5rem;
   border-top: 1px solid var(--color-border);
-  background: var(--color-gray-50);
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
+}
+
+.provider-select {
+  flex: 1;
 }
 
 .provider-select select {
-  padding: 0.5rem;
+  width: 100%;
+  padding: 0.6rem;
   border-radius: var(--radius-md);
-  border: 1px solid var(--color-gray-300);
-  background: var(--color-white);
-  font-size: 0.9rem;
+  border: 1px solid var(--color-border);
+  background: white;
+  font-size: 0.85rem;
+  cursor: pointer;
 }
 
 .footer-buttons {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 .loading-spinner {
-  width: 16px;
-  height: 16px;
-  border: 2px solid var(--color-border);
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(0, 0, 0, 0.1);
   border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
@@ -458,5 +492,26 @@ textarea:focus {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Scrollbar Styling */
+.drawer-content::-webkit-scrollbar,
+.output-box::-webkit-scrollbar {
+  width: 6px;
+}
+
+.drawer-content::-webkit-scrollbar-track,
+.output-box::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.drawer-content::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+
+.output-box::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
 }
 </style>
