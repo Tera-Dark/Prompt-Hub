@@ -18,6 +18,15 @@
       <span>{{ t('home.nav.explore') }}</span>
     </button>
 
+    <button
+      class="nav-btn"
+      :class="{ active: activeTab === 'ai-painting' }"
+      @click="handleNav('ai-painting')"
+    >
+      <Icon name="palette" :size="24" />
+      <span>{{ t('home.nav.aiPainting') }}</span>
+    </button>
+
     <button class="nav-btn center-btn" @click="handleCenterClick">
       <div class="plus-circle">
         <Icon name="plus" :size="24" />
@@ -70,6 +79,9 @@ const isAuthenticated = computed(() => auth.isAuthed.value)
 const activeTab = computed(() => {
   if (route.path.startsWith('/admin') || route.path.startsWith('/dashboard')) {
     return 'dashboard'
+  }
+  if (route.path.startsWith('/ai-painting')) {
+    return 'ai-painting'
   }
   return props.currentView || 'recommendations'
 })

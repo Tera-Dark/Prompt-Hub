@@ -1,4 +1,4 @@
-import { githubService, getDefaultBranch } from './github'
+import { githubService } from './github'
 
 function repoInfo() {
   const owner = import.meta.env.VITE_GITHUB_REPO_OWNER
@@ -16,7 +16,7 @@ export async function uploadImage(file: File, token: string): Promise<string> {
   const { owner, repo } = repoInfo()
 
   // Get default branch dynamically
-  const branch = await getDefaultBranch(owner, repo, token)
+  const branch = await githubService.getDefaultBranch()
 
   // 1. Read file as Base64
   const base64Content = await new Promise<string>((resolve, reject) => {

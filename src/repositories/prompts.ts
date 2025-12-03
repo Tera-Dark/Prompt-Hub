@@ -1,19 +1,6 @@
 import type { Prompt } from '@/types/prompt'
 export type { Prompt }
-import {
-  getDefaultBranch,
-  getBranchSha,
-  createBranch,
-  getFile,
-  updateFile,
-  createPullRequest,
-  createIssue,
-  listIssues,
-  listPullRequests,
-  mergePullRequest,
-  closeIssue,
-  githubService,
-} from '@/services/github'
+import { githubService } from '@/services/github'
 import {
   getShardId,
   loadShardIndex,
@@ -33,19 +20,32 @@ function repoInfo() {
 
 import { PromptLoadError, type PromptsData } from '@/types/prompt'
 
+import LZString from 'lz-string'
+
 const CACHE_KEY = 'prompts_data_v3' // Bump version for sharding
 const CACHE_TTL = 60 * 1000 // 1 minute
+const COMPRESSED_PREFIX = 'lz:'
 
 export async function loadPrompts(force = false): Promise<PromptsData> {
   try {
     // Try to get from cache
     if (!force) {
-      const cached = localStorage.getItem(CACHE_KEY)
-      if (cached) {
+      const stored = localStorage.getItem(CACHE_KEY)
+      if (stored) {
         try {
-          const { data, timestamp } = JSON.parse(cached)
-          if (Date.now() - timestamp < CACHE_TTL) {
-            return data as PromptsData
+          let cachedData: any
+          if (stored.startsWith(COMPRESSED_PREFIX)) {
+            const compressed = stored.slice(COMPRESSED_PREFIX.length)
+            const decompressed = LZString.decompressFromUTF16(compressed)
+            if (decompressed) {
+              cachedData = JSON.parse(decompressed)
+            }
+          } else {
+            cachedData = JSON.parse(stored)
+          }
+
+          if (cachedData && Date.now() - cachedData.timestamp < CACHE_TTL) {
+            return cachedData.data as PromptsData
           }
         } catch (e) {
           console.warn('Failed to parse cached prompts', e)
@@ -89,13 +89,16 @@ export function clearPromptsCache() {
 }
 
 export function setPromptsCache(data: PromptsData) {
-  localStorage.setItem(
-    CACHE_KEY,
-    JSON.stringify({
+  try {
+    const json = JSON.stringify({
       data,
       timestamp: Date.now(),
-    }),
-  )
+    })
+    const compressed = COMPRESSED_PREFIX + LZString.compressToUTF16(json)
+    localStorage.setItem(CACHE_KEY, compressed)
+  } catch (e) {
+    console.warn('Failed to cache prompts (likely quota exceeded)', e)
+  }
 }
 
 export async function addPrompt(
@@ -106,13 +109,13 @@ export async function addPrompt(
   const { owner, repo } = repoInfo()
   githubService.setAccessToken(token)
 
-  const base = await getDefaultBranch(owner, repo, token)
+  const base = await githubService.getDefaultBranch()
 
   let branch = base
   if (!directCommit) {
     branch = `prompt-add-${item.id}-${Date.now()}`
-    const baseSha = await getBranchSha(owner, repo, base, token)
-    await createBranch(owner, repo, branch, baseSha, token)
+    const baseSha = await githubService.getBranchSha(base)
+    await githubService.createBranch(branch, baseSha)
   }
 
   const message = `feat: add prompt ${item.id}`
@@ -122,7 +125,7 @@ export async function addPrompt(
     branch,
     async (baseSha) => {
       // 1. Fetch fresh Index
-      const indexFile = await getFile(owner, repo, 'public/data/prompts/index.json', baseSha, token)
+      const indexFile = await githubService.getFile('public/data/prompts/index.json', baseSha)
       let index: ShardIndex
       try {
         index = JSON.parse(indexFile.content) as ShardIndex
@@ -141,12 +144,9 @@ export async function addPrompt(
       const shardId = getShardId(item.id, index.shardCount)
 
       // 2. Fetch fresh Shard
-      const shardFile = await getFile(
-        owner,
-        repo,
+      const shardFile = await githubService.getFile(
         `public/data/prompts/shard-${shardId}.json`,
         baseSha,
-        token,
       )
       const shard = JSON.parse(shardFile.content) as ShardData
 
@@ -224,7 +224,7 @@ ${item.author?.avatarUrl ? `**Avatar:** ${item.author.avatarUrl}` : ''}
 ${JSON.stringify(item)}
 METADATA_JSON_END -->
 `
-  return await createPullRequest(owner, repo, prTitle, branch, base, prBody, token)
+  return await githubService.createPullRequest(prTitle, branch, base, prBody)
 }
 
 export async function updatePromptById(
@@ -235,13 +235,13 @@ export async function updatePromptById(
 ): Promise<string> {
   const { owner, repo } = repoInfo()
   githubService.setAccessToken(token)
-  const base = await getDefaultBranch(owner, repo, token)
+  const base = await githubService.getDefaultBranch()
 
   let branch = base
   if (!directCommit) {
     branch = `prompt-edit-${id}-${Date.now()}`
-    const baseSha = await getBranchSha(owner, repo, base, token)
-    await createBranch(owner, repo, branch, baseSha, token)
+    const baseSha = await githubService.getBranchSha(base)
+    await githubService.createBranch(branch, baseSha)
   }
 
   const message = `feat: update prompt`
@@ -251,7 +251,7 @@ export async function updatePromptById(
     branch,
     async (baseSha) => {
       // 1. Fetch Index
-      const indexFile = await getFile(owner, repo, 'public/data/prompts/index.json', baseSha, token)
+      const indexFile = await githubService.getFile('public/data/prompts/index.json', baseSha)
       let index: ShardIndex
       try {
         index = JSON.parse(indexFile.content) as ShardIndex
@@ -269,12 +269,9 @@ export async function updatePromptById(
       const shardId = getShardId(id, index.shardCount)
 
       // 2. Fetch Shard
-      const shardFile = await getFile(
-        owner,
-        repo,
+      const shardFile = await githubService.getFile(
         `public/data/prompts/shard-${shardId}.json`,
         baseSha,
-        token,
       )
       const shard = JSON.parse(shardFile.content) as ShardData
 
@@ -338,16 +335,10 @@ export async function updatePromptById(
 
   // For PR, we need to get the updated item for the PR body
   // Re-fetch to get the updated item
-  const indexFile = await getFile(owner, repo, 'public/data/prompts/index.json', branch, token)
+  const indexFile = await githubService.getFile('public/data/prompts/index.json', branch)
   const index = JSON.parse(indexFile.content) as ShardIndex
   const shardId = getShardId(id, index.shardCount)
-  const shardFile = await getFile(
-    owner,
-    repo,
-    `public/data/prompts/shard-${shardId}.json`,
-    branch,
-    token,
-  )
+  const shardFile = await githubService.getFile(`public/data/prompts/shard-${shardId}.json`, branch)
   const shard = JSON.parse(shardFile.content) as ShardData
   const updated = shard.prompts.find((p: Prompt) => p.id === id)!
 
@@ -377,7 +368,7 @@ ${updated.prompt}
 ${JSON.stringify(updated)}
 METADATA_JSON_END -->
 `
-  return await createPullRequest(owner, repo, prTitle, branch, base, prBody, token)
+  return await githubService.createPullRequest(prTitle, branch, base, prBody)
 }
 
 export async function deletePromptById(
@@ -387,13 +378,13 @@ export async function deletePromptById(
 ): Promise<string> {
   const { owner, repo } = repoInfo()
   githubService.setAccessToken(token)
-  const base = await getDefaultBranch(owner, repo, token)
+  const base = await githubService.getDefaultBranch()
 
   let branch = base
   if (!directCommit) {
     branch = `prompt-delete-${id}-${Date.now()}`
-    const baseSha = await getBranchSha(owner, repo, base, token)
-    await createBranch(owner, repo, branch, baseSha, token)
+    const baseSha = await githubService.getBranchSha(base)
+    await githubService.createBranch(branch, baseSha)
   }
 
   const message = `feat: delete prompt`
@@ -403,7 +394,7 @@ export async function deletePromptById(
     branch,
     async (baseSha) => {
       // 1. Fetch Index
-      const indexFile = await getFile(owner, repo, 'public/data/prompts/index.json', baseSha, token)
+      const indexFile = await githubService.getFile('public/data/prompts/index.json', baseSha)
       let index: ShardIndex
       try {
         index = JSON.parse(indexFile.content) as ShardIndex
@@ -421,12 +412,9 @@ export async function deletePromptById(
       const shardId = getShardId(id, index.shardCount)
 
       // 2. Fetch Shard
-      const shardFile = await getFile(
-        owner,
-        repo,
+      const shardFile = await githubService.getFile(
         `public/data/prompts/shard-${shardId}.json`,
         baseSha,
-        token,
       )
       const shard = JSON.parse(shardFile.content) as ShardData
 
@@ -480,14 +468,16 @@ export async function deletePromptById(
 
   const prTitle = `Delete prompt: ${id}`
   const prBody = `Delete prompt ${id}`
-  return await createPullRequest(owner, repo, prTitle, branch, base, prBody, token)
+  return await githubService.createPullRequest(prTitle, branch, base, prBody)
 }
 
 export async function submitPromptIssue(newItem: Prompt, token: string): Promise<string> {
   if (token === 'mock-token') {
     throw new Error(i18n.global.t('errors.mockLoginSubmit'))
   }
-  const { owner, repo } = repoInfo()
+  // owner/repo are used internally by githubService, but we need to set token
+  githubService.setAccessToken(token)
+
   const title = `[Submission] ${newItem.title}`
   const body = `
 ### New Prompt Submission
@@ -516,7 +506,7 @@ METADATA_JSON_END -->
 ---
 *Submitted via Prompt-Hub*
 `
-  return await createIssue(owner, repo, title, body, token)
+  return await githubService.createIssue(title, body)
 }
 
 export async function submitPromptUpdate(
@@ -527,7 +517,8 @@ export async function submitPromptUpdate(
   if (token === 'mock-token') {
     throw new Error(i18n.global.t('errors.mockLoginSubmit'))
   }
-  const { owner, repo } = repoInfo()
+  githubService.setAccessToken(token)
+
   const title = `[Update] ${originalId}`
   const body = `
 ### Update Prompt Request
@@ -556,7 +547,7 @@ METADATA_JSON_END -->
 ---
 *Submitted via Prompt-Hub*
 `
-  return await createIssue(owner, repo, title, body, token)
+  return await githubService.createIssue(title, body)
 }
 
 export async function deletePromptsBatch(
@@ -566,14 +557,14 @@ export async function deletePromptsBatch(
 ): Promise<string> {
   const { owner, repo } = repoInfo()
   githubService.setAccessToken(token)
-  const base = await getDefaultBranch(owner, repo, token)
+  const base = await githubService.getDefaultBranch()
 
   // 1. Prepare Branch
   let branch = base
   if (!directCommit) {
     branch = `batch-delete-${Date.now()}`
-    const baseSha = await getBranchSha(owner, repo, base, token)
-    await createBranch(owner, repo, branch, baseSha, token)
+    const baseSha = await githubService.getBranchSha(base)
+    await githubService.createBranch(branch, baseSha)
   }
 
   const message = `feat: batch delete ${ids.length} prompts`
@@ -584,13 +575,7 @@ export async function deletePromptsBatch(
       branch,
       async (baseSha) => {
         // A. Fetch Index
-        const indexFile = await getFile(
-          owner,
-          repo,
-          'public/data/prompts/index.json',
-          baseSha,
-          token,
-        )
+        const indexFile = await githubService.getFile('public/data/prompts/index.json', baseSha)
         let index: ShardIndex
         try {
           index = JSON.parse(indexFile.content) as ShardIndex
@@ -610,9 +595,9 @@ export async function deletePromptsBatch(
         // C. Fetch Shards
         const shardFiles = await Promise.all(
           Array.from(shardsToFetch).map((shardId) =>
-            getFile(owner, repo, `public/data/prompts/shard-${shardId}.json`, baseSha, token).then(
-              (f) => ({ shardId, content: f.content }),
-            ),
+            githubService
+              .getFile(`public/data/prompts/shard-${shardId}.json`, baseSha)
+              .then((f) => ({ shardId, content: f.content })),
           ),
         )
 
@@ -684,30 +669,12 @@ export async function deletePromptsBatch(
     return `https://github.com/${owner}/${repo}`
   }
 
-  // Non-direct commit (PR flow) - simplified for now:
-  // We can't easily do multi-file PRs without creating the branch first (which we did above)
-  // AND updating the files on that branch.
-  // So we reuse the logic but targeting the new branch.
-  // HOWEVER, updateFiles with function updater works on the branch tip.
-  // So we can just call the same logic but with directCommit=true effectively on the feature branch.
-  // Wait, the logic above uses `branch` variable.
-  // So if we are here, we already created `branch`.
-  // We just need to execute the update on `branch`.
-
-  // Actually, the code block above is inside `if (directCommit)`.
-  // We should extract the updater logic to be reusable or just duplicate it for now since the flow is slightly different?
-  // No, `updateFiles` handles it.
-  // If `directCommit` is false, we created a branch. We should run the SAME update logic on that branch.
-  // The only difference is the return value (PR URL vs Repo URL).
-
-  // Let's refactor slightly to avoid duplication.
-  // But for now, to ensure correctness, I will copy the updater logic.
-
+  // Non-direct commit (PR flow)
   await githubService.updateFiles(
     branch,
     async (baseSha) => {
       // A. Fetch Index
-      const indexFile = await getFile(owner, repo, 'public/data/prompts/index.json', baseSha, token)
+      const indexFile = await githubService.getFile('public/data/prompts/index.json', baseSha)
       let index: ShardIndex
       try {
         index = JSON.parse(indexFile.content) as ShardIndex
@@ -725,9 +692,9 @@ export async function deletePromptsBatch(
       // C. Fetch Shards
       const shardFiles = await Promise.all(
         Array.from(shardsToFetch).map((shardId) =>
-          getFile(owner, repo, `public/data/prompts/shard-${shardId}.json`, baseSha, token).then(
-            (f) => ({ shardId, content: f.content }),
-          ),
+          githubService
+            .getFile(`public/data/prompts/shard-${shardId}.json`, baseSha)
+            .then((f) => ({ shardId, content: f.content })),
         ),
       )
 
@@ -788,14 +755,15 @@ export async function deletePromptsBatch(
 
   const prTitle = `Batch delete ${ids.length} prompts`
   const prBody = `Batch delete request for prompts:\n\n${ids.map((id) => `- ${id}`).join('\n')}`
-  return await createPullRequest(owner, repo, prTitle, branch, base, prBody, token)
+  return await githubService.createPullRequest(prTitle, branch, base, prBody)
 }
 
 export async function submitPromptDeleteBatch(ids: string[], token: string): Promise<string> {
   if (token === 'mock-token') {
     throw new Error(i18n.global.t('errors.mockLoginSubmit'))
   }
-  const { owner, repo } = repoInfo()
+  githubService.setAccessToken(token)
+
   const title = `[Batch Delete] ${ids.length} prompts`
   const body = `
 ### Batch Delete Prompt Request
@@ -806,14 +774,15 @@ ${ids.map((id) => `- ${id}`).join('\n')}
 ---
 *Submitted via Prompt-Hub*
 `
-  return await createIssue(owner, repo, title, body, token)
+  return await githubService.createIssue(title, body)
 }
 
 export async function submitPromptDelete(id: string, token: string): Promise<string> {
   if (token === 'mock-token') {
     throw new Error(i18n.global.t('errors.mockLoginSubmit'))
   }
-  const { owner, repo } = repoInfo()
+  githubService.setAccessToken(token)
+
   const title = `[Delete] ${id}`
   const body = `
 ### Delete Prompt Request
@@ -823,22 +792,22 @@ export async function submitPromptDelete(id: string, token: string): Promise<str
 ---
 *Submitted via Prompt-Hub*
 `
-  return await createIssue(owner, repo, title, body, token)
+  return await githubService.createIssue(title, body)
 }
 
 export async function withdrawSubmission(issueNumber: number, token: string): Promise<void> {
-  const { owner, repo } = repoInfo()
-  await closeIssue(owner, repo, issueNumber, token)
+  githubService.setAccessToken(token)
+  await githubService.closeIssue(issueNumber)
 }
 
 export async function getUserSubmissions(
   username: string,
   token: string,
 ): Promise<PendingSubmission[]> {
-  const { owner, repo } = repoInfo()
-  const issues = await listIssues(owner, repo, username, token)
+  githubService.setAccessToken(token)
+  const issues = await githubService.listIssues(username)
 
-  return issues.map((issue) => {
+  return issues.map((issue: any) => {
     let action: PendingSubmission['action'] = 'create'
     let originalId: string | undefined
     let title = issue.title
@@ -878,11 +847,11 @@ export async function getUserSubmissions(
 }
 
 export async function getAllPendingSubmissions(token: string): Promise<number> {
-  const { owner, repo } = repoInfo()
-  const issues = await listIssues(owner, repo, undefined, token)
+  githubService.setAccessToken(token)
+  const issues = await githubService.listIssues()
   // Filter for actual submissions if needed, e.g. check title or labels
   // For now assume all open issues are submissions or relevant
-  return issues.filter((i) => i.title.includes('[Submission]')).length
+  return issues.filter((i: any) => i.title.includes('[Submission]')).length
 }
 
 // Helper to convert File to Base64 string
@@ -906,28 +875,26 @@ export async function uploadImage(
   directCommit = false,
 ): Promise<string> {
   const { owner, repo } = repoInfo()
-  const base = await getDefaultBranch(owner, repo, token)
-  const baseSha = await getBranchSha(owner, repo, base, token)
+  githubService.setAccessToken(token)
+  const base = await githubService.getDefaultBranch()
+  const baseSha = await githubService.getBranchSha(base)
 
   let branch = base
   if (!directCommit) {
     branch = `upload-image-${Date.now()}`
-    await createBranch(owner, repo, branch, baseSha, token)
+    await githubService.createBranch(branch, baseSha)
   }
 
   const path = `public/images/${Date.now()}-${file.name}`
   const content = await fileToBase64(file)
   const message = `chore: upload image`
 
-  await updateFile(
-    owner,
-    repo,
+  await githubService.updateFile(
     path,
     content,
     message,
     branch,
     baseSha, // We use baseSha as we are creating a new file
-    token,
   )
 
   if (directCommit) {
@@ -936,7 +903,7 @@ export async function uploadImage(
 
   const prTitle = `Upload image: ${file.name}`
   const prBody = `Upload image ${file.name}`
-  await createPullRequest(owner, repo, prTitle, branch, base, prBody, token)
+  await githubService.createPullRequest(prTitle, branch, base, prBody)
 
   // Return a URL that is accessible (raw from the branch)
   return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}`
@@ -950,16 +917,16 @@ export interface PendingSubmission extends Prompt {
 }
 
 export async function fetchPendingSubmissions(token: string): Promise<PendingSubmission[]> {
-  const { owner, repo } = repoInfo()
+  githubService.setAccessToken(token)
   const [issues, prs] = await Promise.all([
-    listIssues(owner, repo, '', token),
-    listPullRequests(owner, repo, token),
+    githubService.listIssues(''), // List all issues
+    githubService.listPullRequests(),
   ])
 
   const submissions: PendingSubmission[] = []
 
   // Process Issues - only open ones
-  for (const issue of issues) {
+  for (const issue of issues as any[]) {
     // Double-check state is open
     if (issue.state !== 'open') continue
 
@@ -1028,7 +995,7 @@ export async function fetchPendingSubmissions(token: string): Promise<PendingSub
   }
 
   // Process PRs - only open ones
-  for (const pr of prs) {
+  for (const pr of prs as any[]) {
     // Double-check state is open
     if (pr.state !== 'open') continue
 
@@ -1104,17 +1071,17 @@ export async function approveSubmission(
   submission: PendingSubmission,
   token: string,
 ): Promise<void> {
-  const { owner, repo } = repoInfo()
+  githubService.setAccessToken(token)
 
   if (submission.type === 'pr') {
-    await mergePullRequest(owner, repo, submission.number, token)
+    await githubService.mergePullRequest(submission.number)
     clearPromptsCache() // Clear cache after merge
   } else {
     // For Issues, we need to parse the body and add/update/delete
     if (submission.action === 'delete') {
       if (!submission.originalId) throw new Error('Missing original ID for delete')
       await deletePromptById(submission.originalId, token, true) // Direct commit as admin
-      await closeIssue(owner, repo, submission.number, token)
+      await githubService.closeIssue(submission.number)
       return
     }
 
@@ -1175,7 +1142,7 @@ export async function approveSubmission(
         true,
       ) // Direct commit as admin
 
-      await closeIssue(owner, repo, submission.number, token)
+      await githubService.closeIssue(submission.number)
       return
     }
 
@@ -1228,7 +1195,7 @@ export async function approveSubmission(
     }
 
     await addPrompt(newItem, token, true)
-    await closeIssue(owner, repo, submission.number, token)
+    await githubService.closeIssue(submission.number)
   }
 }
 
@@ -1236,6 +1203,6 @@ export async function rejectSubmission(
   submission: PendingSubmission,
   token: string,
 ): Promise<void> {
-  const { owner, repo } = repoInfo()
-  await closeIssue(owner, repo, submission.number, token) // Works for PRs too as they are issues
+  githubService.setAccessToken(token)
+  await githubService.closeIssue(submission.number) // Works for PRs too as they are issues
 }

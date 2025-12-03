@@ -209,7 +209,9 @@ function toggleLanguage() {
 }
 
 .admin-sidebar {
-  position: relative;
+  position: sticky;
+  top: 0;
+  height: 100vh;
   width: 240px;
   background: var(--color-surface);
   border-right: 1px solid var(--color-border);

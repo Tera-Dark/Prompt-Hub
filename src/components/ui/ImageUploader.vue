@@ -9,7 +9,7 @@ const props = defineProps<{
   token: string
 }>()
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'file-selected'])
 
 const { t } = useI18n()
 const isDragging = ref(false)
@@ -82,6 +82,7 @@ const processFiles = async (files: File[]) => {
 
     const id = Math.random().toString(36).substring(7)
     const item = { id, file, progress: true, url: '' }
+    emit('file-selected', file)
 
     const reader = new FileReader()
     reader.readAsDataURL(file)
@@ -169,6 +170,9 @@ const processFiles = async (files: File[]) => {
     reader.onload = (e) => {
       item.url = e.target?.result as string
     }
+
+    // Emit file-selected event for metadata extraction
+    emit('file-selected', file)
 
     return item
   })

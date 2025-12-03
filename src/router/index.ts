@@ -80,11 +80,7 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/prompts/new',
-    name: 'PromptNew',
-    component: () => import('@/views/admin/AdminPromptCreateView.vue'),
-    meta: {
-      requiresAuth: true,
-    },
+    redirect: '/admin/prompts/new',
   },
   {
     path: '/dashboard',
@@ -115,6 +111,11 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/user/UserAISettingsView.vue'),
       },
     ],
+  },
+  {
+    path: '/ai-painting/:id',
+    name: 'AIPaintingDetail',
+    component: () => import('@/views/AIPaintingDetailView.vue'),
   },
   {
     path: '/:pathMatch(.*)*',

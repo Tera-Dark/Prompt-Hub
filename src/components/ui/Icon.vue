@@ -94,6 +94,18 @@
 
     <path v-if="name === 'user'" d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
     <circle v-if="name === 'user'" cx="12" cy="7" r="4" />
+
+    <path
+      v-if="name === 'palette'"
+      d="M13.5 2a7 7 0 0 0-.5 14 4 4 0 0 1 3.5 3.5 2 2 0 0 0 3 2 7 7 0 0 0-6-19.5"
+    />
+    <path
+      v-if="name === 'palette'"
+      d="M13.5 2A11 11 0 0 0 2 13.5C2 20 7 22 9.5 22a2.5 2.5 0 0 0 2.5-2.5V17"
+    />
+    <circle v-if="name === 'palette'" cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
+    <circle v-if="name === 'palette'" cx="16.5" cy="7.5" r="1.5" fill="currentColor" />
+    <circle v-if="name === 'palette'" cx="5.5" cy="14.5" r="1.5" fill="currentColor" />
   </svg>
 </template>
 

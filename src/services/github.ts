@@ -18,15 +18,19 @@ export class GitHubService {
     return !!this.octokit
   }
 
-  async getUser() {
+  private ensureAuth() {
     if (!this.octokit) throw new Error('Not authenticated')
-    const { data } = await this.octokit.users.getAuthenticated()
+  }
+
+  async getUser() {
+    this.ensureAuth()
+    const { data } = await this.octokit!.users.getAuthenticated()
     return data
   }
 
   async getRepoDetails() {
-    if (!this.octokit) throw new Error('Not authenticated')
-    const { data } = await this.octokit.repos.get({
+    this.ensureAuth()
+    const { data } = await this.octokit!.repos.get({
       owner: this.owner,
       repo: this.repo,
     })
@@ -34,8 +38,8 @@ export class GitHubService {
   }
 
   async getContents(path: string) {
-    if (!this.octokit) throw new Error('Not authenticated')
-    const { data } = await this.octokit.repos.getContent({
+    this.ensureAuth()
+    const { data } = await this.octokit!.repos.getContent({
       owner: this.owner,
       repo: this.repo,
       path,
@@ -44,8 +48,8 @@ export class GitHubService {
   }
 
   async createIssue(title: string, body: string) {
-    if (!this.octokit) throw new Error('Not authenticated')
-    const { data } = await this.octokit.issues.create({
+    this.ensureAuth()
+    const { data } = await this.octokit!.issues.create({
       owner: this.owner,
       repo: this.repo,
       title,
@@ -55,8 +59,8 @@ export class GitHubService {
   }
 
   async listPullRequests(state: 'open' | 'closed' | 'all' = 'open') {
-    if (!this.octokit) throw new Error('Not authenticated')
-    const { data } = await this.octokit.pulls.list({
+    this.ensureAuth()
+    const { data } = await this.octokit!.pulls.list({
       owner: this.owner,
       repo: this.repo,
       state,
@@ -65,8 +69,8 @@ export class GitHubService {
   }
 
   async mergePullRequest(pullNumber: number) {
-    if (!this.octokit) throw new Error('Not authenticated')
-    const { data } = await this.octokit.pulls.merge({
+    this.ensureAuth()
+    const { data } = await this.octokit!.pulls.merge({
       owner: this.owner,
       repo: this.repo,
       pull_number: pullNumber,
@@ -76,8 +80,8 @@ export class GitHubService {
   }
 
   async updateIssue(issueNumber: number, state: 'open' | 'closed') {
-    if (!this.octokit) throw new Error('Not authenticated')
-    const { data } = await this.octokit.issues.update({
+    this.ensureAuth()
+    const { data } = await this.octokit!.issues.update({
       owner: this.owner,
       repo: this.repo,
       issue_number: issueNumber,
@@ -85,9 +89,10 @@ export class GitHubService {
     })
     return data
   }
+
   async getRef(ref: string) {
-    if (!this.octokit) throw new Error('Not authenticated')
-    const { data } = await this.octokit.git.getRef({
+    this.ensureAuth()
+    const { data } = await this.octokit!.git.getRef({
       owner: this.owner,
       repo: this.repo,
       ref,
@@ -96,8 +101,8 @@ export class GitHubService {
   }
 
   async createBlob(content: string, encoding: 'utf-8' | 'base64') {
-    if (!this.octokit) throw new Error('Not authenticated')
-    const { data } = await this.octokit.git.createBlob({
+    this.ensureAuth()
+    const { data } = await this.octokit!.git.createBlob({
       owner: this.owner,
       repo: this.repo,
       content,
@@ -116,8 +121,8 @@ export class GitHubService {
       sha?: string
     }[],
   ) {
-    if (!this.octokit) throw new Error('Not authenticated')
-    const { data } = await this.octokit.git.createTree({
+    this.ensureAuth()
+    const { data } = await this.octokit!.git.createTree({
       owner: this.owner,
       repo: this.repo,
       base_tree: baseTreeSha,
@@ -127,8 +132,8 @@ export class GitHubService {
   }
 
   async createCommit(message: string, treeSha: string, parents: string[]) {
-    if (!this.octokit) throw new Error('Not authenticated')
-    const { data } = await this.octokit.git.createCommit({
+    this.ensureAuth()
+    const { data } = await this.octokit!.git.createCommit({
       owner: this.owner,
       repo: this.repo,
       message,
@@ -139,8 +144,8 @@ export class GitHubService {
   }
 
   async updateRef(ref: string, sha: string) {
-    if (!this.octokit) throw new Error('Not authenticated')
-    const { data } = await this.octokit.git.updateRef({
+    this.ensureAuth()
+    const { data } = await this.octokit!.git.updateRef({
       owner: this.owner,
       repo: this.repo,
       ref,
@@ -157,15 +162,14 @@ export class GitHubService {
     message: string,
     retries = 3,
   ) {
-    if (!this.octokit) throw new Error('Not authenticated')
+    this.ensureAuth()
 
     let lastError: any
 
     for (let i = 0; i < retries; i++) {
       try {
         // 1. Get the current commit of the branch
-        // Force fetch the latest ref to minimize race window
-        const { data: ref } = await this.octokit.git.getRef({
+        const { data: ref } = await this.octokit!.git.getRef({
           owner: this.owner,
           repo: this.repo,
           ref: `heads/${branch}`,
@@ -173,7 +177,7 @@ export class GitHubService {
         const currentCommitSha = ref.object.sha
 
         // 2. Get the tree of the current commit
-        const { data: currentCommit } = await this.octokit.git.getCommit({
+        const { data: currentCommit } = await this.octokit!.git.getCommit({
           owner: this.owner,
           repo: this.repo,
           commit_sha: currentCommitSha,
@@ -183,32 +187,6 @@ export class GitHubService {
         let filesToUpdate: { path: string; content?: string; sha?: string }[] = []
 
         if (typeof filesOrUpdater === 'function') {
-          // Dynamic update mode (Optimistic Locking)
-          // Need to know which files the updater cares about.
-          // Limitation: The updater must know paths in advance or we fetch root tree?
-          // Ideally, we should pass a "getter" to the updater that fetches file content on demand given the currentTreeSha.
-          // For now, let's assume the updater handles fetching via `getFile` using `currentCommitSha` as ref.
-          // Actually, to be truly atomic, we should pass the current file contents to the updater.
-          // BUT, `updateFiles` signature is generic.
-          // Let's slightly change the contract: updater receives `currentCommitSha`.
-          // The updater is responsible for fetching the *latest* version of files it needs using that SHA.
-
-          // However, the type definition above implies `currentFiles` map.
-          // Let's simplify: if function, we pass the `currentCommitSha` so the caller can fetch fresh data.
-          // But TypeScript signature needs to match.
-          // Let's cast for internal logic.
-
-          // WAIT: A better approach for atomic updates on GitHub API without locking:
-          // 1. Get Ref SHA
-          // 2. Get File Content at that SHA
-          // 3. Modify
-          // 4. Create Tree/Commit based on that SHA
-          // 5. Update Ref (CAS: compare old SHA) -> This is what we do at step 5.
-
-          // So, we just need to provide the `currentCommitSha` to the updater function
-          // so it can fetch the *exact version* of the files it wants to modify.
-
-          // Redefining signature for the implementation:
           const updater = filesOrUpdater as (
             baseSha: string,
           ) => Promise<{ path: string; content: string }[]>
@@ -237,18 +215,15 @@ export class GitHubService {
         return newCommit
       } catch (error: any) {
         lastError = error
-        // If it's not a fast-forward error (409 or 422 usually), throw immediately
-        // The specific error message "Update is not a fast forward" suggests we should check for that
         const isFastForwardError =
-          error.status === 409 || // Conflict
-          error.status === 422 || // Unprocessable Entity (sometimes used for git errors)
+          error.status === 409 ||
+          error.status === 422 ||
           (error.message && error.message.toLowerCase().includes('fast forward'))
 
         if (!isFastForwardError) {
           throw error
         }
 
-        // Wait a bit before retrying to let other updates settle
         await new Promise((resolve) => setTimeout(resolve, 500 + Math.random() * 500))
         console.warn(`Retrying updateFiles due to fast-forward error (attempt ${i + 1}/${retries})`)
       }
@@ -256,179 +231,105 @@ export class GitHubService {
 
     throw lastError
   }
+
+  // --- Migrated Standalone Functions ---
+
+  async getDefaultBranch() {
+    this.ensureAuth()
+    const { data } = await this.octokit!.repos.get({ owner: this.owner, repo: this.repo })
+    return data.default_branch
+  }
+
+  async getBranchSha(branch: string) {
+    this.ensureAuth()
+    const { data } = await this.octokit!.repos.getBranch({
+      owner: this.owner,
+      repo: this.repo,
+      branch,
+    })
+    return data.commit.sha
+  }
+
+  async createBranch(branch: string, sha: string) {
+    this.ensureAuth()
+    await this.octokit!.git.createRef({
+      owner: this.owner,
+      repo: this.repo,
+      ref: `refs/heads/${branch}`,
+      sha,
+    })
+  }
+
+  async getFile(path: string, ref: string) {
+    this.ensureAuth()
+    const { data } = await this.octokit!.repos.getContent({
+      owner: this.owner,
+      repo: this.repo,
+      path,
+      ref,
+    })
+    if (Array.isArray(data) || !('content' in data)) {
+      throw new Error('Not a file')
+    }
+    return {
+      content: decodeURIComponent(escape(atob(data.content))),
+      sha: data.sha,
+    }
+  }
+
+  async updateFile(path: string, content: string, message: string, branch: string, sha: string) {
+    this.ensureAuth()
+    const base64Content = btoa(unescape(encodeURIComponent(content)))
+
+    const { data } = await this.octokit!.repos.createOrUpdateFileContents({
+      owner: this.owner,
+      repo: this.repo,
+      path,
+      message,
+      content: base64Content,
+      branch,
+      sha,
+    })
+    return data.commit
+  }
+
+  async createPullRequest(title: string, head: string, base: string, body: string) {
+    this.ensureAuth()
+    const { data } = await this.octokit!.pulls.create({
+      owner: this.owner,
+      repo: this.repo,
+      title,
+      head,
+      base,
+      body,
+    })
+    return data.html_url
+  }
+
+  async listIssues(creator?: string) {
+    this.ensureAuth()
+    const params: any = {
+      owner: this.owner,
+      repo: this.repo,
+      state: 'open',
+    }
+    if (creator) {
+      params.creator = creator
+    }
+    const { data } = await this.octokit!.issues.listForRepo(params)
+    return data
+  }
+
+  async closeIssue(issueNumber: number) {
+    this.ensureAuth()
+    const { data } = await this.octokit!.issues.update({
+      owner: this.owner,
+      repo: this.repo,
+      issue_number: issueNumber,
+      state: 'closed',
+    })
+    return data
+  }
 }
 
 export const githubService = new GitHubService()
-
-// Standalone functions to support existing repositories
-export async function getDefaultBranch(owner: string, repo: string, token: string) {
-  const octokit = new Octokit({ auth: token })
-  const { data } = await octokit.repos.get({ owner, repo })
-  return data.default_branch
-}
-
-export async function getBranchSha(owner: string, repo: string, branch: string, token: string) {
-  const octokit = new Octokit({ auth: token })
-  const { data } = await octokit.repos.getBranch({ owner, repo, branch })
-  return data.commit.sha
-}
-
-export async function createBranch(
-  owner: string,
-  repo: string,
-  branch: string,
-  sha: string,
-  token: string,
-) {
-  const octokit = new Octokit({ auth: token })
-  await octokit.git.createRef({
-    owner,
-    repo,
-    ref: `refs/heads/${branch}`,
-    sha,
-  })
-}
-
-export async function getFile(
-  owner: string,
-  repo: string,
-  path: string,
-  ref: string,
-  token: string,
-) {
-  const octokit = new Octokit({ auth: token })
-  const { data } = await octokit.repos.getContent({
-    owner,
-    repo,
-    path,
-    ref,
-  })
-  if (Array.isArray(data) || !('content' in data)) {
-    throw new Error('Not a file')
-  }
-  return {
-    content: decodeURIComponent(escape(atob(data.content))),
-    sha: data.sha,
-  }
-}
-
-export async function updateFile(
-  owner: string,
-  repo: string,
-  path: string,
-  content: string,
-  message: string,
-  branch: string,
-  sha: string,
-  token: string,
-) {
-  const octokit = new Octokit({ auth: token })
-
-  // Ensure content is properly Base64 encoded for UTF-8
-  const base64Content = btoa(unescape(encodeURIComponent(content)))
-
-  const { data } = await octokit.repos.createOrUpdateFileContents({
-    owner,
-    repo,
-    path,
-    message,
-    content: base64Content,
-    branch,
-    sha,
-  })
-  return data.commit
-}
-
-export async function createPullRequest(
-  owner: string,
-  repo: string,
-  title: string,
-  head: string,
-  base: string,
-  body: string,
-  token: string,
-) {
-  const octokit = new Octokit({ auth: token })
-  const { data } = await octokit.pulls.create({
-    owner,
-    repo,
-    title,
-    head,
-    base,
-    body,
-  })
-  return data.html_url
-}
-
-export async function createIssue(
-  owner: string,
-  repo: string,
-  title: string,
-  body: string,
-  token: string,
-) {
-  const octokit = new Octokit({ auth: token })
-  const { data } = await octokit.issues.create({
-    owner,
-    repo,
-    title,
-    body,
-  })
-  return data.html_url
-}
-
-export async function listIssues(
-  owner: string,
-  repo: string,
-  creator: string | undefined,
-  token: string,
-) {
-  const octokit = new Octokit({ auth: token })
-  const params: any = {
-    owner,
-    repo,
-    state: 'open',
-  }
-  if (creator) {
-    params.creator = creator
-  }
-  const { data } = await octokit.issues.listForRepo(params)
-  return data
-}
-
-export async function listPullRequests(owner: string, repo: string, token: string) {
-  const octokit = new Octokit({ auth: token })
-  const { data } = await octokit.pulls.list({
-    owner,
-    repo,
-    state: 'open',
-  })
-  return data
-}
-
-export async function mergePullRequest(
-  owner: string,
-  repo: string,
-  pullNumber: number,
-  token: string,
-) {
-  const octokit = new Octokit({ auth: token })
-  const { data } = await octokit.pulls.merge({
-    owner,
-    repo,
-    pull_number: pullNumber,
-    merge_method: 'squash',
-  })
-  return data
-}
-
-export async function closeIssue(owner: string, repo: string, issueNumber: number, token: string) {
-  const octokit = new Octokit({ auth: token })
-  const { data } = await octokit.issues.update({
-    owner,
-    repo,
-    issue_number: issueNumber,
-    state: 'closed',
-  })
-  return data
-}

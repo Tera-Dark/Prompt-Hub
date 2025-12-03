@@ -46,10 +46,28 @@ export function usePromptStore() {
       .sort((a, b) => b.count - a.count)
   })
 
+  const baseModels = computed(() => {
+    const counts = new Map<string, number>()
+    prompts.value.forEach((p) => {
+      if (
+        (p.category === 'AI Painting' || p.category === 'AI 绘画') &&
+        p.aiPaintingConfig?.baseModel
+      ) {
+        const model = p.aiPaintingConfig.baseModel
+        counts.set(model, (counts.get(model) || 0) + 1)
+      }
+    })
+
+    return Array.from(counts.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+  })
+
   function getFilteredPrompts(
     searchQuery: string,
     category: string | null,
-    view: 'recommendations' | 'explore' | 'favorites',
+    view: 'recommendations' | 'explore' | 'favorites' | 'ai-painting',
+    baseModel: string | null = null,
   ) {
     let result = prompts.value
 
@@ -57,6 +75,12 @@ export function usePromptStore() {
       result = featuredPrompts.value
     } else if (view === 'favorites') {
       result = favoritesService.getFavoritePrompts(result)
+    } else if (view === 'ai-painting') {
+      result = result.filter((p) => p.category === 'AI Painting' || p.category === 'AI 绘画')
+
+      if (baseModel) {
+        result = result.filter((p) => p.aiPaintingConfig?.baseModel === baseModel)
+      }
     }
 
     if (category) {
@@ -85,6 +109,7 @@ export function usePromptStore() {
     prompts: allPrompts,
     featuredPrompts,
     categories,
+    baseModels,
     isLoading,
     error,
     fetchPrompts,

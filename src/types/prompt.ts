@@ -1,3 +1,15 @@
+export interface AIPaintingConfig {
+  baseModel: string
+  negativePrompt?: string
+  resolution?: string
+  steps?: number
+  cfg?: number
+  sampler?: string
+  seed?: string
+  scheduler?: string
+  modelHash?: string
+}
+
 export interface Prompt {
   id: string
   title: string
@@ -17,6 +29,7 @@ export interface Prompt {
     username: string
     avatarUrl?: string
   }
+  aiPaintingConfig?: AIPaintingConfig
 }
 
 export interface PromptsData {
