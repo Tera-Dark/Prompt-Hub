@@ -26,31 +26,32 @@ const CACHE_KEY = 'prompts_data_v3' // Bump version for sharding
 const CACHE_TTL = 60 * 1000 // 1 minute
 const COMPRESSED_PREFIX = 'lz:'
 
+function getCachedData(): { data: PromptsData; timestamp: number } | null {
+  const stored = localStorage.getItem(CACHE_KEY)
+  if (!stored) return null
+
+  try {
+    if (stored.startsWith(COMPRESSED_PREFIX)) {
+      const compressed = stored.slice(COMPRESSED_PREFIX.length)
+      const decompressed = LZString.decompressFromUTF16(compressed)
+      return decompressed ? JSON.parse(decompressed) : null
+    } else {
+      return JSON.parse(stored)
+    }
+  } catch (e) {
+    console.warn('Failed to parse cached prompts', e)
+    localStorage.removeItem(CACHE_KEY)
+    return null
+  }
+}
+
 export async function loadPrompts(force = false): Promise<PromptsData> {
   try {
     // Try to get from cache
     if (!force) {
-      const stored = localStorage.getItem(CACHE_KEY)
-      if (stored) {
-        try {
-          let cachedData: any
-          if (stored.startsWith(COMPRESSED_PREFIX)) {
-            const compressed = stored.slice(COMPRESSED_PREFIX.length)
-            const decompressed = LZString.decompressFromUTF16(compressed)
-            if (decompressed) {
-              cachedData = JSON.parse(decompressed)
-            }
-          } else {
-            cachedData = JSON.parse(stored)
-          }
-
-          if (cachedData && Date.now() - cachedData.timestamp < CACHE_TTL) {
-            return cachedData.data as PromptsData
-          }
-        } catch (e) {
-          console.warn('Failed to parse cached prompts', e)
-          localStorage.removeItem(CACHE_KEY)
-        }
+      const cachedData = getCachedData()
+      if (cachedData && Date.now() - cachedData.timestamp < CACHE_TTL) {
+        return cachedData.data as PromptsData
       }
     }
 
@@ -186,9 +187,9 @@ export async function addPrompt(
 
   if (directCommit) {
     // Optimistic Cache Update
-    const cached = localStorage.getItem(CACHE_KEY)
-    if (cached) {
-      const { data } = JSON.parse(cached)
+    const cachedData = getCachedData()
+    if (cachedData) {
+      const { data } = cachedData
       data.prompts.unshift(item)
       setPromptsCache(data)
     }
@@ -320,9 +321,9 @@ export async function updatePromptById(
 
   if (directCommit) {
     // Optimistic Cache Update
-    const cached = localStorage.getItem(CACHE_KEY)
-    if (cached) {
-      const { data } = JSON.parse(cached)
+    const cachedData = getCachedData()
+    if (cachedData) {
+      const { data } = cachedData
       const cacheIdx = data.prompts.findIndex((p: Prompt) => p.id === id)
       if (cacheIdx >= 0) {
         data.prompts[cacheIdx] = updater(data.prompts[cacheIdx])
@@ -456,9 +457,9 @@ export async function deletePromptById(
 
   if (directCommit) {
     // Optimistic Cache Update
-    const cached = localStorage.getItem(CACHE_KEY)
-    if (cached) {
-      const { data } = JSON.parse(cached)
+    const cachedData = getCachedData()
+    if (cachedData) {
+      const { data } = cachedData
       data.prompts = data.prompts.filter((p: Prompt) => p.id !== id)
       setPromptsCache(data)
     }
@@ -658,9 +659,9 @@ export async function deletePromptsBatch(
     )
 
     // Optimistic Cache Update
-    const cached = localStorage.getItem(CACHE_KEY)
-    if (cached) {
-      const { data } = JSON.parse(cached)
+    const cachedData = getCachedData()
+    if (cachedData) {
+      const { data } = cachedData
       const idsSet = new Set(ids)
       data.prompts = data.prompts.filter((p: Prompt) => !idsSet.has(p.id))
       setPromptsCache(data)
