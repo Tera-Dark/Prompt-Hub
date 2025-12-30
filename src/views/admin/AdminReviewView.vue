@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '../../composables/useAuth'
+import { useToast } from '../../composables/useToast'
 import {
   fetchPendingSubmissions,
   approveSubmission,
@@ -17,6 +18,7 @@ import * as Diff from 'diff'
 
 const { t } = useI18n()
 const auth = useAuth()
+const toast = useToast()
 const pendingPrompts = ref<PendingSubmission[]>([])
 const loading = ref(true)
 const error = ref('')
@@ -168,20 +170,58 @@ const getImageDiff = (submission: PendingSubmission) => {
   return { added, removed, unchanged }
 }
 
+import { githubService } from '@/services/github'
+
 const handleApprove = async (submission?: PendingSubmission) => {
   const target = submission || selectedSubmission.value
   if (!auth.token.value || !target) return
 
   processingId.value = target.id
   try {
+    // 1. Pre-check mergeability if it's a PR
+    if (target.type === 'pr' && target.number) {
+      try {
+        const pr = await githubService.getPullRequest(target.number)
+
+        // mergeable can be true, false, or null (if still computing)
+        // If false, it's definitely conflicted.
+        if (pr.mergeable === false) {
+          toast.warning(t('errors.mergeConflict') || 'Conflict Detected - Cannot Auto Merge')
+          return // Stop processing
+        }
+
+        if (pr.mergeable === null) {
+          // If null, GitHub is still computing. We can warn or wait.
+          // For safety, let's warn.
+          toast.info('Merge status unknown (computing), please try again in a moment.')
+          return
+        }
+      } catch (prError) {
+        console.warn('Failed to check PR status', prError)
+        // Ensure we don't block approval if check fails, but maybe strictly we should.
+        // Let's decide to proceed but log it, or we could strict fail.
+        // Given 'robustness', strict fail on network error might be annoying, but safer.
+        // However, if we can't check, the merge call itself will fail later if conflict.
+        // So we can proceed.
+      }
+    }
+
     await approveSubmission(target, auth.token.value)
     pendingPrompts.value = pendingPrompts.value.filter((p) => p.id !== target.id)
+    toast.success(t('review.approving'))
     if (selectedSubmission.value?.id === target.id) {
       closeReview()
     }
-  } catch (e) {
-    console.error(e)
-    alert('Failed to approve submission')
+  } catch (error: unknown) {
+    console.error(error)
+    const e = error as { status?: number; message?: string }
+    if (e.status === 405 || e.message?.includes('not mergeable')) {
+      toast.warning(
+        t('errors.mergeConflict') || 'Merge Conflict: Please resolve on GitHub manually.',
+      )
+    } else {
+      toast.error('Failed to approve submission: ' + (e.message || 'Unknown error'))
+    }
   } finally {
     processingId.value = null
   }
@@ -195,12 +235,13 @@ const handleReject = async (submission?: PendingSubmission) => {
   try {
     await rejectSubmission(target, auth.token.value)
     pendingPrompts.value = pendingPrompts.value.filter((p) => p.id !== target.id)
+    toast.success(t('review.rejecting'))
     if (selectedSubmission.value?.id === target.id) {
       closeReview()
     }
-  } catch (e) {
+  } catch (e: unknown) {
     console.error(e)
-    alert('Failed to reject submission')
+    toast.error('Failed to reject submission')
   } finally {
     processingId.value = null
   }

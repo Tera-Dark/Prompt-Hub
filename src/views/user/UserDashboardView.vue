@@ -165,6 +165,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { usePromptStore } from '@/stores/prompts'
 import { useAuth } from '@/composables/useAuth'
+import { useToast } from '@/composables/useToast'
 import Button from '@/components/ui/Button.vue'
 import {
   getUserSubmissions,
@@ -184,6 +185,7 @@ const router = useRouter()
 const promptStore = usePromptStore()
 const { user, token, hasRepoWriteAccess } = useAuth()
 const { drafts, loadDrafts, deleteDraft } = useLocalDrafts()
+const toast = useToast()
 const { prompts: allPrompts, isLoading: loadingPrompts } = promptStore
 
 const pendingSubmissions = ref<PendingSubmission[]>([])
@@ -280,10 +282,10 @@ async function handleDelete(prompt: Prompt) {
   try {
     if (hasRepoWriteAccess.value) {
       await deletePromptById(prompt.id, token.value!, true)
-      alert(t('common.messages.deleteSuccess'))
+      toast.success(t('common.messages.deleteSuccess'))
     } else {
       const url = await submitPromptDelete(prompt.id, token.value!)
-      alert(t('common.messages.issueCreated', { url }))
+      toast.success(t('common.messages.issueCreated', { url }), 5000)
     }
     // Remove from selection if present
     if (selectedIds.value.has(prompt.id)) {
@@ -291,9 +293,9 @@ async function handleDelete(prompt: Prompt) {
       newSet.delete(prompt.id)
       selectedIds.value = newSet
     }
-  } catch (e) {
+  } catch (e: unknown) {
     console.error(e)
-    alert(getFriendlyErrorMessage(e))
+    toast.error(getFriendlyErrorMessage(e))
   } finally {
     deleting.value = null
   }
@@ -327,14 +329,14 @@ async function handleBatchDelete() {
       await deletePromptsBatch(ids, token.value!, true)
       // Update store locally to reflect changes immediately if cache update didn't trigger reactivity
       promptStore.removePrompts(ids)
-      alert(t('common.messages.deleteSuccess'))
+      toast.success(t('common.messages.deleteSuccess'))
     } else {
       const url = await submitPromptDeleteBatch(ids, token.value!)
-      alert(t('common.messages.issueCreated', { url }))
+      toast.success(t('common.messages.issueCreated', { url }), 5000)
     }
-  } catch (e) {
+  } catch (e: unknown) {
     console.error('Batch delete failed', e)
-    alert(getFriendlyErrorMessage(e))
+    toast.error(getFriendlyErrorMessage(e))
 
     // Revert Optimistic UI (reload)
     promptStore.fetchPrompts()

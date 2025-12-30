@@ -128,6 +128,7 @@ import { RouterLink, useRouter } from 'vue-router'
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '@/composables/useAuth'
+import { useToast } from '@/composables/useToast'
 import { type Prompt } from '@/types/prompt'
 import { deletePromptById, deletePromptsBatch, loadPrompts } from '@/repositories/prompts'
 import { useLocalDrafts } from '@/composables/useLocalDrafts'
@@ -140,6 +141,7 @@ const showDrafts = ref(false)
 const searchQuery = ref('')
 const { token, hasRepoWriteAccess } = useAuth()
 const { drafts, loadDrafts, deleteDraft } = useLocalDrafts()
+const toast = useToast()
 
 // Batch Selection
 const selectedIds = ref<Set<string>>(new Set())
@@ -191,13 +193,14 @@ async function handleBatchDelete() {
   try {
     const tVal = token.value!
     await deletePromptsBatch(ids, tVal, hasRepoWriteAccess.value)
-    alert(t('common.messages.deleteSuccess'))
-  } catch (e) {
+    toast.success(t('common.messages.deleteSuccess'))
+  } catch (e: unknown) {
     console.error('Batch delete failed', e)
     // Revert
     items.value = originalItems
     selectedIds.value = originalSelection
-    alert(e instanceof Error ? e.message : 'Batch delete failed')
+    const msg = e instanceof Error ? e.message : 'Batch delete failed'
+    toast.error(msg)
   } finally {
     isBatchDeleting.value = false
     batchProgress.value = { current: count, total: count }
@@ -257,14 +260,14 @@ async function onDelete(id: string) {
     const tVal = token.value!
     const url = await deletePromptById(id, tVal, hasRepoWriteAccess.value)
     if (hasRepoWriteAccess.value) {
-      alert(t('common.messages.deleteSuccess'))
+      toast.success(t('common.messages.deleteSuccess'))
     } else {
-      alert(t('common.messages.prCreated', { url }))
+      toast.success(t('common.messages.prCreated', { url }), 5000)
     }
     items.value = items.value.filter((x) => x.id !== id)
-  } catch (e) {
+  } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : t('common.messages.deleteFailed')
-    alert(msg)
+    toast.error(msg)
   } finally {
     submitting.value = false
   }

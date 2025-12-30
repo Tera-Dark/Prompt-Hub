@@ -96,6 +96,7 @@
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '@/composables/useAuth'
+import { useToast } from '@/composables/useToast'
 import {
   updatePromptById,
   loadPrompts,
@@ -108,6 +109,7 @@ import ImageUploader from '@/components/ui/ImageUploader.vue'
 const props = defineProps<{ id: string }>()
 const { t } = useI18n()
 const { token, hasRepoWriteAccess, user } = useAuth()
+const toast = useToast()
 
 const form = ref({ title: '', description: '', prompt: '', images: [] as string[] })
 const status = ref<'draft' | 'published' | 'archived'>('published')
@@ -176,7 +178,7 @@ async function handleSubmit() {
         }),
         authToken,
       )
-      alert(t('common.messages.prCreated', { url }))
+      toast.success(t('common.messages.prCreated', { url }), 5000)
     } else {
       if (!originalPrompt.value) throw new Error(t('common.messages.originalNotFound'))
       // Create Issue for update
@@ -192,11 +194,11 @@ async function handleSubmit() {
         imageUrl: form.value.images[0],
       }
       const url = await submitPromptUpdate(props.id, updatedItem, authToken)
-      alert(t('common.messages.updateRequestCreated', { url }))
+      toast.success(t('common.messages.updateRequestCreated', { url }), 5000)
     }
-  } catch (e) {
+  } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : t('common.messages.submissionFailed')
-    alert(msg)
+    toast.error(msg)
   } finally {
     submitting.value = false
   }

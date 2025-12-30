@@ -68,6 +68,16 @@ export class GitHubService {
     return data
   }
 
+  async getPullRequest(pullNumber: number) {
+    this.ensureAuth()
+    const { data } = await this.octokit!.pulls.get({
+      owner: this.owner,
+      repo: this.repo,
+      pull_number: pullNumber,
+    })
+    return data
+  }
+
   async mergePullRequest(pullNumber: number) {
     this.ensureAuth()
     const { data } = await this.octokit!.pulls.merge({
@@ -164,7 +174,7 @@ export class GitHubService {
   ) {
     this.ensureAuth()
 
-    let lastError: any
+    let lastError: unknown
 
     for (let i = 0; i < retries; i++) {
       try {
@@ -213,12 +223,13 @@ export class GitHubService {
         await this.updateRef(`heads/${branch}`, newCommit.sha)
 
         return newCommit
-      } catch (error: any) {
+      } catch (error: unknown) {
         lastError = error
+        const e = error as { status?: number; message?: string }
         const isFastForwardError =
-          error.status === 409 ||
-          error.status === 422 ||
-          (error.message && error.message.toLowerCase().includes('fast forward'))
+          e.status === 409 ||
+          e.status === 422 ||
+          (e.message && e.message.toLowerCase().includes('fast forward'))
 
         if (!isFastForwardError) {
           throw error
@@ -325,7 +336,15 @@ export class GitHubService {
 
   async listIssues(creator?: string) {
     this.ensureAuth()
-    const params: any = {
+    // Explicitly define the params type to avoid implicit any if inference fails,
+    // or just remove the explicit ': any' and let inference do its job.
+    // The previous error was 'Unexpected any. Specify a different type'.
+    const params: {
+      owner: string
+      repo: string
+      state: 'open' | 'closed' | 'all'
+      creator?: string
+    } = {
       owner: this.owner,
       repo: this.repo,
       state: 'open',

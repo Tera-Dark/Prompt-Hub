@@ -81,12 +81,14 @@
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePromptStore } from '@/stores/prompts'
+import { useToast } from '@/composables/useToast'
 import ImportModal from '@/components/admin/data/ImportModal.vue'
 import TagManagerModal from '@/components/admin/data/TagManagerModal.vue'
 import LinkValidatorModal from '@/components/admin/data/LinkValidatorModal.vue'
 
 const { t } = useI18n()
 const promptStore = usePromptStore()
+const toast = useToast()
 
 const isImportOpen = ref(false)
 const isTagManagerOpen = ref(false)
@@ -94,8 +96,7 @@ const isLinkValidatorOpen = ref(false)
 const isExporting = ref(false)
 
 function showSuccess(msg: string) {
-  // Simple alert for now, could use toast if available
-  alert(msg)
+  toast.success(msg)
 }
 
 async function handleExport(format: 'json' | 'md') {
@@ -146,9 +147,9 @@ ${p.prompt}
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
     showSuccess(t('dataTools.exports.success'))
-  } catch (e) {
+  } catch (e: unknown) {
     console.error('Export failed', e)
-    alert(t('dataTools.exports.failed'))
+    toast.error(t('dataTools.exports.failed'))
   } finally {
     isExporting.value = false
   }

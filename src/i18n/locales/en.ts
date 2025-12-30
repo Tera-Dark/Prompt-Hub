@@ -17,6 +17,8 @@ export default {
       unprocessable: 'Unprocessable Entity (Git Error)',
       notFound: 'Resource not found',
       forbidden: 'Permission denied. Please check your access rights.',
+      mergeConflict:
+        'Merge Conflict: This submission cannot be auto-merged. Please resolve on GitHub manually.',
     },
   },
   admin: {

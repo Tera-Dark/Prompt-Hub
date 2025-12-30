@@ -75,6 +75,7 @@ import Modal from '@/components/ui/Modal.vue'
 import Button from '@/components/ui/Button.vue'
 import { usePromptStore } from '@/stores/prompts'
 import { githubService } from '@/services/github'
+import { useToast } from '@/composables/useToast'
 
 const { t } = useI18n()
 
@@ -85,6 +86,7 @@ defineProps<{
 const emit = defineEmits(['close', 'success'])
 
 const promptStore = usePromptStore()
+const toast = useToast()
 const searchQuery = ref('')
 const editingTag = ref<{ name: string; count: number } | null>(null)
 const newTagName = ref('')
@@ -173,9 +175,9 @@ async function saveRename() {
     await promptStore.fetchPrompts(true)
     cancelEdit()
     emit('success')
-  } catch (err) {
+  } catch (err: unknown) {
     console.error(err)
-    alert('Failed to rename tag.')
+    toast.error('Failed to rename tag.')
   } finally {
     isProcessing.value = false
   }
@@ -206,9 +208,9 @@ async function confirmDelete(tag: { name: string; count: number }) {
 
     await promptStore.fetchPrompts(true)
     emit('success')
-  } catch (err) {
+  } catch (err: unknown) {
     console.error(err)
-    alert('Failed to delete tag.')
+    toast.error('Failed to delete tag.')
   } finally {
     isProcessing.value = false
   }

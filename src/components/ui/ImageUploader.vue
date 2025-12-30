@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useToast } from '@/composables/useToast'
 import { uploadImage, uploadExternal } from '../../services/image'
 
 const props = defineProps<{
@@ -12,6 +13,7 @@ const props = defineProps<{
 const emit = defineEmits(['update:modelValue', 'file-selected'])
 
 const { t } = useI18n()
+const toast = useToast()
 const isDragging = ref(false)
 const isUploading = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -30,9 +32,10 @@ const addImageFromUrl = () => {
     new URL(url)
     emit('update:modelValue', [url])
     imageUrlInput.value = ''
-    console.log('✅ Added image from URL:', url)
-  } catch (e) {
-    alert('请输入有效的图片URL')
+    toast.success(t('imageUploader.urlAdded') || 'Image URL added')
+  } catch (e: unknown) {
+    console.error(e)
+    toast.error('请输入有效的图片URL')
   }
 }
 
@@ -71,7 +74,7 @@ const processFiles = async (files: File[]) => {
 
     if (!file.type.startsWith('image/')) return
     if (file.size > 10 * 1024 * 1024) {
-      alert(t('imageUploader.fileTooLarge', { name: file.name }))
+      toast.error(t('imageUploader.fileTooLarge', { name: file.name }))
       return
     }
 
@@ -123,10 +126,12 @@ const processFiles = async (files: File[]) => {
             console.error('External upload fallback failed:', externalError)
             qItem.progress = false
             qItem.error = '上传失败 (GitHub无权限且所有图床均失败)'
+            toast.error(qItem.error)
           }
         } else {
           qItem.progress = false
           qItem.error = t('imageUploader.uploadFailed') || 'Upload failed'
+          toast.error(qItem.error)
         }
       }
     } finally {
@@ -138,7 +143,7 @@ const processFiles = async (files: File[]) => {
   // Multi-image mode (existing logic)
   const remainingSlots = (props.limit || 9) - props.modelValue.length
   if (remainingSlots <= 0) {
-    alert(t('imageUploader.limitReached'))
+    toast.warning(t('imageUploader.limitReached'))
     return
   }
 
@@ -149,7 +154,7 @@ const processFiles = async (files: File[]) => {
   for (const file of filesToUpload) {
     if (!file.type.startsWith('image/')) continue
     if (file.size > 10 * 1024 * 1024) {
-      alert(t('imageUploader.fileTooLarge', { name: file.name }))
+      toast.error(t('imageUploader.fileTooLarge', { name: file.name }))
       continue
     }
     validFiles.push(file)

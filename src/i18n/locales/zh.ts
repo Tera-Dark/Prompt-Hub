@@ -15,6 +15,7 @@ export default {
       unprocessable: '无法处理的请求 (Git 错误)',
       notFound: '资源未找到',
       forbidden: '权限不足。请检查您的访问权限。',
+      mergeConflict: '合并冲突：此提交无法自动合并。请在 GitHub 上手动解决。',
     },
   },
   admin: {
