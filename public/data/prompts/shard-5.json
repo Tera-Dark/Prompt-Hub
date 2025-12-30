@@ -1,26 +1,4 @@
 {
   "shardId": 5,
-  "prompts": [
-    {
-      "id": "测试-3-202512020604",
-      "title": "图文测试3",
-      "category": "测试",
-      "description": "测试",
-      "prompt": "测试",
-      "tags": [
-        "测试"
-      ],
-      "createdAt": "2025-12-02T06:04:46.340Z",
-      "status": "published",
-      "images": [
-        "https://cdn.jsdelivr.net/gh/tera-dark/Prompt-Hub@main/public/data/images/2025/12/1764656202749-eqzi63.jpg"
-      ],
-      "author": {
-        "username": "Tera-Dark",
-        "avatarUrl": "https://avatars.githubusercontent.com/u/142307294?v=4"
-      },
-      "updatedAt": "2025-12-02T06:16:50.646Z",
-      "imageUrl": "https://cdn.jsdelivr.net/gh/tera-dark/Prompt-Hub@main/public/data/images/2025/12/1764656202749-eqzi63.jpg"
-    }
-  ]
+  "prompts": []
 }
