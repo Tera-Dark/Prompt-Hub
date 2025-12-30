@@ -7,12 +7,10 @@
     <div class="card-content-wrapper">
       <!-- Image Cover (Grid View: Top, List View: Left) -->
       <div v-if="prompt.imageUrl || (prompt.images && prompt.images.length > 0)" class="card-cover">
-        <img
+        <AsyncImage
           :src="prompt.images?.[0] || prompt.imageUrl"
           :alt="prompt.title"
-          :title="prompt.title"
-          class="card-image"
-          loading="lazy"
+          img-class="card-image"
         />
         <!-- Overlay Actions (Grid Only) -->
         <div v-if="viewMode === 'grid'" class="card-overlay">
@@ -89,6 +87,7 @@ import Card from '@/components/ui/Card.vue'
 import Badge from '@/components/ui/Badge.vue'
 import Button from '@/components/ui/Button.vue'
 import Icon from '@/components/ui/Icon.vue'
+import AsyncImage from '@/components/ui/AsyncImage.vue'
 import { useToast } from '@/composables/useToast'
 import { favoritesService } from '@/services/favorites'
 

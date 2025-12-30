@@ -12,7 +12,11 @@
             <div v-if="allImages.length > 0" class="image-gallery-section">
               <div class="gallery-container">
                 <div class="main-image-wrapper" @dblclick="openZoom">
-                  <img :src="allImages[currentImageIndex]" :alt="prompt.title" class="main-image" />
+                  <AsyncImage
+                    :src="allImages[currentImageIndex]"
+                    :alt="prompt.title"
+                    img-class="main-image"
+                  />
 
                   <!-- Navigation Arrows -->
                   <button
@@ -147,6 +151,7 @@ import type { Prompt } from '@/types/prompt'
 import Badge from '@/components/ui/Badge.vue'
 import Button from '@/components/ui/Button.vue'
 import Icon from '@/components/ui/Icon.vue'
+import AsyncImage from '@/components/ui/AsyncImage.vue'
 import { useToast } from '@/composables/useToast'
 import { favoritesService } from '@/services/favorites'
 import { useScrollLock } from '@/composables/useScrollLock'

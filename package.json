@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "validate:prompts": "node scripts/validate-prompts.js",
+    "validate:shards": "node scripts/validate-shards.js",
     "typecheck": "vue-tsc --noEmit",
     "lint": "eslint . --ext .ts,.vue",
     "format": "prettier --write .",

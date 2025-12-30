@@ -7,6 +7,8 @@ const prompts = ref<Prompt[]>([])
 const isLoading = ref(false)
 const error = ref<string | null>(null)
 const isLoaded = ref(false)
+const lastUpdated = ref<string | null>(null)
+const hasUpdate = ref(false)
 
 export function usePromptStore() {
   async function fetchPrompts(force = false) {
@@ -14,15 +16,37 @@ export function usePromptStore() {
 
     isLoading.value = true
     error.value = null
+    hasUpdate.value = false // Reset update flag on fetch
+
     try {
       const data = await loadPrompts(force)
       prompts.value = data.prompts
+      if (data.lastUpdated) {
+        lastUpdated.value = data.lastUpdated
+      }
       isLoaded.value = true
     } catch (e) {
       error.value = 'Failed to load prompts'
       console.error(e)
     } finally {
       isLoading.value = false
+    }
+  }
+
+  async function checkForUpdates() {
+    try {
+      // Lazy import to avoid circular dependency issues if any
+      const { loadShardIndex } = await import('@/utils/shard')
+      const index = await loadShardIndex()
+
+      if (lastUpdated.value && index.lastUpdated && index.lastUpdated !== lastUpdated.value) {
+        hasUpdate.value = true
+        return true
+      }
+      return false
+    } catch (e) {
+      console.error('Failed to check for updates', e)
+      return false
     }
   }
 
@@ -115,5 +139,7 @@ export function usePromptStore() {
     fetchPrompts,
     getFilteredPrompts,
     removePrompts,
+    checkForUpdates,
+    hasUpdate,
   }
 }

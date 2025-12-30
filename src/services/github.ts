@@ -277,6 +277,23 @@ export class GitHubService {
     }
   }
 
+  async getRawFile(path: string, branch = 'main') {
+    // Try GitHub Pages first (faster, CDN cached)
+    // Fallback to raw.githubusercontent.com
+    const pagesUrl = `https://${this.owner}.github.io/${this.repo}/${path}`
+    const rawUrl = `https://raw.githubusercontent.com/${this.owner}/${this.repo}/${branch}/${path}`
+
+    try {
+      const response = await fetch(pagesUrl, { cache: 'no-cache' })
+      if (response.ok) return await response.text()
+      throw new Error('Pages not found')
+    } catch {
+      const response = await fetch(rawUrl)
+      if (!response.ok) throw new Error(`Failed to fetch raw file: ${response.statusText}`)
+      return await response.text()
+    }
+  }
+
   async updateFile(path: string, content: string, message: string, branch: string, sha: string) {
     this.ensureAuth()
     const base64Content = btoa(unescape(encodeURIComponent(content)))

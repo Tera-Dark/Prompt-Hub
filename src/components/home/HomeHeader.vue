@@ -3,6 +3,15 @@
     <div class="container header-content">
       <div class="header-top">
         <div class="brand">
+          <button
+            v-if="promptStore.hasUpdate"
+            class="update-badge"
+            :title="t('common.newContentAvailable')"
+            @click="handleRefresh"
+          >
+            <span class="update-dot"></span>
+            New
+          </button>
           <span class="logo-icon">⚡</span>
           <span class="brand-name">{{ t('app.name') }}</span>
         </div>
@@ -94,6 +103,12 @@ const emit = defineEmits<{
 
 const { t, locale } = useI18n()
 const mobileMenuOpen = ref(false)
+import { usePromptStore } from '@/stores/prompts'
+const promptStore = usePromptStore()
+
+async function handleRefresh() {
+  await promptStore.fetchPrompts(true)
+}
 
 const views = [
   { id: 'recommendations', icon: 'sparkles', labelKey: 'home.nav.featured' },
@@ -144,6 +159,58 @@ function toggleLanguage() {
   font-size: var(--text-lg);
   color: var(--color-text-primary);
   white-space: nowrap;
+}
+
+.update-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-right: 0.5rem;
+  animation: fadeIn 0.3s ease;
+}
+
+.update-badge:hover {
+  background: var(--color-primary);
+  color: white;
+}
+
+.update-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .header-nav {

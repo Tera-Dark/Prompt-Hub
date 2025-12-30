@@ -35,6 +35,7 @@ export interface Prompt {
 export interface PromptsData {
   prompts: Prompt[]
   version: string
+  lastUpdated?: string
 }
 
 export class PromptLoadError extends Error {

@@ -3,6 +3,8 @@
  * 分片存储工具函数
  */
 
+import { githubService } from '@/services/github'
+
 export interface ShardIndex {
   version: string
   shardCount: number
@@ -48,22 +50,29 @@ export function getShardId(promptId: string, shardCount: number): number {
  * 加载索引
  */
 export async function loadShardIndex(): Promise<ShardIndex> {
-  const response = await fetch(`${import.meta.env.BASE_URL}data/prompts/index.json`)
-  if (!response.ok) {
-    throw new Error('Failed to load shard index')
+  try {
+    const response = await fetch(`${import.meta.env.BASE_URL}data/prompts/index.json`)
+    if (!response.ok) throw new Error('Fetch failed')
+    return await response.json()
+  } catch (e) {
+    // Fallback to raw file (bypass cache or if pages is down)
+    const content = await githubService.getRawFile('public/data/prompts/index.json')
+    return JSON.parse(content)
   }
-  return await response.json()
 }
 
 /**
  * 加载指定分片
  */
 export async function loadShard(shardId: number): Promise<ShardData> {
-  const response = await fetch(`${import.meta.env.BASE_URL}data/prompts/shard-${shardId}.json`)
-  if (!response.ok) {
-    throw new Error(`Failed to load shard ${shardId}`)
+  try {
+    const response = await fetch(`${import.meta.env.BASE_URL}data/prompts/shard-${shardId}.json`)
+    if (!response.ok) throw new Error('Fetch failed')
+    return await response.json()
+  } catch (e) {
+    const content = await githubService.getRawFile(`public/data/prompts/shard-${shardId}.json`)
+    return JSON.parse(content)
   }
-  return await response.json()
 }
 
 /**

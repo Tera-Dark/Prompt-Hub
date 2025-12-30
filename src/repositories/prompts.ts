@@ -63,6 +63,7 @@ export async function loadPrompts(force = false): Promise<PromptsData> {
 
       const data: PromptsData = {
         version: index.version,
+        lastUpdated: index.lastUpdated,
         prompts,
       }
 
